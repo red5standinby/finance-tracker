@@ -20,3 +20,4 @@ server.log
 # dev probes
 probe_*.py
 *_shot.png
+.probe_*.py

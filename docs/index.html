@@ -1,0 +1,1392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Luna Family Finance Dashboard</title>
+<style>
+  :root{
+    --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044;
+    --txt:#e6edf7; --mut:#8899b3; --accent:#4f8cff; --good:#22c55e; --bad:#ef4444;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--accent)}
+  header{display:flex;align-items:center;gap:18px;padding:16px 26px;
+    background:linear-gradient(180deg,var(--panel2),var(--panel));
+    border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+    box-shadow:0 2px 14px rgba(0,0,0,.35)}
+  header h1{font-size:20px;margin:0;letter-spacing:.3px;font-weight:700}
+  header h1 .lffd{color:var(--accent);font-weight:800}
+  header .logo{font-size:23px}
+  .spacer{flex:1}
+  nav{display:flex;gap:6px;background:rgba(0,0,0,.18);padding:5px;border-radius:12px;
+    border:1px solid var(--line)}
+  nav button{background:none;border:1px solid transparent;color:var(--mut);
+    padding:10px 20px;border-radius:9px;cursor:pointer;font-size:15px;font-weight:600;
+    letter-spacing:.2px;transition:background .15s,color .15s,border-color .15s,box-shadow .15s}
+  nav button:hover{color:var(--txt);background:var(--panel2)}
+  nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);
+    box-shadow:0 2px 10px rgba(79,140,255,.4)}
+  main{padding:26px;max-width:1400px;margin:0 auto}
+  .grid{display:grid;gap:16px}
+  .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+  .card .lbl{color:var(--mut);font-size:12.5px;text-transform:uppercase;letter-spacing:.6px}
+  .card .val{font-size:28px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
+  .pos{color:var(--good)} .neg{color:var(--bad)}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px;margin-top:16px}
+  .panel h2{font-size:15px;margin:0 0 14px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{text-align:left;color:var(--mut);font-weight:600;padding:12px 12px;
+    border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;cursor:pointer;user-select:none}
+  th.no-sort{cursor:default}
+  td{padding:14px 12px;border-bottom:1px solid rgba(36,48,68,.5);vertical-align:middle}
+  tr:hover td{background:rgba(79,140,255,.05)}
+  .amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
+  .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;
+    cursor:pointer;white-space:nowrap;border:1px solid transparent}
+  .pill:hover{filter:brightness(1.25)}
+  select,input[type=text],input[type=date],input[type=search],input[type=number],textarea{
+    background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:8px 11px;border-radius:8px;font-size:14px;font-family:inherit;
+    -webkit-appearance:none;appearance:none}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M1 1l4 4 4-4' stroke='%238899b3' stroke-width='1.6' fill='none'/></svg>");
+    background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+  select option{background:var(--panel);color:var(--txt)}
+  select:focus,input:focus{outline:none;border-color:var(--accent)}
+  input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.7)}
+  /* themed checkbox (all native checkboxes) — forced square, equal-sized */
+  input[type=checkbox]{-webkit-appearance:none;appearance:none;
+    inline-size:20px;block-size:20px;width:20px;height:20px;
+    flex:0 0 20px;min-width:20px;min-height:20px;max-width:20px;max-height:20px;
+    box-sizing:border-box;aspect-ratio:1/1;line-height:0;
+    border:1.5px solid var(--line);border-radius:6px;background:var(--panel2);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;padding:0;
+    margin:0;vertical-align:middle;position:relative;transition:background .12s,border-color .12s}
+  input[type=checkbox]::before{content:"";width:11px;height:11px;flex:0 0 auto;transform:scale(0);
+    transition:transform .12s;background:#fff;clip-path:polygon(14% 44%,0 62%,40% 100%,100% 18%,84% 4%,38% 68%)}
+  input[type=checkbox]:hover{border-color:var(--accent)}
+  input[type=checkbox]:indeterminate{background:var(--accent);border-color:var(--accent)}
+  input[type=checkbox]:indeterminate::before{transform:scale(1);width:11px;height:3px;
+    clip-path:none;border-radius:1px}
+  input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+  input[type=checkbox]:checked::before{transform:scale(1)}
+  input[type=checkbox]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  /* checkbox cells get breathing room + centered */
+  td input[type=checkbox]{display:block;margin:0 auto}
+  th input[type=checkbox]{display:block;margin:0 auto}
+  .filters{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;margin-bottom:18px}
+  .filters label{color:var(--mut);font-size:13px;display:flex;flex-direction:column;gap:7px}
+  .filters label:has(.multiselect){flex:1 1 200px;min-width:180px}
+  .filters label:has(.multiselect) .multiselect{width:100%}
+  .filters label input:not([type=checkbox]),.filters label select{width:100%}
+  button.btn{background:var(--accent);border:none;color:#fff;padding:9px 18px;border-radius:8px;
+    cursor:pointer;font-weight:600;font-size:13px}
+  button.btn:hover{filter:brightness(1.12)}
+  button.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
+  button.ghost:hover{background:var(--line)}
+  .bars{display:flex;flex-direction:column;gap:9px}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 90px;gap:12px;align-items:center;font-size:13px}
+  .bar-track{background:var(--panel2);border-radius:6px;height:20px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px;transition:width .4s}
+  .bar-row .amt{color:var(--mut);font-weight:600}
+  .drop{border:2px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;
+    color:var(--mut);cursor:pointer;transition:.2s;background:var(--panel)}
+  .drop.hot{border-color:var(--accent);background:rgba(79,140,255,.08);color:var(--txt)}
+  .src{font-size:10px;padding:1px 6px;border-radius:10px;background:var(--panel2);color:var(--mut);
+    margin-left:6px;text-transform:uppercase;letter-spacing:.4px}
+  .toast{position:fixed;bottom:22px;right:22px;background:var(--panel2);border:1px solid var(--line);
+    padding:13px 20px;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:100;
+    transform:translateY(80px);opacity:0;transition:.3s}
+  .toast.show{transform:translateY(0);opacity:1}
+  .muted{color:var(--mut)}
+  .empty{text-align:center;color:var(--mut);padding:40px}
+  .tag-edit{display:flex;gap:4px;align-items:center}
+  .hidden{display:none!important}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 11px;
+    font-size:12px;font-weight:600}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--mut)}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 auto}
+
+  /* ---------- transactions toolbar ---------- */
+  .toolbar{display:flex;flex-direction:column;gap:12px}
+  .tb-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+  .tb-row label{color:var(--mut);font-size:13px;display:flex;flex-direction:column;gap:6px}
+  .tb-row label input:not([type=checkbox]),.tb-row label select{min-width:130px}
+  .tb-row label input[type=checkbox]{min-width:20px;width:20px}
+  .tb-row label .multiselect{min-width:160px}
+  .cb-label{flex-direction:row!important;align-items:center!important;gap:9px!important;
+    padding-bottom:9px;cursor:pointer;white-space:nowrap}
+  .txn-statusbar{display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:12px;margin:16px 0 12px}
+  .pager{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .pager button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    min-width:38px;height:38px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;
+    padding:0 12px;transition:.15s}
+  .pager button:hover:not(:disabled){border-color:var(--accent);color:var(--txt)}
+  .pager button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pager button:disabled{opacity:.4;cursor:default}
+  .pager .pg-ellipsis{color:var(--mut);padding:0 4px}
+  .pager-bottom{justify-content:center;margin-top:18px}
+  .bulkbar{display:none;align-items:center;gap:14px;flex-wrap:wrap;
+    background:var(--panel2);border:1px solid var(--accent);border-radius:10px;
+    padding:12px 16px;margin-bottom:14px}
+  .bulkbar.show{display:flex}
+  .bulkbar label{color:var(--mut);font-size:13px;display:flex;flex-direction:row;align-items:center;gap:9px}
+  .bulk-count{font-weight:700;color:var(--txt);white-space:nowrap}
+  /* clickable category bars */
+  .bar-row.clickable{cursor:pointer;border-radius:8px;padding:4px 8px;margin:-4px -8px;transition:background .12s}
+  .bar-row.clickable:hover{background:rgba(79,140,255,.09)}
+  .bar-row .bar-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar-row:hover .bar-lbl{color:var(--accent)}
+
+  /* budget card */
+  /* fixed-height paginated account list */
+  .acct-wrap{max-height:264px;overflow-y:auto}
+  .acct-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:12px;font-size:13px;color:var(--mut)}
+  .acct-pager .pg-btns{display:flex;gap:8px}
+  .acct-pager button{background:var(--panel2);border:1px solid var(--bd);border-radius:7px;
+    color:var(--txt);font-size:13px;font-weight:600;padding:6px 14px;cursor:pointer;transition:.15s}
+  .acct-pager button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .acct-pager button:disabled{opacity:.4;cursor:default}
+  .acct-pager .pg-info b{color:var(--txt)}
+
+  .budget-card{margin-top:16px}
+  .budget-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    flex-wrap:wrap;margin-bottom:14px}
+  .budget-head h2{margin:0}
+  .budget-sum{font-size:12.5px;color:var(--mut);font-weight:600}
+  .budget-sum b{color:var(--txt)}
+  .bg-row{display:grid;grid-template-columns:150px 1fr 132px;gap:12px;align-items:center;
+    font-size:13px;margin-bottom:11px}
+  .bg-track{background:var(--panel2);border-radius:6px;height:20px;overflow:hidden}
+  .bg-fill{height:100%;border-radius:6px;transition:width .4s}
+  .bg-fill.ok{background:var(--good)} .bg-fill.warn{background:#f59e0b} .bg-fill.over{background:var(--bad)}
+  .bg-nums{text-align:right;font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums}
+  .bg-nums .over{color:var(--bad)}
+  .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
+  .bg-row .bg-edit{background:none;border:1px dashed var(--bd);border-radius:6px;color:var(--mut);
+    font-size:11px;padding:2px 8px;cursor:pointer}
+  .bg-row .bg-edit:hover{color:var(--accent);border-color:var(--accent)}
+  .bg-input{width:96px;background:var(--panel2);border:1px solid var(--accent);border-radius:6px;
+    color:var(--txt);padding:3px 7px;font-size:12px;text-align:right}
+
+  /* grade card */
+  .grade-card{position:relative;overflow:hidden;margin-top:16px;
+    display:flex;flex-direction:column;justify-content:center;align-items:center;
+    text-align:center;transition:box-shadow .3s}
+  .grade-card .lbl{align-self:stretch;text-align:left}
+  .grade-letter{font-size:58px;font-weight:800;line-height:1.05;letter-spacing:-2px;
+    margin:4px 0 2px;font-variant-numeric:tabular-nums}
+  .grade-sub{font-size:13px;color:var(--mut);font-weight:600}
+  .grade-trend{font-size:12px;font-weight:600;margin-top:6px;min-height:16px}
+  .grade-trend.up{color:var(--good)} .grade-trend.down{color:var(--bad)}
+  .grade-trend.flat{color:var(--mut)}
+  .grade-alltime{font-size:11px;color:var(--mut);margin-top:8px;
+    border-top:1px solid var(--line);padding-top:7px;width:100%}
+
+  /* ---------- responsive / mobile ---------- */
+  @media (max-width: 820px){
+    header{flex-wrap:wrap;gap:12px;padding:14px 16px}
+    header h1{font-size:15px}
+    header h1 .lffd{display:none}
+    nav{order:3;width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+    nav button{padding:10px 16px;font-size:14px;white-space:nowrap}
+    header .btn{order:2;padding:9px 14px;font-size:13px}
+    main{padding:14px}
+    .cards{grid-template-columns:1fr 1fr;gap:14px}
+    .grade-card{grid-column:1 / -1}
+    .grade-letter{font-size:46px}
+    .card{padding:16px}
+    .card .val{font-size:22px}
+    .bar-row{grid-template-columns:100px 1fr 74px;gap:10px;font-size:12px}
+    .filters{gap:12px}
+    .filters label{flex:1 1 44%}
+    .filters label input:not([type=checkbox]),.filters label select{width:100%}
+    .filters .btn{flex:1 1 100%}
+    .tb-row{gap:12px}
+    .tb-row label{flex:1 1 44%;min-width:0}
+    .tb-row label input,.tb-row label select,.tb-row label .multiselect{min-width:0;width:100%}
+    .tb-row .btn{flex:1 1 auto}
+    .cb-label{flex:1 1 100%!important;padding-bottom:0}
+    .bulkbar{gap:10px;padding:12px}
+    .bulkbar label{flex:1 1 100%;justify-content:space-between}
+    .bulkbar .btn{flex:1 1 auto}
+    table{font-size:13px}
+    th,td{padding:11px 9px}
+    .panel{padding:16px}
+    .legend{gap:12px}
+    .pie-wrap{gap:16px;justify-content:center}
+    #t-pie{flex:1 1 100%;max-width:340px;margin:0 auto}
+    .pie-legend{flex:1 1 100%;max-width:none}
+  }
+  @media (max-width: 480px){
+    .cards{grid-template-columns:1fr}
+    .bar-row{grid-template-columns:84px 1fr 68px;font-size:11px}
+    .filters label,.tb-row label{flex:1 1 100%}
+    header h1{font-size:14px}
+    input[type=checkbox]{width:22px;height:22px;flex:0 0 22px;min-width:22px}
+  }
+  /* keep long tables scrollable rather than stretching the page */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  img,svg{max-width:100%}
+  tr.tag-confirm-row:hover td{background:var(--panel2)}
+  tr.tag-confirm-row .chip{vertical-align:middle}
+  /* trends: pie + legend side by side */
+  .pie-wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  #t-pie{flex:0 0 360px;max-width:360px}
+  .pie-legend{flex:1;min-width:200px;max-width:560px;
+    column-count:2;column-gap:22px}
+  .pl-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);
+    font-size:13.5px;break-inside:avoid;-webkit-column-break-inside:avoid}
+  .pl-row .pl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pl-row .pl-val{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .pl-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pl-val{font-variant-numeric:tabular-nums}
+  /* multi-select account filter */
+  .multiselect{position:relative;display:inline-block;min-width:150px;width:100%}
+  .filter label .multiselect{width:100%}
+  .ms-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+    background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:9px 11px;font-size:14px;cursor:pointer;text-align:left;font-family:inherit}
+  .ms-btn:hover{border-color:var(--accent)}
+  .ms-btn .ms-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ms-btn .ms-caret{opacity:.6;font-size:10px;flex:0 0 auto}
+  .ms-panel{position:absolute;z-index:40;top:calc(100% + 6px);left:0;right:0;min-width:220px;max-height:340px;
+    overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;
+    box-shadow:0 14px 34px rgba(0,0,0,.5);display:none;flex-direction:column}
+  .ms-panel.open{display:flex}
+  .ms-panel .ms-item,.ms-panel label.ms-item{display:flex;flex-direction:row!important;align-items:center;justify-content:space-between;
+    gap:12px;width:100%;box-sizing:border-box;padding:11px 12px;border-radius:8px;cursor:pointer;
+    font-size:14px;white-space:nowrap;overflow:hidden;color:var(--txt);min-height:44px}
+  .ms-panel .ms-item + .ms-item{margin-top:2px}
+  .ms-panel .ms-item .ms-text{overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;color:var(--txt)}
+  .ms-panel .ms-item input{width:20px;height:20px;flex:0 0 20px;order:2}
+  .ms-panel .ms-item:hover{background:var(--panel2)}
+  .ms-panel .ms-actions{display:flex;flex-direction:row;justify-content:space-between;gap:8px;padding:9px 11px 4px;border-top:1px solid var(--line);margin-top:7px}
+  .ms-panel .ms-actions button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-weight:600;padding:3px 5px}
+</style>
+
+<!-- ===== GitHub Pages demo bootstrap (injected by build_pages.py) ===== -->
+<script>
+window.API_BASE = '';
+window.DEMO = true;
+(function(){
+  if(!window.DEMO) return;
+  let DATA = null;
+  async function demoData(){ if(!DATA){ DATA = await (await fetch('demo.json')).json(); } return DATA; }
+  const origFetch = window.fetch;
+  window.fetch = async function(url, opts){
+    const u = String(url);
+    if(!u.startsWith('/api')) return origFetch.apply(this, arguments);
+    const d = await demoData();
+    const path = u.slice(4); // strip '/api'
+    const qs = path.includes('?') ? new URLSearchParams(path.split('?')[1]) : new URLSearchParams();
+    let body;
+    if(path.startsWith('/dashboard')) body = d.dashboard;
+    else if(path.startsWith('/categories')) body = d.categories;
+    else if(path.startsWith('/accounts')) body = d.accounts;
+    else if(path.startsWith('/budgets')) body = d.budgets;
+    else if(path.startsWith('/trends')) body = d.trends;
+    else if(path.startsWith('/transactions')) body = d.transactions;
+    else if(path.startsWith('/rules')) body = d.rules;
+    else if(path.startsWith('/imports')) body = d.imports;
+    else body = {};
+    return new Response(JSON.stringify(body), {status:200, headers:{'Content-Type':'application/json'}});
+  };
+  // Read-only demo: block writes with a friendly notice.
+  const origPost = window.fetch;
+  window.fetch = async function(url, opts){
+    if(opts && opts.method && opts.method !== 'GET'){
+      if(String(url).startsWith('/api')){
+        if(window.toast) toast('Demo mode — changes are not saved');
+        return new Response(JSON.stringify({ok:true}), {status:200, headers:{'Content-Type':'application/json'}});
+      }
+    }
+    return origPost.apply(this, arguments);
+  };
+})();
+</script>
+<!-- ===== end demo bootstrap ===== -->
+</head>
+<body>
+<header>
+  <span class="logo">◈</span>
+  <h1>Luna Family Finance Dashboard <span class="lffd">LFFD</span></h1>
+  <nav>
+    <button data-tab="dash" class="active">Dashboard</button>
+    <button data-tab="trends">Trends</button>
+    <button data-tab="txns">Transactions</button>
+    <button data-tab="rules">Rules</button>
+  </nav>
+  <div class="spacer"></div>
+  <button class="btn" id="nav-import">+ Import</button>
+</header>
+<main>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="tab-dash">
+  <div class="filters">
+    <label>From <input type="date" id="d-start"></label>
+    <label>To <input type="date" id="d-end"></label>
+    <label>Account
+      <div class="multiselect" id="d-account-ms"></div>
+    </label>
+    <label>Quick
+      <select id="d-quick">
+        <option value="all">All time</option>
+        <option value="tm">This month</option>
+        <option value="lm">Last month</option>
+        <option value="ty">This year</option>
+        <option value="90">Last 90 days</option>
+      </select>
+    </label>
+    <button class="btn ghost" onclick="loadDashboard()">Apply</button>
+  </div>
+
+  <div class="grid cards">
+    <div class="card"><div class="lbl">Income</div><div class="val pos" id="k-income">$0</div></div>
+    <div class="card"><div class="lbl">Expenses</div><div class="val neg" id="k-expense">$0</div></div>
+    <div class="card"><div class="lbl">Net</div><div class="val" id="k-net">$0</div></div>
+    <div class="card"><div class="lbl">Uncategorized</div><div class="val" id="k-unc">0</div>
+      <div class="muted" style="font-size:12px" id="k-unc-amt"></div></div>
+  </div>
+
+  <div class="panel">
+    <h2>Spending by Category <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a bar to see its transactions</span></h2>
+    <div class="bars" id="cat-bars"></div>
+    <div class="legend" id="cat-legend"></div>
+  </div>
+
+  <div class="panel">
+    <h2>Income vs Expenses by Month</h2>
+    <div id="month-chart"></div>
+  </div>
+
+  <div class="panel">
+    <h2>By Account</h2>
+    <div class="table-wrap acct-wrap">
+    <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Income</th>
+      <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
+      <tbody id="acct-body"></tbody></table>
+    </div>
+    <div class="acct-pager" id="acct-pager"></div>
+  </div>
+
+  <div class="card budget-card" id="budget-card" style="grid-column:1 / -1">
+    <div class="budget-head">
+      <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
+      <div class="budget-sum" id="bg-sum"></div>
+    </div>
+    <div id="budget-body"><div class="empty">No budgets set</div></div>
+  </div>
+
+  <div class="card grade-card" id="grade-card">
+    <div class="lbl">Financial Grade</div>
+    <div class="grade-letter" id="g-letter">–</div>
+    <div class="grade-sub" id="g-rate">–</div>
+    <div class="grade-trend" id="g-trend"></div>
+    <div class="grade-alltime" id="g-alltime"></div>
+  </div>
+</section>
+
+<!-- ============ TRENDS ============ -->
+<section id="tab-trends" class="hidden">
+  <div class="filters">
+    <label>From <input type="date" id="t-start"></label>
+    <label>To <input type="date" id="t-end"></label>
+    <label>Account
+      <div class="multiselect" id="t-account-ms"></div>
+    </label>
+    <label>Window
+      <select id="t-months">
+        <option value="6">Last 6 months</option>
+        <option value="12" selected>Last 12 months</option>
+        <option value="24">Last 24 months</option>
+        <option value="0">All time</option>
+      </select>
+    </label>
+    <label>View
+      <select id="t-view">
+        <option value="pie">Expense mix (pie)</option>
+        <option value="avg">3-mo averages</option>
+        <option value="trend">Spend vs income trend</option>
+      </select>
+    </label>
+    <label id="t-piemonth-label">Month
+      <select id="t-piemonth"><option value="">All months</option></select>
+    </label>
+    <button class="btn ghost" onclick="loadTrends()">Apply</button>
+  </div>
+
+  <div class="grid cards">
+    <div class="card"><div class="lbl">Avg monthly income (3mo)</div><div class="val pos" id="t-avg-inc">$0</div></div>
+    <div class="card"><div class="lbl">Avg monthly spend (3mo)</div><div class="val neg" id="t-avg-exp">$0</div></div>
+    <div class="card"><div class="lbl">Avg monthly net (3mo)</div><div class="val" id="t-avg-net">$0</div></div>
+    <div class="card"><div class="lbl">Months shown</div><div class="val" id="t-nmonths">0</div></div>
+  </div>
+
+  <div class="panel" id="t-panel-pie">
+    <h2>Expense Mix <span class="muted" id="t-pie-sub" style="font-size:12px;font-weight:400"></span></h2>
+    <div class="pie-wrap">
+      <div id="t-pie"></div>
+      <div class="pie-legend" id="t-pie-legend"></div>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="t-panel-avg">
+    <h2>3-Month Averages by Category <span class="muted" style="font-size:12px;font-weight:400">(avg monthly spend in the last 3 months)</span></h2>
+    <div class="table-wrap">
+    <table><thead><tr><th class="no-sort">Category</th><th class="no-sort">3-mo avg /mo</th>
+      <th class="no-sort">All-time avg /mo</th><th class="no-sort">Total</th><th class="no-sort">Share</th></tr></thead>
+      <tbody id="t-avg-body"></tbody></table>
+    </div>
+  </div>
+
+  <div class="panel hidden" id="t-panel-trend">
+    <h2>Spend vs Income by Month</h2>
+    <div id="t-trend-chart"></div>
+    <div class="muted" id="t-trend-legend" style="font-size:12px;margin-top:6px"></div>
+  </div>
+</section>
+
+<!-- ============ TRANSACTIONS ============ -->
+<section id="tab-txns" class="hidden">
+  <div class="panel">
+    <div class="toolbar">
+      <div class="tb-row">
+        <label>Search <input type="text" id="f-q" placeholder="merchant…"></label>
+        <label>From <input type="date" id="f-start"></label>
+        <label>To <input type="date" id="f-end"></label>
+        <label>Category <select id="f-cat"><option value="">All</option></select></label>
+        <label>Account <div class="multiselect" id="f-account-ms"></div></label>
+        <label>Source <select id="f-source">
+          <option value="">Any</option><option value="uncategorized">Uncategorized</option>
+          <option value="manual">Manual</option><option value="learned">Learned</option>
+          <option value="rule">Rule</option><option value="transfer">Transfer</option>
+        </select></label>
+        <label class="cb-label"><input type="checkbox" id="f-hidden"> Show hidden</label>
+        <button class="btn" onclick="loadTxns(0)">Filter</button>
+        <button class="btn ghost" onclick="clearFilters()">Clear</button>
+      </div>
+    </div>
+    <div class="txn-statusbar">
+      <div class="muted" id="txn-count"></div>
+      <div class="pager" id="pager-top"></div>
+    </div>
+    <div class="bulkbar" id="bulkbar">
+      <span class="bulk-count" id="bulk-count">0 selected</span>
+      <label>Set category
+        <select id="bulk-cat"><option value="">— pick a category —</option></select></label>
+      <button class="btn" id="bulk-apply" onclick="bulkApply()">Apply to selected</button>
+      <button class="btn ghost" onclick="clearSelection()">Clear selection</button>
+      <span class="muted" id="bulk-hint"></span>
+    </div>
+    <div style="overflow-x:auto">
+    <table><thead><tr>
+      <th class="no-sort" style="width:34px"><input type="checkbox" id="sel-all" onchange="toggleSelectAll(this.checked)"></th>
+      <th onclick="sortBy('date')">Date</th>
+      <th onclick="sortBy('description')">Description</th>
+      <th class="no-sort">Account</th>
+      <th class="no-sort">Category</th>
+      <th onclick="sortBy('amount')" style="text-align:right">Amount</th>
+    </tr></thead><tbody id="txn-body"></tbody></table>
+    </div>
+    <div class="pager pager-bottom" id="pager-bottom"></div>
+  </div>
+</section>
+
+<!-- ============ RULES ============ -->
+<section id="tab-rules" class="hidden">
+  <div class="panel">
+    <h2>Categories</h2>
+    <div class="chips" id="cat-chips"></div>
+    <div class="filters" style="margin-top:16px">
+      <label>New category <input type="text" id="new-cat" placeholder="e.g. Pets"></label>
+      <label>Type <select id="new-cat-kind">
+        <option value="expense">Expense</option><option value="income">Income</option>
+        <option value="transfer">Transfer</option></select></label>
+      <label>Color <input type="color" id="new-cat-color" value="#4f8cff" style="padding:2px;width:52px"></label>
+      <button class="btn" onclick="addCategory()">Add</button>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Learned Merchant Rules</h2>
+    <div class="muted" style="margin-bottom:10px">Created automatically when you retag a transaction.</div>
+    <div class="table-wrap">
+    <table><thead><tr><th class="no-sort">Merchant</th><th class="no-sort">Category</th>
+      <th class="no-sort">Hits</th><th class="no-sort"></th></tr></thead>
+      <tbody id="rule-body"></tbody></table>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Maintenance</h2>
+    <button class="btn ghost" onclick="recategorize()">Re-run rules engine</button>
+    <span class="muted" style="margin-left:12px">Re-applies rules to non-manual transactions.</span>
+  </div>
+</section>
+
+<!-- ============ IMPORT ============ -->
+<section id="tab-import" class="hidden">
+  <div class="panel">
+    <h2>Upload Bank CSV</h2>
+    <div class="filters">
+      <label>Account <input type="text" id="imp-account" list="imp-account-list"
+        placeholder="pick existing or type a new one" autocomplete="off">
+        <datalist id="imp-account-list"></datalist></label>
+      <label>Type <select id="imp-kind">
+        <option value="checking">Checking</option><option value="savings">Savings</option>
+        <option value="credit">Credit card</option></select></label>
+      <label class="cb-label">
+        <input type="checkbox" id="imp-exclude"> Exclude from totals</label>
+    </div>
+    <div id="imp-account-hint" style="margin-top:-6px"></div>
+    <div class="drop" id="drop">
+      <div style="font-size:32px">⬆</div>
+      Drop a CSV here or click to browse
+      <div class="muted" style="font-size:12px;margin-top:8px">
+        Auto-detects M&amp;T, Citizens, Chase, Gemini, Capital One formats</div>
+      <input type="file" id="file" accept=".csv" class="hidden">
+    </div>
+    <div id="imp-result" style="margin-top:16px"></div>
+  </div>
+  <div class="panel">
+    <h2>Import History</h2>
+    <div class="table-wrap">
+    <table><thead><tr><th class="no-sort">When</th><th class="no-sort">File</th>
+      <th class="no-sort">Account</th><th class="no-sort">Bank</th>
+      <th class="no-sort">Added</th><th class="no-sort">Dupes</th></tr></thead>
+      <tbody id="imp-body"></tbody></table>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Accounts</h2>
+    <div class="table-wrap">
+    <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Bank</th>
+      <th class="no-sort">Txns</th><th class="no-sort">Range</th>
+      <th class="no-sort">Include</th></tr></thead>
+      <tbody id="acct-list"></tbody></table>
+    </div>
+  </div>
+</section>
+
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = n => '$' + Math.abs(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+let CATS = [], ACCTS = [], TXNPAGE = 0, TXNTOTAL = 0, SORT = {col:'date',dir:'desc'};
+
+// ---------- reusable multi-select (account filter, etc.) ----------
+// Each instance keeps its own selected set of values; onChange fires on every toggle.
+const MS = {};
+function msInit(id, opts){
+  const el = document.getElementById(id);
+  if(!el) return;
+  MS[id] = { el, options: [], selected: new Set(), placeholder: opts.placeholder || 'All',
+             allLabel: opts.allLabel || 'All', onChange: opts.onChange || null };
+  el.innerHTML = `<button type="button" class="ms-btn"><span class="ms-label"></span><span class="ms-caret">▼</span></button>
+    <div class="ms-panel"></div>`;
+  const btn = el.querySelector('.ms-btn'), panel = el.querySelector('.ms-panel');
+  btn.onclick = e=>{ e.stopPropagation();
+    document.querySelectorAll('.ms-panel.open').forEach(p=>{ if(p!==panel) p.classList.remove('open'); });
+    panel.classList.toggle('open'); };
+  panel.onclick = e=>e.stopPropagation();
+  msRender(id);
+}
+function msSetOptions(id, values){
+  const m = MS[id]; if(!m) return;
+  m.options = values.slice();
+  // drop selections that no longer exist
+  [...m.selected].forEach(v=>{ if(!m.options.includes(v)) m.selected.delete(v); });
+  msRender(id);
+}
+function msRender(id){
+  const m = MS[id]; if(!m) return;
+  const label = m.selected.size===0 ? m.allLabel
+    : (m.selected.size===1 ? [...m.selected][0] : `${m.selected.size} selected`);
+  m.el.querySelector('.ms-label').textContent = label;
+  m.el.querySelector('.ms-panel').innerHTML =
+    (m.options.length ? m.options.map(v=>
+      `<label class="ms-item"><span class="ms-text">${esc(v)}</span><input type="checkbox" ${m.selected.has(v)?'checked':''} value="${esc(v)}"></label>`).join('')
+      : '<div class="ms-item muted">No accounts</div>')
+    + `<div class="ms-actions"><button type="button" data-ms-all>All</button>
+       <button type="button" data-ms-none>Clear</button></div>`;
+  m.el.querySelector('.ms-panel').querySelectorAll('input[type=checkbox]').forEach(cb=>{
+    cb.onchange = ()=>{ cb.checked ? m.selected.add(cb.value) : m.selected.delete(cb.value);
+      msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
+  });
+  m.el.querySelector('[data-ms-all]').onclick = ()=>{ m.selected = new Set(m.options); msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
+  m.el.querySelector('[data-ms-none]').onclick = ()=>{ m.selected = new Set(); msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
+}
+function msOpen(id){ const p = MS[id].el.querySelector('.ms-panel'); p.classList.add('open'); }
+function msValues(id){ const m=MS[id]; return m ? [...m.selected] : []; }
+function msSet(id, values){ const m=MS[id]; if(!m) return; m.selected=new Set(values||[]); msRender(id); }
+// close any open panel when clicking elsewhere
+document.addEventListener('click', ()=>document.querySelectorAll('.ms-panel.open').forEach(p=>p.classList.remove('open')));
+
+function toast(msg){
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+// API base: same-origin '/api' when served by the FastAPI backend, or
+// window.API_BASE when hosted statically (e.g. GitHub Pages) pointed at a remote
+// backend. Empty string => same origin.
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '';
+async function api(path, opts){
+  const r = await fetch(API_BASE + '/api' + path, opts);
+  if(!r.ok){ let e; try{e=(await r.json()).detail}catch(_){e=r.statusText} throw new Error(e); }
+  return r.json();
+}
+// JSON POST helper
+function jpost(path, body){
+  return api(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+}
+
+// ---------- tabs ----------
+function showTab(name){
+  document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
+  ['dash','trends','txns','rules','import'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='dash') loadDashboard();
+  if(name==='trends') loadTrends();
+  if(name==='txns') loadTxns(0);
+  if(name==='rules'){ loadCats(); loadRules(); }
+  if(name==='import'){ loadImports(); loadAcctList(); }
+}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+$('#nav-import').onclick = ()=>showTab('import');
+
+// ---------- categories / accounts meta ----------
+async function loadMeta(){
+  // preserve current category dropdown selection across a meta refresh
+  const prevCat = $('#f-cat') ? $('#f-cat').value : '';
+  // remember account selections (multi-select) so a refresh keeps them
+  const prevAcct = msValues('f-account-ms');
+  const prevDash = msValues('d-account-ms');
+  const prevTrend = msValues('t-account-ms');
+
+  CATS = await api('/categories');
+  ACCTS = await api('/accounts');
+  loadAcctDatalist();
+  const opts = CATS.map(c=>`<option value="${c.key}">${c.name}</option>`).join('');
+  $('#f-cat').innerHTML = '<option value="">All</option>' + opts;
+  const bulk = $('#bulk-cat');
+  if(bulk) bulk.innerHTML = '<option value="">— pick a category —</option>' + opts;
+  const names = ACCTS.map(a=>a.name);
+  // (re)build multi-selects if not yet initialised
+  if(!MS['f-account-ms']) msInit('f-account-ms', {allLabel:'All accounts', onChange:()=>loadTxns(0)});
+  if(!MS['d-account-ms']) msInit('d-account-ms', {allLabel:'All accounts', onChange:()=>loadDashboard()});
+  if(!MS['t-account-ms']) msInit('t-account-ms', {allLabel:'All accounts', onChange:()=>loadTrends()});
+  msSetOptions('f-account-ms', names); msSet('f-account-ms', prevAcct);
+  msSetOptions('d-account-ms', names); msSet('d-account-ms', prevDash);
+  msSetOptions('t-account-ms', names); msSet('t-account-ms', prevTrend);
+
+  // restore category selection if still valid
+  if([...$('#f-cat').options].some(o=>o.value===prevCat)) $('#f-cat').value = prevCat;
+}
+const catByKey = k => CATS.find(c=>c.key===k) || {name:'Uncategorized',color:'#525252',key:'uncategorized'};
+
+// ---------- grade ----------
+function renderGrade(g){
+  if(!g) return;
+  $('#g-letter').textContent = g.grade;
+  $('#g-letter').style.color = g.color;
+  const card = $('#grade-card');
+  card.style.boxShadow = `inset 0 0 0 1px ${g.color}55, inset 0 -40px 80px -60px ${g.color}`;
+  card.style.background = `linear-gradient(180deg, ${g.color}14, var(--panel))`;
+  $('#g-rate').innerHTML = g.rate === null
+    ? (g.grade === 'F' ? '<span class="muted">spending with no income</span>'
+                       : '<span class="muted">no activity</span>')
+    : `savings rate <b style="color:${g.color}">${g.rate}%</b>`;
+
+  const t = g.trend;
+  const el = $('#g-trend');
+  if(t && t.direction!=='flat'){
+    const arrow = t.direction==='up' ? '▲' : '▼';
+    const word = t.direction==='up' ? 'better' : 'worse';
+    el.className = 'grade-trend ' + t.direction;
+    el.textContent = `${arrow} ${Math.abs(t.delta).toFixed(1)} pts ${word} vs prior period`;
+  } else if(t && t.direction==='flat'){
+    el.className = 'grade-trend flat'; el.textContent = '≈ flat vs prior period';
+  } else {
+    el.textContent = ''; el.className = 'grade-trend';
+  }
+  const at = g.all_time;
+  if(at && at.grade && at.grade !== 'N/A' && (g.rate !== at.rate)){
+    $('#g-alltime').innerHTML = `all-time: <b style="color:${at.color}">${at.grade}</b> · ${at.rate}%`;
+  } else {
+    $('#g-alltime').innerHTML = at && at.grade
+      ? `all-time: <b style="color:${at.color}">${at.grade}</b>` : '';
+  }
+}
+
+// ---------- dashboard ----------
+async function loadDashboard(){
+  const q = new URLSearchParams();
+  const s=$('#d-start').value, e=$('#d-end').value, sel=msValues('d-account-ms');
+  if(s) q.set('start',s); if(e) q.set('end',e);
+  if(sel.length){ const ids=sel.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
+    if(ids.length) q.set('accounts', ids.join(',')); }
+  const d = await api('/dashboard?'+q);
+  renderGrade(d.grade);
+  $('#k-income').textContent = fmt(d.totals.income);
+  $('#k-expense').textContent = fmt(d.totals.expense);
+  const net = d.totals.net;
+  const kn = $('#k-net'); kn.textContent = (net<0?'-':'')+fmt(net);
+  kn.className = 'val ' + (net>=0?'pos':'neg');
+  $('#k-unc').textContent = d.uncategorized.count;
+  $('#k-unc-amt').textContent = d.uncategorized.count ? fmt(d.uncategorized.amount)+' to review' : 'all tagged';
+
+  // category bars (clickable -> jump to filtered transactions)
+  const cats = d.categories.filter(c=>c.kind!=='income');
+  const max = Math.max(1, ...cats.map(c=>c.total));
+  $('#cat-bars').innerHTML = cats.length ? cats.map(c=>`
+    <div class="bar-row clickable" onclick="gotoCategory('${c.key}')" title="View ${esc(c.name)} transactions">
+      <span class="bar-lbl">${esc(c.name)}</span>
+      <div class="bar-track"><div class="bar-fill"
+        style="width:${(c.total/max*100).toFixed(1)}%;background:${c.color}"></div></div>
+      <span class="amt">${fmt(c.total)}</span>
+    </div>`).join('') : '<div class="empty">No expense data in range</div>';
+
+  // monthly chart
+  renderMonths(d.months);
+  // budgets (uses the latest month in the current dashboard window)
+  loadBudgets((d.months.length ? d.months[d.months.length-1].month : null), sel);
+  // accounts (fixed-height, paginated)
+  renderAccounts(d.accounts);
+}
+
+// ---------- paginated account list ----------
+const ACCT_PAGE_SIZE = 5;
+let _acctRows = [];
+let _acctPage = 0;
+
+function renderAccounts(rows){
+  _acctRows = rows || [];
+  _acctPage = 0;
+  renderAcctPage();
+}
+
+function renderAcctPage(){
+  const rows = _acctRows;
+  const body = $('#acct-body'), pager = $('#acct-pager');
+  if(!rows.length){
+    body.innerHTML = '<tr><td colspan=4 class="empty">No data</td></tr>';
+    pager.innerHTML = '';
+    return;
+  }
+  const pages = Math.max(1, Math.ceil(rows.length / ACCT_PAGE_SIZE));
+  if(_acctPage >= pages) _acctPage = pages - 1;
+  if(_acctPage < 0) _acctPage = 0;
+  const start = _acctPage * ACCT_PAGE_SIZE;
+  const slice = rows.slice(start, start + ACCT_PAGE_SIZE);
+  body.innerHTML = slice.map(a=>{
+    const net = a.income - a.expense;
+    return `<tr><td>${esc(a.name)}</td><td class="amt pos">${fmt(a.income)}</td>
+    <td class="amt neg">${fmt(a.expense)}</td>
+    <td class="amt ${net>=0?'pos':'neg'}">${(net<0?'-':'')+fmt(net)}</td></tr>`;
+  }).join('');
+  const first = start + 1, last = Math.min(start + ACCT_PAGE_SIZE, rows.length);
+  pager.innerHTML = `<span class="pg-info">Showing <b>${first}–${last}</b> of <b>${rows.length}</b></span>
+    <div class="pg-btns">
+      <button onclick="acctPrev()" ${_acctPage===0?'disabled':''}>‹ Prev</button>
+      <button onclick="acctNext()" ${_acctPage>=pages-1?'disabled':''}>Next ›</button>
+    </div>`;
+}
+
+function acctNext(){ _acctPage++; renderAcctPage(); }
+function acctPrev(){ _acctPage--; renderAcctPage(); }
+
+
+// ---------- budgets ----------
+let _budgets = null;
+
+function budgetClass(pct){
+  if(pct === null) return '';
+  return pct >= 100 ? 'over' : (pct >= 80 ? 'warn' : 'ok');
+}
+
+async function loadBudgets(month, acctNames){
+  const q = new URLSearchParams();
+  if(month) q.set('month', month);
+  if(acctNames && acctNames.length){
+    const ids = acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
+    if(ids.length) q.set('accounts', ids.join(','));
+  }
+  let d;
+  try { d = await api('/budgets?'+q); } catch(e){ return; }
+  _budgets = d;
+  renderBudgets();
+}
+
+function renderBudgets(){
+  const d = _budgets; if(!d) return;
+  $('#bg-month').textContent = d.month;
+  const rows = d.rows.filter(r => r.budget > 0 || r.spent > 0);
+  const t = d.totals;
+  const pct = t.budget > 0 ? Math.round(t.spent / t.budget * 100) : null;
+  $('#bg-sum').innerHTML = t.budget > 0
+    ? `budgeted <b>${fmt(t.budget)}</b> · spent <b class="${pct>=100?'neg':''}">${fmt(t.spent)}</b>` +
+      ` · <b class="${t.budget-t.spent<0?'neg':'pos'}">` +
+      (t.budget - t.spent < 0 ? `${fmt(t.spent-t.budget)} over budget`
+                              : `${fmt(t.budget-t.spent)} left`) + `</b>`
+    : '<span class="muted">click “set budget” on a category to start</span>';
+
+  if(!rows.length){ $('#budget-body').innerHTML = '<div class="empty">No spend or budgets this month</div>'; return; }
+  const max = Math.max(1, ...rows.map(r => Math.max(r.budget, r.spent)));
+  $('#budget-body').innerHTML = rows.map(r => {
+    if(r.budget <= 0){
+      return `<div class="bg-row bg-none">
+        <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
+        <div class="bg-track"></div>
+        <div class="bg-nums">${fmt(r.spent)} spent
+          <button class="bg-edit" onclick="editBudget('${r.key}')">set budget</button></div>
+      </div>`;
+    }
+    const w = Math.min(100, r.spent / max * 100).toFixed(1);
+    const cls = budgetClass(r.pct);
+    const remTxt = r.remaining < 0
+      ? `<span class="over">${fmt(-r.remaining)} over</span>`
+      : `${fmt(r.remaining)} left`;
+    return `<div class="bg-row">
+      <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
+      <div class="bg-track"><div class="bg-fill ${cls}" style="width:${w}%"></div></div>
+      <div class="bg-nums">${fmt(r.spent)} / ${fmt(r.budget)}
+        <span class="muted">·</span> ${remTxt}
+        <button class="bg-edit" onclick="editBudget('${r.key}')">edit</button></div>
+    </div>`;
+  }).join('');
+}
+
+function editBudget(key){
+  const d = _budgets; if(!d) return;
+  const row = d.rows.find(r => r.key === key); if(!row) return;
+  const cur = row.budget > 0 ? row.budget : '';
+  const inp = prompt(`Monthly budget for “${row.name}” (blank to clear):`, cur);
+  if(inp === null) return;
+  const val = parseFloat(String(inp).replace(/[$,]/g,''));
+  if(String(inp).trim() !== '' && (isNaN(val) || val < 0)){ alert('Enter a positive number, or leave blank to clear.'); return; }
+  fetch('/api/budgets', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({category_key: key, amount: (String(inp).trim()==='' ? 0 : val)})})
+    .then(r => r.ok ? loadBudgets(d.month, msValues('d-account-ms')) : alert('Could not save budget'))
+    .catch(() => alert('Could not save budget'));
+}
+
+// Jump from a dashboard category bar into filtered Transactions.
+function gotoCategory(key){
+  showTab('txns');
+  $('#f-q').value=''; $('#f-start').value=''; $('#f-end').value='';
+  $('#f-source').value=''; $('#f-hidden').checked=false;
+  msSet('f-account-ms', []);
+  // wait a tick for the tab to render its selects, then set category
+  setTimeout(()=>{ $('#f-cat').value = key; loadTxns(0); }, 0);
+}
+
+let _lastTrends = null;
+
+function renderMonths(months){
+  if(!months.length){ $('#month-chart').innerHTML='<div class="empty">No data</div>'; return; }
+  const W=760,H=220,pad=34, bw=(W-pad*2)/months.length;
+  const max = Math.max(1, ...months.map(m=>Math.max(m.income,m.expense)));
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#243044"/>`;
+  months.forEach((m,i)=>{
+    const x = pad + i*bw;
+    const ih = (m.income/max)*(H-pad*2);
+    const eh = (m.expense/max)*(H-pad*2);
+    svg += `<rect x="${x+bw*0.14}" y="${H-pad-ih}" width="${bw*0.32}" height="${ih}" rx="3" fill="#22c55e"/>`;
+    svg += `<rect x="${x+bw*0.52}" y="${H-pad-eh}" width="${bw*0.32}" height="${eh}" rx="3" fill="#ef4444"/>`;
+    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="#8899b3" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
+  });
+  svg += '</svg>';
+  $('#month-chart').innerHTML = svg +
+    `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>
+     <span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
+}
+
+// ---------- trends ----------
+async function loadTrends(){
+  const q = new URLSearchParams();
+  if($('#t-start').value) q.set('start',$('#t-start').value);
+  if($('#t-end').value) q.set('end',$('#t-end').value);
+  if(msValues('t-account-ms').length) q.set('accounts', msValues('t-account-ms').map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean).join(','));
+  q.set('months', $('#t-months').value);
+  const d = await api('/trends?'+q);
+  $('#t-avg-inc').textContent = fmt(d.avg_3mo.income);
+  $('#t-avg-exp').textContent = fmt(d.avg_3mo.expense);
+  const net = d.avg_3mo.net;
+  const ne = $('#t-avg-net'); ne.textContent = (net<0?'-':'')+fmt(net);
+  ne.className = 'val ' + (net>=0?'pos':'neg');
+  $('#t-nmonths').textContent = d.months.length;
+  _lastTrends = d;
+  // month selector for the pie (one month at a time)
+  tMonthSeries = d.month_series || [];
+  const pm = $('#t-piemonth');
+  const prevPm = pm.value;
+  pm.innerHTML = '<option value="">All months</option>' + d.months.map(m=>{
+    const [y,mo]=m.split('-');
+    const nm=new Date(+y,+mo-1,1).toLocaleString('en-US',{month:'short'});
+    return `<option value="${m}">${nm} ${y}</option>`; }).join('');
+  if([...pm.options].some(o=>o.value===prevPm)) pm.value = prevPm;
+  renderPie(_lastTrends);
+  renderAvgTable(d);
+  renderTrendChart(d);
+  // show/hide panels per selected view
+  const v = $('#t-view').value;
+  $('#t-panel-pie').classList.toggle('hidden', v!=='pie');
+  $('#t-panel-avg').classList.toggle('hidden', v!=='avg');
+  $('#t-panel-trend').classList.toggle('hidden', v!=='trend');
+  $('#t-piemonth-label').classList.toggle('hidden', v!=='pie');
+  $('#t-view').onchange = ()=>{ loadTrends(); };
+}
+let tMonthSeries = [];
+
+function renderPie(d){
+  const month = $('#t-piemonth').value;
+  // Build category totals for the selected month, or all months if none selected.
+  let cats;
+  if(month){
+    cats = d.categories.map(c=>({name:c.name,color:c.color,total:c.series?.[month]||0}))
+           .filter(c=>c.total>0);
+  } else {
+    cats = d.categories.filter(c=>c.total>0).map(c=>({name:c.name,color:c.color,total:c.total}));
+  }
+  const total = cats.reduce((s,c)=>s+c.total,0);
+  const scope = month ? new Date(+month.slice(0,4), +month.slice(5,7)-1, 1)
+      .toLocaleString('en-US',{month:'long',year:'numeric'}) : 'all months';
+  $('#t-pie-sub').textContent = total ? `· ${fmt(total)} · ${scope}` : '';
+  if(!cats.length || !total){ $('#t-pie').innerHTML='<div class="empty">No expense data</div>'; $('#t-pie-legend').innerHTML=''; return; }
+  const R=150, r=86, cx=170, cy=170;
+  let a0=-Math.PI/2, svg=`<svg viewBox="0 0 340 340" style="width:100%;max-width:360px;height:auto">`;
+  cats.forEach(c=>{
+    const frac=c.total/total, a1=a0+frac*Math.PI*2;
+    const large=(a1-a0)>Math.PI?1:0;
+    const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+    const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+    const xi1=cx+r*Math.cos(a1), yi1=cy+r*Math.sin(a1);
+    const xi0=cx+r*Math.cos(a0), yi0=cy+r*Math.sin(a0);
+    svg += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${c.color}" stroke="#0b0f17" stroke-width="1.5"><title>${esc(c.name)}: ${fmt(c.total)} (${(frac*100).toFixed(1)}%)</title></path>`;
+    a0=a1;
+  });
+  svg += `<text x="170" y="165" fill="#8899b3" font-size="13" text-anchor="middle">Total spend</text>`;
+  svg += `<text x="170" y="189" fill="#e6edf7" font-size="19" font-weight="700" text-anchor="middle">${fmt(total)}</text>`;
+  svg += '</svg>';
+  $('#t-pie').innerHTML = svg;
+  $('#t-pie-legend').innerHTML = cats.map(c=>
+    `<div class="pl-row"><span class="dot" style="background:${c.color}"></span>
+      <span class="pl-name">${esc(c.name)}</span>
+      <span class="pl-val">${fmt(c.total)}</span>
+      <span class="muted" style="width:46px;text-align:right">${(c.total/total*100).toFixed(1)}%</span></div>`).join('');
+}
+
+function renderAvgTable(d){
+  const cats = d.categories.filter(c=>c.total>0);
+  const total = cats.reduce((s,c)=>s+c.total,0) || 1;
+  $('#t-avg-body').innerHTML = cats.map(c=>`
+    <tr>
+      <td><span class="dot" style="background:${c.color};display:inline-block;margin-right:6px"></span>${esc(c.name)}</td>
+      <td>${fmt(c.avg_3mo)}</td>
+      <td class="muted">${fmt(c.avg_active)}</td>
+      <td>${fmt(c.total)}</td>
+      <td>${(c.total/total*100).toFixed(1)}%</td>
+    </tr>`).join('') || '<tr><td colspan=5 class="empty">No data</td></tr>';
+}
+
+function renderTrendChart(d){
+  const ms = d.month_series;
+  if(!ms.length){ $('#t-trend-chart').innerHTML='<div class="empty">No data</div>'; return; }
+  const W=760,H=240,pad=36, bw=(W-pad*2)/ms.length;
+  const max = Math.max(1, ...ms.map(m=>Math.max(m.income,m.expense)));
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#243044"/>`;
+  ms.forEach((m,i)=>{
+    const x = pad + i*bw;
+    const ih=(m.income/max)*(H-pad*2), eh=(m.expense/max)*(H-pad*2);
+    svg += `<rect x="${x+bw*0.16}" y="${H-pad-ih}" width="${bw*0.30}" height="${ih}" rx="3" fill="#22c55e"><title>${m.month} income ${fmt(m.income)}</title></rect>`;
+    svg += `<rect x="${x+bw*0.54}" y="${H-pad-eh}" width="${bw*0.30}" height="${eh}" rx="3" fill="#ef4444"><title>${m.month} spend ${fmt(m.expense)}</title></rect>`;
+    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="#8899b3" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
+  });
+  svg += '</svg>';
+  $('#t-trend-chart').innerHTML = svg;
+  $('#t-trend-legend').innerHTML =
+    `<span><span class="dot" style="background:#22c55e"></span>Income</span>
+     <span><span class="dot" style="background:#ef4444"></span>Expenses</span>
+     <span class="muted">· 3-mo avg income ${fmt(d.avg_3mo.income)}, spend ${fmt(d.avg_3mo.expense)}</span>`;
+}
+
+// quick range
+$('#d-quick').onchange = e=>{
+  const v = e.target.value, now = new Date(), y=now.getFullYear(), m=now.getMonth();
+  const dstr = dt=>dt.toISOString().slice(0,10);
+  if(v==='all'){ $('#d-start').value=''; $('#d-end').value=''; }
+  if(v==='tm'){ $('#d-start').value=dstr(new Date(y,m,1)); $('#d-end').value=dstr(new Date(y,m+1,0)); }
+  if(v==='lm'){ $('#d-start').value=dstr(new Date(y,m-1,1)); $('#d-end').value=dstr(new Date(y,m,0)); }
+  if(v==='ty'){ $('#d-start').value=`${y}-01-01`; $('#d-end').value=`${y}-12-31`; }
+  if(v==='90'){ const s=new Date(now); s.setDate(s.getDate()-90); $('#d-start').value=dstr(s); $('#d-end').value=dstr(now); }
+  loadDashboard();
+};
+
+// ---------- transactions ----------
+let SELECTED = new Set();
+let PAGE_ITEMS = [];
+
+async function loadTxns(page){
+  if(page===0) TXNPAGE=0; else TXNPAGE=page;
+  const q = new URLSearchParams();
+  if($('#f-q').value) q.set('q',$('#f-q').value);
+  if($('#f-start').value) q.set('start',$('#f-start').value);
+  if($('#f-end').value) q.set('end',$('#f-end').value);
+  if($('#f-cat').value) q.set('category',$('#f-cat').value);
+  if(msValues('f-account-ms').length) q.set('accounts', msValues('f-account-ms').join(','));
+  if($('#f-source').value) q.set('source',$('#f-source').value);
+  if($('#f-hidden').checked) q.set('include_hidden','true');
+  q.set('sort',SORT.col); q.set('order',SORT.dir);
+  q.set('limit','100'); q.set('offset', String(TXNPAGE*100));
+  const d = await api('/transactions?'+q);
+  TXNTOTAL = d.total;
+  PAGE_ITEMS = d.items;
+  $('#txn-count').textContent = `${d.total.toLocaleString()} transactions`;
+  $('#txn-body').innerHTML = d.items.length ? d.items.map(t=>{
+    const c = catByKey(t.ckey);
+    const src = t.category_source!=='rule' ? `<span class="src">${t.category_source}</span>` : '';
+    const rowBg = SELECTED.has(t.id) ? ' style="background:rgba(79,140,255,.10)"' : '';
+    return `<tr${rowBg}>
+      <td><input type="checkbox" class="row-chk" ${SELECTED.has(t.id)?'checked':''} onchange="toggleRow(${t.id}, this.checked)"></td>
+      <td class="muted">${t.date}</td>
+      <td title="${esc(t.description)}">${esc(t.cleaned||t.description)}</td>
+      <td class="muted">${t.account}</td>
+      <td>${catSelect(t.id, t.ckey, c.color)}${src}</td>
+      <td class="amt ${t.amount>=0?'pos':'neg'}">${(t.amount<0?'-':'+')+fmt(t.amount)}</td>
+    </tr>`;
+  }).join('') : '<tr><td colspan=6 class="empty">No transactions match</td></tr>';
+  // pager(s)
+  const pages = Math.ceil(d.total/100);
+  renderPager('#pager-top', pages);
+  renderPager('#pager-bottom', pages);
+  syncSelectAll();
+  updateBulkBar();
+  updateSortIndicators();
+}
+
+function renderPager(sel, pages){
+  const el = $(sel); if(!el) return;
+  if(!pages){ el.innerHTML=''; return; }
+  const cur = TXNPAGE;
+  const nums = [];
+  // windowed page numbers: first, ..., around current, ..., last
+  const add = n => nums.push(n);
+  add(0);
+  for(let p=cur-1;p<=cur+1;p++) if(p>0 && p<pages-1) add(p);
+  if(pages-1>0) add(pages-1);
+  const uniq = [...new Set(nums)].sort((a,b)=>a-b);
+  let html = `<button ${cur===0?'disabled':''} onclick="pageTxns(-1)">‹</button>`;
+  let prev = -1;
+  uniq.forEach(p=>{
+    if(prev>=0 && p-prev>1) html += `<span class="pg-ellipsis">…</span>`;
+    html += `<button class="${p===cur?'active':''}" onclick="pageTxns(${p-cur})">${p+1}</button>`;
+    prev = p;
+  });
+  html += `<button ${cur>=pages-1?'disabled':''} onclick="pageTxns(1)">›</button>`;
+  html += `<span class="muted" style="margin-left:6px;font-size:12px">${pages} page${pages===1?'':'s'}</span>`;
+  el.innerHTML = html;
+}
+function pageTxns(dir){
+  const pages = Math.ceil(TXNTOTAL/100);
+  TXNPAGE = Math.max(0, Math.min(pages-1, TXNPAGE+dir));
+  loadTxns(TXNPAGE);
+}
+function sortBy(col){
+  SORT.dir = (SORT.col===col && SORT.dir==='desc') ? 'asc' : 'desc';
+  SORT.col = col; loadTxns(TXNPAGE);
+}
+function updateSortIndicators(){
+  document.querySelectorAll('#tab-txns th[onclick^="sortBy"]').forEach(th=>{
+    const col = th.getAttribute('onclick').match(/'([^']+)'/)[1];
+    th.textContent = th.textContent.replace(/\s*[▲▼]$/,'');
+    if(col===SORT.col) th.textContent += (SORT.dir==='asc'?' ▲':' ▼');
+  });
+}
+
+// ---------- selection + bulk ----------
+function toggleRow(id, on){ on ? SELECTED.add(id) : SELECTED.delete(id);
+  const row = document.querySelector(`.row-chk[onchange*="toggleRow(${id},"]`)?.closest('tr');
+  if(row) row.style.background = on ? 'rgba(79,140,255,.10)' : '';
+  syncSelectAll(); updateBulkBar(); }
+function toggleSelectAll(on){
+  PAGE_ITEMS.forEach(t=> on ? SELECTED.add(t.id) : SELECTED.delete(t.id));
+  document.querySelectorAll('.row-chk').forEach(cb=>cb.checked=on);
+  document.querySelectorAll('#txn-body tr').forEach(tr=>tr.style.background = on?'rgba(79,140,255,.10)':'');
+  updateBulkBar();
+}
+function clearSelection(){ SELECTED.clear(); document.querySelectorAll('.row-chk').forEach(cb=>cb.checked=false);
+  document.querySelectorAll('#txn-body tr').forEach(tr=>tr.style.background='');
+  const sa=$('#sel-all'); if(sa){ sa.checked=false; sa.indeterminate=false; } updateBulkBar(); }
+function syncSelectAll(){
+  const sa = $('#sel-all'); if(!sa) return;
+  const on = PAGE_ITEMS.filter(t=>SELECTED.has(t.id)).length;
+  sa.checked = PAGE_ITEMS.length>0 && on===PAGE_ITEMS.length;
+  sa.indeterminate = on>0 && on<PAGE_ITEMS.length;
+}
+function updateBulkBar(){
+  const n = SELECTED.size;
+  $('#bulk-count').textContent = `${n} selected`;
+  $('#bulkbar').classList.toggle('show', n>0);
+}
+async function bulkApply(){
+  const cat = $('#bulk-cat').value;
+  if(!cat){ toast('Pick a category first'); return; }
+  const ids = [...SELECTED];
+  if(!ids.length){ toast('Nothing selected'); return; }
+  if(!confirm(`Set category "${catByKey(cat).name}" on ${ids.length} transaction${ids.length===1?'':'s'}?`)) return;
+  try{
+    const r = await jpost('/transactions/bulk-category', {ids, category:cat});
+    toast(`Updated ${r.updated} transaction${r.updated===1?'':'s'}`);
+    clearSelection(); await loadMeta(); loadTxns(TXNPAGE);
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function catSelect(id, key, color){
+  const opts = CATS.map(c=>`<option value="${c.key}" ${c.key===key?'selected':''}>${c.name}</option>`).join('');
+  return `<select onchange="pickCat(${id}, this.value, this)"
+    style="background:${color}22;border-color:${color}88;font-size:12px;padding:4px 8px">${opts}</select>`;
+}
+
+// User picks a category -> show an inline confirm with an optional
+// "apply to similar transactions" checkbox (match count previewed).
+async function pickCat(id, key, sel){
+  const c = catByKey(key);
+  let sim = {count:0, merchant:''};
+  try{ sim = await api(`/transactions/${id}/similar`); }catch(e){}
+  showTagConfirm(id, key, c, sim);
+}
+
+function showTagConfirm(id, key, cat, sim){
+  const row = document.querySelector(`#txn-body select[onchange*="pickCat(${id},"]`)?.closest('tr')
+           || document.querySelectorAll('#txn-body tr')[0];
+  if(!row) return;
+  let bar = row.nextElementSibling;
+  if(!bar || !bar.classList.contains('tag-confirm-row')){
+    bar = document.createElement('tr');
+    bar.className = 'tag-confirm-row';
+    row.parentNode.insertBefore(bar, row.nextSibling);
+  }
+  const simBox = sim.count > 0
+    ? `<label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+         <input type="checkbox" id="sim-chk-${id}" checked>
+         Also apply to <b>${sim.count}</b> similar transaction${sim.count===1?'':'s'}
+         <span class="muted">(“${esc(sim.merchant)}”)</span>
+       </label>`
+    : `<span class="muted">No other transactions match this merchant.</span>`;
+  bar.innerHTML = `<td colspan="5" style="background:var(--panel2);padding:10px 12px">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+      <div>Tag as <span class="chip" style="border-color:${cat.color}">
+        <span class="dot" style="background:${cat.color}"></span> ${cat.name}</span>
+        <div style="margin-top:8px">${simBox}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="confirmTag(${id},'${key}')">Apply</button>
+        <button class="btn ghost" onclick="cancelTag(${id})">Cancel</button>
+      </div>
+    </div></td>`;
+}
+
+function cancelTag(id){
+  const chk = document.getElementById('sim-chk-'+id);
+  const bar = chk ? chk.closest('tr.tag-confirm-row') : null;
+  if(bar) bar.remove();
+  loadTxns(TXNPAGE);
+}
+
+async function confirmTag(id, key){
+  const chk = document.getElementById('sim-chk-'+id);
+  const applySimilar = chk ? chk.checked : false;
+  try{
+    const r = await api('/transactions/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({category:key, learn:true, apply_to_similar:applySimilar})});
+    const extra = applySimilar && r.applied>1 ? ` · ${r.applied-1} similar updated` : '';
+    toast(`Tagged as ${catByKey(key).name} · rule learned${extra}`);
+    await loadMeta();
+    loadTxns(TXNPAGE);
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+// legacy alias
+async function setCat(id, key){ return confirmTag(id, key); }
+function clearFilters(){
+  ['#f-q','#f-start','#f-end'].forEach(s=>$(s).value='');
+  $('#f-cat').value=''; msSet('f-account-ms', []); $('#f-source').value='';
+  $('#f-hidden').checked=false;
+  loadTxns(0);
+}
+
+// ---------- rules / categories ----------
+async function loadCats(){
+  CATS = await api('/categories');
+  $('#cat-chips').innerHTML = CATS.map(c=>{
+    const eye = c.hidden
+      ? `<span title="Hidden from totals — click to show" style="cursor:pointer;opacity:.55"
+           onclick="toggleHidden('${c.key}', false)">🙈</span>`
+      : `<span title="Visible — click to hide from totals" style="cursor:pointer"
+           onclick="toggleHidden('${c.key}', true)">👁</span>`;
+    return `<span class="chip" style="border-color:${c.color};${c.hidden?'opacity:.5':''}">
+      <span class="dot" style="background:${c.color}"></span> ${c.name}
+      <span class="muted">· ${c.cnt}</span>
+      ${eye}
+      ${c.is_custom?`<span style="cursor:pointer;color:var(--bad)" onclick="delCategory('${c.key}')">✕</span>`:''}
+    </span>`;
+  }).join('');
+  loadMeta();
+}
+async function toggleHidden(key, hidden){
+  await api('/categories/'+key,{method:'PATCH',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({hidden})});
+  toast(hidden?`${catByKey(key).name} hidden from totals`:`${catByKey(key).name} shown again`);
+  loadCats();
+}
+async function addCategory(){
+  const name=$('#new-cat').value.trim(); if(!name) return;
+  try{
+    await api('/categories',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,kind:$('#new-cat-kind').value,color:$('#new-cat-color').value})});
+    $('#new-cat').value=''; toast('Category added'); loadCats();
+  }catch(e){ toast('Error: '+e.message); }
+}
+async function delCategory(key){
+  if(!confirm(`Delete category "${key}"? Transactions will move to Uncategorized.`)) return;
+  try{ await api('/categories/'+key,{method:'DELETE'}); toast('Deleted'); loadCats(); }
+  catch(e){ toast('Error: '+e.message); }
+}
+async function loadRules(){
+  const rules = await api('/rules');
+  $('#rule-body').innerHTML = rules.length ? rules.map(r=>`
+    <tr><td>${esc(r.cleaned)}</td><td>${catByKey(r.category_key).name}</td>
+    <td class="muted">${r.hits}</td>
+    <td><span style="cursor:pointer;color:var(--bad)" onclick="delRule(${r.id})">delete</span></td></tr>`).join('')
+    : '<tr><td colspan=4 class="empty">No learned rules yet — retag a transaction to create one</td></tr>';
+}
+async function delRule(id){ await api('/rules/'+id,{method:'DELETE'}); toast('Rule deleted'); loadRules(); }
+async function recategorize(){
+  const r = await api('/recategorize',{method:'POST'});
+  toast(`Re-categorized ${r.updated} transactions`); loadDashboard();
+}
+
+// ---------- import ----------
+const drop = $('#drop'), fileInput = $('#file');
+drop.onclick = ()=>fileInput.click();
+$('#imp-account').addEventListener('input', onAcctInput);
+$('#imp-account').addEventListener('change', onAcctInput);
+drop.ondragover = e=>{ e.preventDefault(); drop.classList.add('hot'); };
+drop.ondragleave = ()=>drop.classList.remove('hot');
+drop.ondrop = e=>{ e.preventDefault(); drop.classList.remove('hot');
+  if(e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]); };
+fileInput.onchange = ()=>{ if(fileInput.files[0]) upload(fileInput.files[0]); };
+
+async function upload(file){
+  const acct = $('#imp-account').value.trim();
+  if(!acct){ toast('Enter an account name first'); $('#imp-account').focus(); return; }
+  // Guardrail: if the label closely matches an existing account, require the user
+  // to pick the existing account (or explicitly confirm a new one) before importing.
+  let resolved;
+  try{ resolved = await jpost('/accounts/resolve',{name:acct}); }
+  catch(e){ resolved = null; }
+  if(resolved && !resolved.exact && resolved.suggestions.length){
+    const top = resolved.suggestions[0];
+    if(top.score >= 0.8){
+      const useExisting = confirm(
+        `"${acct}" looks like your existing account "${top.name}".\n\n`+
+        `OK  = import into existing "${top.name}"\n`+
+        `Cancel = create a NEW separate account "${acct}"`);
+      if(useExisting){ $('#imp-account').value = top.name; loadMeta(); return upload(file); }
+    } else {
+      const proceed = confirm(
+        `Heads up: "${acct}" is similar to existing account "${top.name}" (${Math.round(top.score*100)}% match).\n\n`+
+        `OK = create a NEW account "${acct}"\nCancel = stop and pick the existing one instead`);
+      if(!proceed){ renderAcctHint(resolved); return; }
+    }
+  }
+  const fd = new FormData();
+  fd.append('file', file); fd.append('account', acct);
+  fd.append('kind', $('#imp-kind').value);
+  fd.append('exclude', $('#imp-exclude').checked ? 'true' : 'false');
+  $('#imp-result').innerHTML = '<span class="muted">Uploading…</span>';
+  try{
+    const r = await api('/import',{method:'POST',body:fd});
+    $('#imp-result').innerHTML = `<div class="card" style="border-color:var(--good)">
+      <b class="pos">✓ Imported</b> ${r.inserted} transactions from <b>${r.bank}</b>
+      into <b>${r.account}</b>${r.skipped_duplicates?` · ${r.skipped_duplicates} duplicates skipped`:''}</div>`;
+    toast(`Imported ${r.inserted} transactions`);
+    loadImports(); loadAcctList(); loadMeta();
+  }catch(e){
+    $('#imp-result').innerHTML = `<div class="card" style="border-color:var(--bad)">
+      <b class="neg">✕ Failed</b> ${e.message}</div>`;
+  }
+}
+
+// ---------- account picker guardrail ----------
+function renderAcctHint(res){
+  const box = $('#imp-account-hint');
+  if(!box) return;
+  if(!res || res.exact || !res.suggestions.length){ box.innerHTML=''; return; }
+  const top = res.suggestions[0];
+  box.innerHTML = `<div class="card" style="border-color:var(--warn,#b45309);padding:10px 12px">
+    <b>⚠ Similar to existing account</b> — <b>${esc(top.name)}</b> (${Math.round(top.score*100)}% match).
+    <button class="btn" data-use="${esc(top.name)}" style="margin-left:8px">Use "${esc(top.name)}"</button>
+    <span class="muted" style="font-size:12px"> · or keep typing to create a new account</span></div>`;
+  box.querySelector('[data-use]').onclick = ()=>{
+    $('#imp-account').value = top.name; renderAcctHint(null); loadMeta(); };
+}
+let acctHintTimer = null;
+function onAcctInput(){
+  clearTimeout(acctHintTimer);
+  acctHintTimer = setTimeout(async ()=>{
+    const name = $('#imp-account').value.trim();
+    if(!name){ renderAcctHint(null); return; }
+    try{ renderAcctHint(await jpost('/accounts/resolve',{name})); }
+    catch(e){ renderAcctHint(null); }
+  }, 250);
+}
+function loadAcctDatalist(){
+  const dl = $('#imp-account-list'); if(!dl) return;
+  dl.innerHTML = ACCTS.map(a=>`<option value="${esc(a.name)}">`).join('');
+}
+async function loadImports(){
+  const rows = await api('/imports');
+  $('#imp-body').innerHTML = rows.length ? rows.map(r=>`
+    <tr><td class="muted">${r.created_at}</td><td>${esc(r.filename)}</td>
+    <td>${r.account}</td><td class="muted">${r.bank}</td>
+    <td class="pos">+${r.inserted}</td><td class="muted">${r.skipped}</td></tr>`).join('')
+    : '<tr><td colspan=6 class="empty">No imports yet</td></tr>';
+}
+async function loadAcctList(){
+  const rows = await api('/accounts');
+  $('#acct-list').innerHTML = rows.length ? rows.map(a=>`
+    <tr><td>${a.name}</td><td class="muted">${a.bank}</td><td>${a.cnt}</td>
+    <td class="muted">${a.first_date||'—'} → ${a.last_date||'—'}</td>
+    <td><input type="checkbox" ${a.exclude?'':'checked'} onchange="toggleAcct(${a.id}, this.checked)"></td></tr>`).join('')
+    : '<tr><td colspan=5 class="empty">No accounts yet</td></tr>';
+}
+async function toggleAcct(id, include){
+  await api('/accounts/'+id+'?exclude='+(!include),{method:'PATCH'});
+  toast(include?'Account included':'Account excluded from totals');
+}
+
+// ---------- boot ----------
+(async function(){
+  await loadMeta();
+  $('#d-quick').value='all';
+  $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
+  loadDashboard();
+})();
+</script>
+</body>
+</html>

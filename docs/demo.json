@@ -1,0 +1,1530 @@
+{
+ "dashboard": {
+  "totals": {
+   "income": 21361.43,
+   "expense": 15380.23,
+   "net": 5981.2
+  },
+  "grade": {
+   "grade": "A",
+   "color": "#22c55e",
+   "rate": 28.0,
+   "net": 5981.2,
+   "income": 21361.43,
+   "expense": 15380.23,
+   "trend": {
+    "direction": "up",
+    "delta": 1.8,
+    "prev_grade": "C",
+    "prev_rate": 26.2
+   },
+   "all_time": {
+    "grade": "A",
+    "color": "#22c55e",
+    "rate": 28.0,
+    "net": 5981.2,
+    "income": 21361.43,
+    "expense": 15380.23
+   }
+  },
+  "categories": [
+   {
+    "key": "income",
+    "name": "Income",
+    "color": "#22c55e",
+    "kind": "income",
+    "total": 21361.43,
+    "count": 8,
+    "hidden": 0,
+    "avg_3mo": 5340.36,
+    "avg_active": 5340.36,
+    "series": {
+     "2026-06": 5340.36,
+     "2026-07": 5340.36,
+     "2026-08": 5340.36,
+     "2026-09": 5340.36
+    }
+   },
+   {
+    "key": "housing",
+    "name": "Rent/Housing",
+    "color": "#8b5cf6",
+    "kind": "expense",
+    "total": 6015.07,
+    "count": 38,
+    "hidden": 0,
+    "avg_3mo": 1503.77,
+    "avg_active": 1503.77,
+    "series": {
+     "2026-06": 1515.44,
+     "2026-07": 1432.41,
+     "2026-08": 1672.45,
+     "2026-09": 1394.77
+    }
+   },
+   {
+    "key": "groceries",
+    "name": "Groceries",
+    "color": "#84cc16",
+    "kind": "expense",
+    "total": 3073.51,
+    "count": 9,
+    "hidden": 0,
+    "avg_3mo": 768.38,
+    "avg_active": 768.38,
+    "series": {
+     "2026-06": 685.03,
+     "2026-07": 799.37,
+     "2026-08": 875.87,
+     "2026-09": 713.24
+    }
+   },
+   {
+    "key": "dining",
+    "name": "Dining",
+    "color": "#f97316",
+    "kind": "expense",
+    "total": 1519.31,
+    "count": 40,
+    "hidden": 0,
+    "avg_3mo": 379.83,
+    "avg_active": 379.83,
+    "series": {
+     "2026-06": 401.84,
+     "2026-07": 357.09,
+     "2026-08": 359.66,
+     "2026-09": 400.72
+    }
+   },
+   {
+    "key": "transport",
+    "name": "Transport",
+    "color": "#06b6d4",
+    "kind": "expense",
+    "total": 1033.93,
+    "count": 40,
+    "hidden": 0,
+    "avg_3mo": 258.48,
+    "avg_active": 258.48,
+    "series": {
+     "2026-06": 230.66,
+     "2026-07": 238.41,
+     "2026-08": 269.94,
+     "2026-09": 294.92
+    }
+   },
+   {
+    "key": "shopping",
+    "name": "Shopping",
+    "color": "#3b82f6",
+    "kind": "expense",
+    "total": 1300.12,
+    "count": 12,
+    "hidden": 0,
+    "avg_3mo": 325.03,
+    "avg_active": 325.03,
+    "series": {
+     "2026-06": 348.73,
+     "2026-07": 294.06,
+     "2026-08": 311.55,
+     "2026-09": 345.78
+    }
+   },
+   {
+    "key": "utilities",
+    "name": "Utilities",
+    "color": "#eab308",
+    "kind": "expense",
+    "total": 658.45,
+    "count": 15,
+    "hidden": 0,
+    "avg_3mo": 164.61,
+    "avg_active": 164.61,
+    "series": {
+     "2026-06": 168.64,
+     "2026-07": 160.79,
+     "2026-08": 159.36,
+     "2026-09": 169.66
+    }
+   },
+   {
+    "key": "health",
+    "name": "Health",
+    "color": "#ec4899",
+    "kind": "expense",
+    "total": 350.35,
+    "count": 8,
+    "hidden": 0,
+    "avg_3mo": 87.59,
+    "avg_active": 87.59,
+    "series": {
+     "2026-06": 83.69,
+     "2026-07": 97.03,
+     "2026-08": 86.1,
+     "2026-09": 83.53
+    }
+   },
+   {
+    "key": "entertainment",
+    "name": "Entertainment",
+    "color": "#a855f7",
+    "kind": "expense",
+    "total": 487.61,
+    "count": 24,
+    "hidden": 0,
+    "avg_3mo": 121.9,
+    "avg_active": 121.9,
+    "series": {
+     "2026-06": 122.32,
+     "2026-07": 124.28,
+     "2026-08": 119.87,
+     "2026-09": 121.14
+    }
+   },
+   {
+    "key": "subscriptions",
+    "name": "Subscriptions",
+    "color": "#64748b",
+    "kind": "expense",
+    "total": 339.97,
+    "count": 15,
+    "hidden": 0,
+    "avg_3mo": 84.99,
+    "avg_active": 84.99,
+    "series": {
+     "2026-06": 84.12,
+     "2026-07": 95.8,
+     "2026-08": 81.47,
+     "2026-09": 78.58
+    }
+   },
+   {
+    "key": "insurance",
+    "name": "Insurance",
+    "color": "#14b8a6",
+    "kind": "expense",
+    "total": 601.91,
+    "count": 25,
+    "hidden": 0,
+    "avg_3mo": 150.48,
+    "avg_active": 150.48,
+    "series": {
+     "2026-06": 158.95,
+     "2026-07": 138.48,
+     "2026-08": 153.35,
+     "2026-09": 151.13
+    }
+   }
+  ],
+  "months": [
+   {
+    "month": "2026-06",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-07",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-08",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-09",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   }
+  ],
+  "accounts": [
+   {
+    "name": "M&T Checking",
+    "income": 13244.09,
+    "expense": 6305.89
+   },
+   {
+    "name": "Citizens Checking",
+    "income": 8117.34,
+    "expense": 3383.65
+   },
+   {
+    "name": "Chase Mastercard",
+    "income": 0,
+    "expense": 2153.23
+   },
+   {
+    "name": "Citizens Credit Card",
+    "income": 0,
+    "expense": 1845.63
+   },
+   {
+    "name": "Gemini Credit Card",
+    "income": 0,
+    "expense": 1076.62
+   },
+   {
+    "name": "360 Checking",
+    "income": 0,
+    "expense": 615.21
+   },
+   {
+    "name": "Gaming Fund",
+    "income": 0,
+    "expense": 76.9
+   },
+   {
+    "name": "Vacation",
+    "income": 0,
+    "expense": 153.8
+   },
+   {
+    "name": "War Chest",
+    "income": 0,
+    "expense": 307.6
+   },
+   {
+    "name": "Pet Deposit",
+    "income": 0,
+    "expense": 46.14
+   },
+   {
+    "name": "Jaime FUNds",
+    "income": 0,
+    "expense": 92.28
+   }
+  ],
+  "uncategorized": {
+   "count": 0,
+   "amount": 0
+  },
+  "range": {
+   "start": null,
+   "end": null
+  }
+ },
+ "categories": [
+  {
+   "id": 0,
+   "key": "income",
+   "name": "Income",
+   "kind": "income",
+   "color": "#22c55e",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 1,
+   "key": "housing",
+   "name": "Rent/Housing",
+   "kind": "expense",
+   "color": "#8b5cf6",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 2,
+   "key": "groceries",
+   "name": "Groceries",
+   "kind": "expense",
+   "color": "#84cc16",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 3,
+   "key": "dining",
+   "name": "Dining",
+   "kind": "expense",
+   "color": "#f97316",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 4,
+   "key": "transport",
+   "name": "Transport",
+   "kind": "expense",
+   "color": "#06b6d4",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 5,
+   "key": "shopping",
+   "name": "Shopping",
+   "kind": "expense",
+   "color": "#3b82f6",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 6,
+   "key": "utilities",
+   "name": "Utilities",
+   "kind": "expense",
+   "color": "#eab308",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 7,
+   "key": "health",
+   "name": "Health",
+   "kind": "expense",
+   "color": "#ec4899",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 8,
+   "key": "entertainment",
+   "name": "Entertainment",
+   "kind": "expense",
+   "color": "#a855f7",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 9,
+   "key": "subscriptions",
+   "name": "Subscriptions",
+   "kind": "expense",
+   "color": "#64748b",
+   "is_custom": 0,
+   "hidden": 0
+  },
+  {
+   "id": 10,
+   "key": "insurance",
+   "name": "Insurance",
+   "kind": "expense",
+   "color": "#14b8a6",
+   "is_custom": 0,
+   "hidden": 0
+  }
+ ],
+ "accounts": [
+  {
+   "id": 0,
+   "name": "M&T Checking",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 462,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 1,
+   "name": "Citizens Checking",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 297,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 2,
+   "name": "Chase Mastercard",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 77,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 3,
+   "name": "Citizens Credit Card",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 123,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 4,
+   "name": "Gemini Credit Card",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 527,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 5,
+   "name": "360 Checking",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 431,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 6,
+   "name": "Gaming Fund",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 171,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 7,
+   "name": "Vacation",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 353,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 8,
+   "name": "War Chest",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 158,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 9,
+   "name": "Pet Deposit",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 503,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  },
+  {
+   "id": 10,
+   "name": "Jaime FUNds",
+   "bank": "demo",
+   "kind": "checking",
+   "exclude": 0,
+   "cnt": 434,
+   "first_date": "2026-01-02",
+   "last_date": "2026-09-29"
+  }
+ ],
+ "budgets": {
+  "month": "2026-09",
+  "rows": [
+   {
+    "key": "transport",
+    "name": "Transport",
+    "color": "#06b6d4",
+    "budget": 300,
+    "spent": 294.92,
+    "remaining": 5.08,
+    "pct": 98.3
+   },
+   {
+    "key": "groceries",
+    "name": "Groceries",
+    "color": "#84cc16",
+    "budget": 800,
+    "spent": 713.24,
+    "remaining": 86.76,
+    "pct": 89.2
+   },
+   {
+    "key": "dining",
+    "name": "Dining",
+    "color": "#f97316",
+    "budget": 450,
+    "spent": 400.72,
+    "remaining": 49.28,
+    "pct": 89.0
+   },
+   {
+    "key": "shopping",
+    "name": "Shopping",
+    "color": "#3b82f6",
+    "budget": 400,
+    "spent": 345.78,
+    "remaining": 54.22,
+    "pct": 86.4
+   },
+   {
+    "key": "utilities",
+    "name": "Utilities",
+    "color": "#eab308",
+    "budget": 200,
+    "spent": 169.66,
+    "remaining": 30.34,
+    "pct": 84.8
+   },
+   {
+    "key": "housing",
+    "name": "Rent/Housing",
+    "color": "#8b5cf6",
+    "budget": 1650,
+    "spent": 1394.77,
+    "remaining": 255.23,
+    "pct": 84.5
+   },
+   {
+    "key": "entertainment",
+    "name": "Entertainment",
+    "color": "#a855f7",
+    "budget": 150,
+    "spent": 121.14,
+    "remaining": 28.86,
+    "pct": 80.8
+   },
+   {
+    "key": "subscriptions",
+    "name": "Subscriptions",
+    "color": "#64748b",
+    "budget": 100,
+    "spent": 78.58,
+    "remaining": 21.42,
+    "pct": 78.6
+   },
+   {
+    "key": "insurance",
+    "name": "Insurance",
+    "color": "#14b8a6",
+    "budget": 0,
+    "spent": 151.13,
+    "remaining": -151.13,
+    "pct": null
+   },
+   {
+    "key": "health",
+    "name": "Health",
+    "color": "#ec4899",
+    "budget": 0,
+    "spent": 83.53,
+    "remaining": -83.53,
+    "pct": null
+   }
+  ],
+  "totals": {
+   "budget": 4050,
+   "spent": 3518.81
+  }
+ },
+ "trends": {
+  "months": [
+   "2026-06",
+   "2026-07",
+   "2026-08",
+   "2026-09"
+  ],
+  "categories": [
+   {
+    "key": "housing",
+    "name": "Rent/Housing",
+    "color": "#8b5cf6",
+    "total": 6015.07,
+    "avg_3mo": 1503.77,
+    "avg_active": 1503.77,
+    "series": {
+     "2026-06": 1515.44,
+     "2026-07": 1432.41,
+     "2026-08": 1672.45,
+     "2026-09": 1394.77
+    }
+   },
+   {
+    "key": "groceries",
+    "name": "Groceries",
+    "color": "#84cc16",
+    "total": 3073.51,
+    "avg_3mo": 768.38,
+    "avg_active": 768.38,
+    "series": {
+     "2026-06": 685.03,
+     "2026-07": 799.37,
+     "2026-08": 875.87,
+     "2026-09": 713.24
+    }
+   },
+   {
+    "key": "dining",
+    "name": "Dining",
+    "color": "#f97316",
+    "total": 1519.31,
+    "avg_3mo": 379.83,
+    "avg_active": 379.83,
+    "series": {
+     "2026-06": 401.84,
+     "2026-07": 357.09,
+     "2026-08": 359.66,
+     "2026-09": 400.72
+    }
+   },
+   {
+    "key": "transport",
+    "name": "Transport",
+    "color": "#06b6d4",
+    "total": 1033.93,
+    "avg_3mo": 258.48,
+    "avg_active": 258.48,
+    "series": {
+     "2026-06": 230.66,
+     "2026-07": 238.41,
+     "2026-08": 269.94,
+     "2026-09": 294.92
+    }
+   },
+   {
+    "key": "shopping",
+    "name": "Shopping",
+    "color": "#3b82f6",
+    "total": 1300.12,
+    "avg_3mo": 325.03,
+    "avg_active": 325.03,
+    "series": {
+     "2026-06": 348.73,
+     "2026-07": 294.06,
+     "2026-08": 311.55,
+     "2026-09": 345.78
+    }
+   },
+   {
+    "key": "utilities",
+    "name": "Utilities",
+    "color": "#eab308",
+    "total": 658.45,
+    "avg_3mo": 164.61,
+    "avg_active": 164.61,
+    "series": {
+     "2026-06": 168.64,
+     "2026-07": 160.79,
+     "2026-08": 159.36,
+     "2026-09": 169.66
+    }
+   },
+   {
+    "key": "health",
+    "name": "Health",
+    "color": "#ec4899",
+    "total": 350.35,
+    "avg_3mo": 87.59,
+    "avg_active": 87.59,
+    "series": {
+     "2026-06": 83.69,
+     "2026-07": 97.03,
+     "2026-08": 86.1,
+     "2026-09": 83.53
+    }
+   },
+   {
+    "key": "entertainment",
+    "name": "Entertainment",
+    "color": "#a855f7",
+    "total": 487.61,
+    "avg_3mo": 121.9,
+    "avg_active": 121.9,
+    "series": {
+     "2026-06": 122.32,
+     "2026-07": 124.28,
+     "2026-08": 119.87,
+     "2026-09": 121.14
+    }
+   },
+   {
+    "key": "subscriptions",
+    "name": "Subscriptions",
+    "color": "#64748b",
+    "total": 339.97,
+    "avg_3mo": 84.99,
+    "avg_active": 84.99,
+    "series": {
+     "2026-06": 84.12,
+     "2026-07": 95.8,
+     "2026-08": 81.47,
+     "2026-09": 78.58
+    }
+   },
+   {
+    "key": "insurance",
+    "name": "Insurance",
+    "color": "#14b8a6",
+    "total": 601.91,
+    "avg_3mo": 150.48,
+    "avg_active": 150.48,
+    "series": {
+     "2026-06": 158.95,
+     "2026-07": 138.48,
+     "2026-08": 153.35,
+     "2026-09": 151.13
+    }
+   }
+  ],
+  "month_series": [
+   {
+    "month": "2026-06",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-07",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-08",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   },
+   {
+    "month": "2026-09",
+    "income": 5340.36,
+    "expense": 3845.06,
+    "net": 1495.3
+   }
+  ],
+  "avg_3mo": {
+   "income": 5340.36,
+   "expense": 3845.06,
+   "net": 1495.3
+  }
+ },
+ "transactions": {
+  "total": 45,
+  "items": [
+   {
+    "id": 9,
+    "date": "2026-09-28",
+    "description": "TRADER JOES #2320",
+    "cleaned": "WHOLE FOODS",
+    "amount": -58.31,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 2,
+    "date": "2026-09-27",
+    "description": "TRADER JOES #6572",
+    "cleaned": "STOP & SHOP",
+    "amount": -47.22,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 42,
+    "date": "2026-09-26",
+    "description": "GYM #3394",
+    "cleaned": "GYM",
+    "amount": -100.57,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 38,
+    "date": "2026-09-25",
+    "description": "NETFLIX #8832",
+    "cleaned": "NETFLIX",
+    "amount": -56.6,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 17,
+    "date": "2026-09-24",
+    "description": "CHIPOTLE #8481",
+    "cleaned": "STARBUCKS",
+    "amount": -97.36,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 33,
+    "date": "2026-09-23",
+    "description": "UBER #8327",
+    "cleaned": "UBER",
+    "amount": -114.96,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 6,
+    "date": "2026-09-22",
+    "description": "TRADER JOES #1369",
+    "cleaned": "TRADER JOES",
+    "amount": -47.81,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 19,
+    "date": "2026-09-21",
+    "description": "TARGET #2019",
+    "cleaned": "AMAZON",
+    "amount": -15.54,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 39,
+    "date": "2026-09-21",
+    "description": "SPOTIFY #2421",
+    "cleaned": "GYM",
+    "amount": -52.33,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 7,
+    "date": "2026-09-20",
+    "description": "WHOLE FOODS #9088",
+    "cleaned": "WHOLE FOODS",
+    "amount": -32.44,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 30,
+    "date": "2026-09-20",
+    "description": "SHELL #4922",
+    "cleaned": "UBER",
+    "amount": -90.87,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 36,
+    "date": "2026-09-20",
+    "description": "SHELL #8855",
+    "cleaned": "UBER",
+    "amount": -97.56,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 14,
+    "date": "2026-09-19",
+    "description": "CHIPOTLE #5304",
+    "cleaned": "LOCAL BISTRO",
+    "amount": -8.46,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 10,
+    "date": "2026-09-18",
+    "description": "LOCAL BISTRO #3243",
+    "cleaned": "LOCAL BISTRO",
+    "amount": -104.77,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 27,
+    "date": "2026-09-17",
+    "description": "TARGET #3401",
+    "cleaned": "AMAZON",
+    "amount": -92.91,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 45,
+    "date": "2026-09-17",
+    "description": "GYM #3281",
+    "cleaned": "SPOTIFY",
+    "amount": -118.49,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 3,
+    "date": "2026-09-16",
+    "description": "STOP & SHOP #8474",
+    "cleaned": "WHOLE FOODS",
+    "amount": -102.08,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 26,
+    "date": "2026-09-16",
+    "description": "AMAZON #9459",
+    "cleaned": "AMAZON",
+    "amount": -30.98,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 43,
+    "date": "2026-09-16",
+    "description": "GYM #6741",
+    "cleaned": "NETFLIX",
+    "amount": -69.45,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 15,
+    "date": "2026-09-14",
+    "description": "STARBUCKS #7049",
+    "cleaned": "STARBUCKS",
+    "amount": -71.43,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 12,
+    "date": "2026-09-13",
+    "description": "CHIPOTLE #3472",
+    "cleaned": "CHIPOTLE",
+    "amount": -27.74,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 18,
+    "date": "2026-09-13",
+    "description": "LOCAL BISTRO #7536",
+    "cleaned": "LOCAL BISTRO",
+    "amount": -19.6,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 40,
+    "date": "2026-09-13",
+    "description": "GYM #2391",
+    "cleaned": "GYM",
+    "amount": -25.79,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 22,
+    "date": "2026-09-12",
+    "description": "AMAZON #2152",
+    "cleaned": "AMAZON",
+    "amount": -76.78,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 29,
+    "date": "2026-09-12",
+    "description": "SHELL #9725",
+    "cleaned": "UBER",
+    "amount": -79.28,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 34,
+    "date": "2026-09-12",
+    "description": "SHELL #4612",
+    "cleaned": "SHELL",
+    "amount": -33.41,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 5,
+    "date": "2026-09-10",
+    "description": "STOP & SHOP #8301",
+    "cleaned": "TRADER JOES",
+    "amount": -88.26,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 8,
+    "date": "2026-09-10",
+    "description": "WHOLE FOODS #5056",
+    "cleaned": "TRADER JOES",
+    "amount": -51.79,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 28,
+    "date": "2026-09-10",
+    "description": "SHELL #5278",
+    "cleaned": "UBER",
+    "amount": -109.72,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 4,
+    "date": "2026-09-09",
+    "description": "TRADER JOES #2064",
+    "cleaned": "WHOLE FOODS",
+    "amount": -89.89,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 11,
+    "date": "2026-09-09",
+    "description": "STARBUCKS #7804",
+    "cleaned": "LOCAL BISTRO",
+    "amount": -84.46,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 13,
+    "date": "2026-09-08",
+    "description": "STARBUCKS #4822",
+    "cleaned": "CHIPOTLE",
+    "amount": -62.32,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 31,
+    "date": "2026-09-08",
+    "description": "SHELL #9480",
+    "cleaned": "UBER",
+    "amount": -47.82,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 20,
+    "date": "2026-09-07",
+    "description": "TARGET #3659",
+    "cleaned": "AMAZON",
+    "amount": -46.09,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 35,
+    "date": "2026-09-07",
+    "description": "UBER #4348",
+    "cleaned": "UBER",
+    "amount": -77.9,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 16,
+    "date": "2026-09-05",
+    "description": "STARBUCKS #9445",
+    "cleaned": "STARBUCKS",
+    "amount": -81.36,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "dining",
+    "cname": "Dining",
+    "ccolor": "#f97316",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 23,
+    "date": "2026-09-05",
+    "description": "TARGET #6691",
+    "cleaned": "TARGET",
+    "amount": -61.1,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 41,
+    "date": "2026-09-05",
+    "description": "NETFLIX #3476",
+    "cleaned": "GYM",
+    "amount": -109.34,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 44,
+    "date": "2026-09-05",
+    "description": "NETFLIX #1233",
+    "cleaned": "GYM",
+    "amount": -80.76,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 24,
+    "date": "2026-09-04",
+    "description": "TARGET #8634",
+    "cleaned": "TARGET",
+    "amount": -62.19,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 25,
+    "date": "2026-09-03",
+    "description": "AMAZON #2674",
+    "cleaned": "TARGET",
+    "amount": -90.92,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 37,
+    "date": "2026-09-03",
+    "description": "GYM #2964",
+    "cleaned": "SPOTIFY",
+    "amount": -95.62,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "subscriptions",
+    "cname": "Subscriptions",
+    "ccolor": "#64748b",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 1,
+    "date": "2026-09-02",
+    "description": "STOP & SHOP #2271",
+    "cleaned": "STOP & SHOP",
+    "amount": -72.18,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "groceries",
+    "cname": "Groceries",
+    "ccolor": "#84cc16",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 21,
+    "date": "2026-09-02",
+    "description": "AMAZON #1003",
+    "cleaned": "AMAZON",
+    "amount": -68.1,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "shopping",
+    "cname": "Shopping",
+    "ccolor": "#3b82f6",
+    "account": "M&T Checking"
+   },
+   {
+    "id": 32,
+    "date": "2026-09-01",
+    "description": "SHELL #5577",
+    "cleaned": "UBER",
+    "amount": -37.03,
+    "raw_type": "DEBIT",
+    "category_source": "rule",
+    "memo": "",
+    "ckey": "transport",
+    "cname": "Transport",
+    "ccolor": "#06b6d4",
+    "account": "M&T Checking"
+   }
+  ]
+ },
+ "rules": [
+  {
+   "id": 0,
+   "merchant_pattern": "WHOLE FOODS",
+   "category_key": "groceries",
+   "hits": 14
+  },
+  {
+   "id": 0,
+   "merchant_pattern": "TRADER JOES",
+   "category_key": "groceries",
+   "hits": 15
+  },
+  {
+   "id": 0,
+   "merchant_pattern": "STOP & SHOP",
+   "category_key": "groceries",
+   "hits": 3
+  },
+  {
+   "id": 1,
+   "merchant_pattern": "CHIPOTLE",
+   "category_key": "dining",
+   "hits": 18
+  },
+  {
+   "id": 1,
+   "merchant_pattern": "LOCAL BISTRO",
+   "category_key": "dining",
+   "hits": 15
+  },
+  {
+   "id": 1,
+   "merchant_pattern": "STARBUCKS",
+   "category_key": "dining",
+   "hits": 20
+  },
+  {
+   "id": 2,
+   "merchant_pattern": "AMAZON",
+   "category_key": "shopping",
+   "hits": 34
+  },
+  {
+   "id": 2,
+   "merchant_pattern": "TARGET",
+   "category_key": "shopping",
+   "hits": 17
+  },
+  {
+   "id": 3,
+   "merchant_pattern": "SHELL",
+   "category_key": "transport",
+   "hits": 39
+  },
+  {
+   "id": 3,
+   "merchant_pattern": "UBER",
+   "category_key": "transport",
+   "hits": 22
+  },
+  {
+   "id": 4,
+   "merchant_pattern": "NETFLIX",
+   "category_key": "subscriptions",
+   "hits": 18
+  },
+  {
+   "id": 4,
+   "merchant_pattern": "SPOTIFY",
+   "category_key": "subscriptions",
+   "hits": 36
+  },
+  {
+   "id": 4,
+   "merchant_pattern": "GYM",
+   "category_key": "subscriptions",
+   "hits": 28
+  }
+ ],
+ "imports": [
+  {
+   "id": "demo-1",
+   "filename": "demo_statement.csv",
+   "account": "M&T Checking",
+   "bank": "M&T Bank",
+   "inserted": 386,
+   "skipped": 4,
+   "created_at": "2026-09-28 10:00:00"
+  }
+ ]
+}

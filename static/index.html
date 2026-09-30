@@ -595,8 +595,12 @@ function toast(msg){
   const t = $('#toast'); t.textContent = msg; t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600);
 }
+// API base: same-origin '/api' when served by the FastAPI backend, or
+// window.API_BASE when hosted statically (e.g. GitHub Pages) pointed at a remote
+// backend. Empty string => same origin.
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : '';
 async function api(path, opts){
-  const r = await fetch('/api'+path, opts);
+  const r = await fetch(API_BASE + '/api' + path, opts);
   if(!r.ok){ let e; try{e=(await r.json()).detail}catch(_){e=r.statusText} throw new Error(e); }
   return r.json();
 }
