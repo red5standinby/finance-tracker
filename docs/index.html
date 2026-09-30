@@ -211,6 +211,8 @@
     .filters{gap:12px}
     .filters label{flex:1 1 44%}
     .filters label input:not([type=checkbox]),.filters label select{width:100%}
+    .filters .f-half{flex:1 1 calc(50% - 6px)}
+    .filters label:has(.multiselect){flex:1 1 calc(50% - 6px);min-width:0}
     .filters .btn{flex:1 1 100%}
     .tb-row{gap:12px}
     .tb-row .tb-search{flex:1 1 100%}
@@ -348,12 +350,12 @@ window.DEMO = true;
 <!-- ============ DASHBOARD ============ -->
 <section id="tab-dash">
   <div class="filters">
-    <label>From <input type="date" id="d-start"></label>
-    <label>To <input type="date" id="d-end"></label>
-    <label>Account
+    <label class="f-half">From <input type="date" id="d-start"></label>
+    <label class="f-half">To <input type="date" id="d-end"></label>
+    <label class="f-half">Account
       <div class="multiselect" id="d-account-ms"></div>
     </label>
-    <label>Quick
+    <label class="f-half">Quick
       <select id="d-quick">
         <option value="all">All time</option>
         <option value="tm">This month</option>
@@ -414,12 +416,12 @@ window.DEMO = true;
 <!-- ============ TRENDS ============ -->
 <section id="tab-trends" class="hidden">
   <div class="filters">
-    <label>From <input type="date" id="t-start"></label>
-    <label>To <input type="date" id="t-end"></label>
-    <label>Account
+    <label class="f-half">From <input type="date" id="t-start"></label>
+    <label class="f-half">To <input type="date" id="t-end"></label>
+    <label class="f-half">Account
       <div class="multiselect" id="t-account-ms"></div>
     </label>
-    <label>Window
+    <label class="f-half">Window
       <select id="t-months">
         <option value="6">Last 6 months</option>
         <option value="12" selected>Last 12 months</option>
@@ -427,14 +429,14 @@ window.DEMO = true;
         <option value="0">All time</option>
       </select>
     </label>
-    <label>View
+    <label class="f-half">View
       <select id="t-view">
         <option value="pie">Expense mix (pie)</option>
         <option value="avg">3-mo averages</option>
         <option value="trend">Spend vs income trend</option>
       </select>
     </label>
-    <label id="t-piemonth-label">Month
+    <label class="f-half" id="t-piemonth-label">Month
       <select id="t-piemonth"><option value="">All months</option></select>
     </label>
     <button class="btn ghost" onclick="loadTrends()">Apply</button>
