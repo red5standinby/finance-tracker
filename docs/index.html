@@ -121,6 +121,7 @@
   .tb-row label input:not([type=checkbox]),.tb-row label select{min-width:130px}
   .tb-row label input[type=checkbox]{min-width:20px;width:20px}
   .tb-row label .multiselect{min-width:160px}
+  .tb-row .tb-actions{display:flex;gap:10px}
   .cb-label{flex-direction:row!important;align-items:center!important;gap:9px!important;
     padding-bottom:9px;cursor:pointer;white-space:nowrap}
   .txn-statusbar{display:flex;align-items:center;justify-content:space-between;
@@ -212,9 +213,14 @@
     .filters label input:not([type=checkbox]),.filters label select{width:100%}
     .filters .btn{flex:1 1 100%}
     .tb-row{gap:12px}
-    .tb-row label{flex:1 1 44%;min-width:0}
+    .tb-row .tb-search{flex:1 1 100%}
+    .tb-row .tb-search input{width:100%}
+    .tb-row .tb-half{flex:1 1 calc(50% - 6px);min-width:0}
+    .tb-row .tb-half input,.tb-row .tb-half select,.tb-row .tb-half .multiselect{min-width:0;width:100%}
     .tb-row label input,.tb-row label select,.tb-row label .multiselect{min-width:0;width:100%}
-    .tb-row .btn{flex:1 1 auto}
+    .tb-row .cb-label{flex:1 1 100%!important;padding-bottom:0}
+    .tb-row .tb-actions{flex:1 1 100%}
+    .tb-row .tb-actions .btn{flex:1 1 0}
     .cb-label{flex:1 1 100%!important;padding-bottom:0}
     .bulkbar{gap:10px;padding:12px}
     .bulkbar label{flex:1 1 100%;justify-content:space-between}
@@ -470,19 +476,16 @@ window.DEMO = true;
   <div class="panel">
     <div class="toolbar">
       <div class="tb-row">
-        <label>Search <input type="text" id="f-q" placeholder="merchant…"></label>
-        <label>From <input type="date" id="f-start"></label>
-        <label>To <input type="date" id="f-end"></label>
-        <label>Category <select id="f-cat"><option value="">All</option></select></label>
-        <label>Account <div class="multiselect" id="f-account-ms"></div></label>
-        <label>Source <select id="f-source">
-          <option value="">Any</option><option value="uncategorized">Uncategorized</option>
-          <option value="manual">Manual</option><option value="learned">Learned</option>
-          <option value="rule">Rule</option><option value="transfer">Transfer</option>
-        </select></label>
+        <label class="tb-search">Search <input type="text" id="f-q" placeholder="merchant…"></label>
+        <label class="tb-half">From <input type="date" id="f-start"></label>
+        <label class="tb-half">To <input type="date" id="f-end"></label>
+        <label class="tb-half">Category <select id="f-cat"><option value="">All</option></select></label>
+        <label class="tb-half">Account <div class="multiselect" id="f-account-ms"></div></label>
         <label class="cb-label"><input type="checkbox" id="f-hidden"> Show hidden</label>
-        <button class="btn" onclick="loadTxns(0)">Filter</button>
-        <button class="btn ghost" onclick="clearFilters()">Clear</button>
+        <div class="tb-actions">
+          <button class="btn" onclick="loadTxns(0)">Filter</button>
+          <button class="btn ghost" onclick="clearFilters()">Clear</button>
+        </div>
       </div>
     </div>
     <div class="txn-statusbar">
@@ -893,7 +896,7 @@ function editBudget(key){
 function gotoCategory(key){
   showTab('txns');
   $('#f-q').value=''; $('#f-start').value=''; $('#f-end').value='';
-  $('#f-source').value=''; $('#f-hidden').checked=false;
+  $('#f-hidden').checked=false;
   msSet('f-account-ms', []);
   // wait a tick for the tab to render its selects, then set category
   setTimeout(()=>{ $('#f-cat').value = key; loadTxns(0); }, 0);
@@ -1088,7 +1091,6 @@ async function loadTxns(page){
   if($('#f-end').value) q.set('end',$('#f-end').value);
   if($('#f-cat').value) q.set('category',$('#f-cat').value);
   if(msValues('f-account-ms').length) q.set('accounts', msValues('f-account-ms').join(','));
-  if($('#f-source').value) q.set('source',$('#f-source').value);
   if($('#f-hidden').checked) q.set('include_hidden','true');
   q.set('sort',SORT.col); q.set('order',SORT.dir);
   q.set('limit','100'); q.set('offset', String(TXNPAGE*100));
@@ -1265,7 +1267,7 @@ async function confirmTag(id, key){
 async function setCat(id, key){ return confirmTag(id, key); }
 function clearFilters(){
   ['#f-q','#f-start','#f-end'].forEach(s=>$(s).value='');
-  $('#f-cat').value=''; msSet('f-account-ms', []); $('#f-source').value='';
+  $('#f-cat').value=''; msSet('f-account-ms', []);
   $('#f-hidden').checked=false;
   loadTxns(0);
 }
