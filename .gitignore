@@ -1,0 +1,18 @@
+# Virtualenv
+.venv/
+__pycache__/
+*.pyc
+
+# Real financial data — NEVER commit
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/backups/
+
+# Logs & local artifacts
+*.log
+server.log
+*.png
+
+# macOS
+.DS_Store

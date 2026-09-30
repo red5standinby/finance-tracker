@@ -1,0 +1,96 @@
+Reference Number,Transaction Post Date,Description of Transaction,Transaction Type,Amount
+5333633079,03/20/26,AFP*Michael A Olenski  Milford       USA,clearing,100
+5332622792,03/20/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+5323811125,03/19/26,Amazon,clearing,15.95
+5323808324,03/19/26,seeleys deli,clearing,16.64
+5316957809,03/19/26,Amazon,purchase_return,-42.53
+5316957808,03/19/26,Amazon,purchase_return,-42.53
+5316957806,03/19/26,Amazon,purchase_return,-27.27
+5316957807,03/19/26,Amazon,purchase_return,-38.28
+5316957798,03/19/26,Amazon,purchase_return,-48.91
+5316957784,03/19/26,Amazon,purchase_return,-45.72
+5316957782,03/19/26,Amazon,purchase_return,-40.67
+5316957780,03/19/26,Amazon,purchase_return,-42.53
+5306483950,03/17/26,,payment_transaction,-45.63
+5297252037,03/17/26,CITGO,clearing,45.63
+5296227815,03/16/26,,payment_transaction,-346.72
+5292375182,03/16/26,Amazon,clearing,9.3
+5292085078,03/16/26,,payment_transaction,-500
+5273873330,03/14/26,MAHESWARA LLC-         MILFORD       USA,clearing,2.65
+5252401216,03/12/26,Amazon,clearing,150.61
+5244240958,03/11/26,Amazon,clearing,190.59
+5237934847,03/11/26,Amazon,purchase_return,-36.16
+5237934846,03/11/26,Amazon,purchase_return,-54.23
+5223263766,03/09/26,Amazon,clearing,13.81
+5223243374,03/09/26,Cumberland Farms 142 Nashua St 03055 NH United States,clearing,9.63
+5214331688,03/08/26,TST*POWDER RIDGE       Middlefield   USA,clearing,2.7
+5214331687,03/08/26,TST*POWDER RIDGE       Middlefield   USA,clearing,10.2
+5208776083,03/08/26,CITGO,clearing,38.31
+5208421745,03/08/26,CAPITAL SPIRITS MONROE MONROE        USA,clearing,14.53
+5184204413,03/05/26,DEVINES'S BAGELS & CAF MILFORD       USA,clearing,8.29
+5166322261,03/04/26,Amazon,clearing,90.39
+5162584890,03/03/26,Amazon,clearing,20.65
+5162583501,03/03/26,Amazon,clearing,10.54
+5151084062,03/02/26,,payment_transaction,-420
+5147946912,03/02/26,Restaurants,clearing,42.95
+5136374192,03/02/26,Barnes & Noble 1375 Boston Post Road 06460 CT United States,clearing,8.48
+5136365817,03/02/26,UPS 2820 Selwyn Ave130 28209 NC United States,clearing,44.17
+5136361754,03/02/26,POWDER RIDGE RETAIL    MIDDLEFIELD   USA,clearing,60
+5129677358,03/01/26,Uber,clearing,9.99
+5129668816,03/01/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+5129650315,03/01/26,Cumberland Farms 142 Nashua St 03055 NH United States,clearing,10.46
+5116896330,02/28/26,Best Buy,clearing,319.04
+5108191970,02/27/26,DEVINES'S BAGELS & CAF MILFORD       USA,clearing,4.19
+5108188611,02/27/26,Roblox,clearing,5.31
+5093478108,02/26/26,Amazon,clearing,6.37
+5080660286,02/24/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+5073165444,02/23/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,11.98
+5070556373,02/23/26,Cumberland Farms 142 Nashua St 03055 NH United States,clearing,30
+5066623160,02/23/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+5059561906,02/22/26,Wines More Wines Unlim Milford       USA,clearing,32.28
+5056053778,02/21/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,11.99
+5051228927,02/21/26,Amazon,clearing,9.3
+5038462826,02/19/26,MAHESWARA LLC-         MILFORD       USA,clearing,1.06
+5029412950,02/18/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,42.62
+5019496276,02/17/26,MAHESWARA LLC-         MILFORD       USA,clearing,1.06
+4993909004,02/15/26,Wines More Wines Unlim Milford       USA,clearing,46.1
+4991149059,02/14/26,seeleys deli,clearing,16.37
+4991133796,02/14/26,Total Wine and More 230 Cherry St 06460 CT United States,clearing,29.76
+4982758488,02/13/26,,payment_transaction,-365.32
+4970416155,02/12/26,DEVINES'S BAGELS & CAF MILFORD       USA,clearing,4.19
+4963871885,02/11/26,AFP*Michael A Olenski  Milford       USA,clearing,325
+4959435333,02/11/26,Amazon,clearing,7.43
+4958237117,02/10/26,,payment_transaction,-375
+4951166407,02/10/26,PeacockMastercardOfferMasterCard                                      Credit       63366     NY USA,principal_credit_adjustment,-3
+4946696900,02/09/26,Amazon,clearing,15.94
+4939421187,02/08/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,50.87
+4930636369,02/07/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,28.32
+4930573637,02/07/26,Walgreens 541 BRIDGEPORT AVE 06460 CT United States,clearing,4.23
+4928702240,02/07/26,30 Rockefeller Plaza,purchase_return,-8.5
+4928702239,02/07/26,Peacock TV,clearing,8.5
+4928702247,02/07/26,Peacock TV,clearing,11.69
+4920004022,02/06/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+4915558531,02/05/26,,interest,4.34
+4893891424,02/01/26,Target 1191 Boston Post Rd 06460 CT United States,clearing,41.47
+4893891423,02/01/26,Target 1191 Boston Post Rd 06460 CT United States,clearing,15.08
+4892454437,02/01/26,Uber,clearing,9.99
+4890853607,02/01/26,Wines More Wines Unlim Milford       USA,clearing,13.81
+4889228005,01/31/26,SEELEY'S DELI          MILFORD       USA,clearing,12.08
+4885886887,01/30/26,,payment_transaction,-50
+4868219005,01/27/26,Cumberland Farms 142 Nashua St 03055 NH United States,clearing,36.48
+4857582961,01/25/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,9.99
+4857582960,01/25/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,71.93
+4854834923,01/25/26,Wines More Wines Unlim Milford       USA,clearing,47.16
+4843080598,01/22/26,SILVER SANDS GYRO      MILFORD       USA,clearing,16.08
+4841704201,01/22/26,Amazon,clearing,53.43
+4839017593,01/21/26,,payment_transaction,-228.33
+4834214187,01/21/26,The Home Depot 350 Barnum Ave Cutoff 06614 CT United States,clearing,30.79
+4820514270,01/17/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,12.95
+4815041340,01/16/26,Valvoline 131 S Milford Rd 48381 MI United States,clearing,184.59
+4803459602,01/14/26,,payment_transaction,-882.97
+4799127233,01/13/26,Payrix,clearing,152.6
+4761875794,01/05/26,,payment_transaction,-235
+4761987490,01/05/26,,interest_reversal,-0.11
+4759792012,01/05/26,,interest,13.84
+4741978194,01/01/26,Big Y 150 Boston Post Road 06460 CT United States,clearing,19.01
+4741522415,01/01/26,Uber,clearing,9.99
