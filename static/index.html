@@ -147,6 +147,17 @@
   .bar-row:hover .bar-lbl{color:var(--accent)}
 
   /* budget card */
+  /* fixed-height paginated account list */
+  .acct-wrap{max-height:264px;overflow-y:auto}
+  .acct-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:12px;font-size:13px;color:var(--mut)}
+  .acct-pager .pg-btns{display:flex;gap:8px}
+  .acct-pager button{background:var(--panel2);border:1px solid var(--bd);border-radius:7px;
+    color:var(--txt);font-size:13px;font-weight:600;padding:6px 14px;cursor:pointer;transition:.15s}
+  .acct-pager button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .acct-pager button:disabled{opacity:.4;cursor:default}
+  .acct-pager .pg-info b{color:var(--txt)}
+
   .budget-card{margin-top:16px}
   .budget-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
     flex-wrap:wrap;margin-bottom:14px}
@@ -319,11 +330,12 @@
 
   <div class="panel">
     <h2>By Account</h2>
-    <div class="table-wrap">
+    <div class="table-wrap acct-wrap">
     <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Income</th>
       <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
       <tbody id="acct-body"></tbody></table>
     </div>
+    <div class="acct-pager" id="acct-pager"></div>
   </div>
 
   <div class="card budget-card" id="budget-card" style="grid-column:1 / -1">
@@ -702,13 +714,51 @@ async function loadDashboard(){
   renderMonths(d.months);
   // budgets (uses the latest month in the current dashboard window)
   loadBudgets((d.months.length ? d.months[d.months.length-1].month : null), sel);
-  // accounts
-  $('#acct-body').innerHTML = d.accounts.map(a=>`
-    <tr><td>${a.name}</td><td class="amt pos">${fmt(a.income)}</td>
-    <td class="amt neg">${fmt(a.expense)}</td>
-    <td class="amt ${a.income-a.expense>=0?'pos':'neg'}">${(a.income-a.expense<0?'-':'')+fmt(a.income-a.expense)}</td></tr>`).join('')
-    || '<tr><td colspan=4 class="empty">No data</td></tr>';
+  // accounts (fixed-height, paginated)
+  renderAccounts(d.accounts);
 }
+
+// ---------- paginated account list ----------
+const ACCT_PAGE_SIZE = 5;
+let _acctRows = [];
+let _acctPage = 0;
+
+function renderAccounts(rows){
+  _acctRows = rows || [];
+  _acctPage = 0;
+  renderAcctPage();
+}
+
+function renderAcctPage(){
+  const rows = _acctRows;
+  const body = $('#acct-body'), pager = $('#acct-pager');
+  if(!rows.length){
+    body.innerHTML = '<tr><td colspan=4 class="empty">No data</td></tr>';
+    pager.innerHTML = '';
+    return;
+  }
+  const pages = Math.max(1, Math.ceil(rows.length / ACCT_PAGE_SIZE));
+  if(_acctPage >= pages) _acctPage = pages - 1;
+  if(_acctPage < 0) _acctPage = 0;
+  const start = _acctPage * ACCT_PAGE_SIZE;
+  const slice = rows.slice(start, start + ACCT_PAGE_SIZE);
+  body.innerHTML = slice.map(a=>{
+    const net = a.income - a.expense;
+    return `<tr><td>${esc(a.name)}</td><td class="amt pos">${fmt(a.income)}</td>
+    <td class="amt neg">${fmt(a.expense)}</td>
+    <td class="amt ${net>=0?'pos':'neg'}">${(net<0?'-':'')+fmt(net)}</td></tr>`;
+  }).join('');
+  const first = start + 1, last = Math.min(start + ACCT_PAGE_SIZE, rows.length);
+  pager.innerHTML = `<span class="pg-info">Showing <b>${first}–${last}</b> of <b>${rows.length}</b></span>
+    <div class="pg-btns">
+      <button onclick="acctPrev()" ${_acctPage===0?'disabled':''}>‹ Prev</button>
+      <button onclick="acctNext()" ${_acctPage>=pages-1?'disabled':''}>Next ›</button>
+    </div>`;
+}
+
+function acctNext(){ _acctPage++; renderAcctPage(); }
+function acctPrev(){ _acctPage--; renderAcctPage(); }
+
 
 // ---------- budgets ----------
 let _budgets = null;
