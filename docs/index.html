@@ -240,16 +240,24 @@
   tr.tag-confirm-row:hover td{background:var(--panel2)}
   tr.tag-confirm-row .chip{vertical-align:middle}
   /* trends: pie + legend side by side */
-  .pie-wrap{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .pie-wrap{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
   #t-pie{flex:0 0 360px;max-width:360px}
-  .pie-legend{flex:1;min-width:200px;max-width:560px;
-    column-count:2;column-gap:22px}
+  .pie-legend{flex:1;min-width:200px;max-width:560px}
+  .pl-list{max-height:264px;overflow-y:auto}
   .pl-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);
-    font-size:13.5px;break-inside:avoid;-webkit-column-break-inside:avoid}
+    font-size:13.5px}
   .pl-row .pl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .pl-row .pl-val{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
   .pl-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pl-val{font-variant-numeric:tabular-nums}
+  .pl-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-top:12px;font-size:13px;color:var(--mut)}
+  .pl-pager .pg-btns{display:flex;gap:8px}
+  .pl-pager button{background:var(--panel2);border:1px solid var(--line);border-radius:7px;
+    color:var(--txt);font-size:13px;font-weight:600;padding:6px 14px;cursor:pointer;transition:.15s}
+  .pl-pager button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .pl-pager button:disabled{opacity:.4;cursor:default}
+  .pl-pager .pg-info b{color:var(--txt)}
   /* multi-select account filter */
   .multiselect{position:relative;display:inline-block;min-width:150px;width:100%}
   .filter label .multiselect{width:100%}
@@ -981,12 +989,45 @@ function renderPie(d){
   svg += `<text x="170" y="189" fill="#e6edf7" font-size="19" font-weight="700" text-anchor="middle">${fmt(total)}</text>`;
   svg += '</svg>';
   $('#t-pie').innerHTML = svg;
-  $('#t-pie-legend').innerHTML = cats.map(c=>
+  _pieRows = cats; _piePage = 0; _pieTotal = total;
+  renderPieLegend(total);
+}
+
+// ---------- paginated pie legend ----------
+const PIE_PAGE_SIZE = 6;
+let _pieRows = [];
+let _piePage = 0;
+let _pieTotal = 0;
+
+function renderPieLegend(total){
+  _pieTotal = total;
+  const el = $('#t-pie-legend');
+  const rows = _pieRows;
+  if(!rows.length){ el.innerHTML = ''; return; }
+  const pages = Math.max(1, Math.ceil(rows.length / PIE_PAGE_SIZE));
+  if(_piePage >= pages) _piePage = pages - 1;
+  if(_piePage < 0) _piePage = 0;
+  const start = _piePage * PIE_PAGE_SIZE;
+  const slice = rows.slice(start, start + PIE_PAGE_SIZE);
+  const list = slice.map(c=>
     `<div class="pl-row"><span class="dot" style="background:${c.color}"></span>
       <span class="pl-name">${esc(c.name)}</span>
       <span class="pl-val">${fmt(c.total)}</span>
       <span class="muted" style="width:46px;text-align:right">${(c.total/total*100).toFixed(1)}%</span></div>`).join('');
+  const first = start + 1, last = Math.min(start + PIE_PAGE_SIZE, rows.length);
+  const pager = rows.length > PIE_PAGE_SIZE
+    ? `<div class="pl-pager">
+        <span class="pg-info">Showing <b>${first}–${last}</b> of <b>${rows.length}</b></span>
+        <div class="pg-btns">
+          <button onclick="piePrev()" ${_piePage===0?'disabled':''}>‹ Back</button>
+          <button onclick="pieNext()" ${_piePage>=pages-1?'disabled':''}>Next ›</button>
+        </div></div>`
+    : '';
+  el.innerHTML = `<div class="pl-list">${list}</div>${pager}`;
 }
+
+function pieNext(){ _piePage++; renderPieLegend(_pieTotal); }
+function piePrev(){ _piePage--; renderPieLegend(_pieTotal); }
 
 function renderAvgTable(d){
   const cats = d.categories.filter(c=>c.total>0);
