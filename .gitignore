@@ -16,3 +16,7 @@ server.log
 
 # macOS
 .DS_Store
+
+# dev probes
+probe_*.py
+*_shot.png

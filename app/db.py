@@ -58,6 +58,12 @@ CREATE TABLE IF NOT EXISTS learned_rules (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS budgets (
+    category_key TEXT PRIMARY KEY,   -- one monthly target per category
+    amount REAL NOT NULL DEFAULT 0,  -- 0 or absent = no budget set
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS imports (
     id TEXT PRIMARY KEY,
     filename TEXT,

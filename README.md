@@ -188,3 +188,17 @@ Unload with `launchctl unload …`.
 - Subscription/recurring detection
 - Export back out (CSV / PDF reports)
 - Multi-currency (USD-only for now)
+
+## Budgets (v2.1)
+
+Monthly budget targets per expense category, shown as a card on the Dashboard.
+
+- One target per category (`budgets` table, `category_key → amount`); `amount <= 0`
+  clears the target. Non-destructive: new table only, no changes to existing tables.
+- Bars are color-coded: green (`<80%`), amber (`80–99%`), red (`≥100%`).
+- Summary line shows budgeted / spent / remaining (or "over budget").
+- Categories with spend but no target show a dashed track + a "set budget" button.
+- Driven by the Dashboard's month + account filters.
+
+API: `GET /api/budgets?month=YYYY-MM[&accounts=1,2]`,
+`POST /api/budgets {category_key, amount}` (amount `0` clears).

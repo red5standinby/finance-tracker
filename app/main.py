@@ -455,6 +455,88 @@ def trends(start: str | None = None, end: str | None = None,
     }
 
 
+# ---------- budgets ----------
+
+class BudgetIn(BaseModel):
+    category_key: str
+    amount: float
+
+
+@app.get("/api/budgets")
+def get_budgets(month: str | None = None, accounts: str | None = None):
+    """Monthly budget targets + actual spend for a given month (YYYY-MM).
+
+    Defaults to the month of the latest transaction. Returns one row per
+    expense category that either has a budget set OR had spend this month.
+    """
+    ids = [int(x) for x in accounts.split(",") if x.strip().isdigit()] if accounts else []
+    with db() as con:
+        if not month:
+            mrow = con.execute("SELECT MAX(date) d FROM transactions").fetchone()
+            month = (mrow["d"] or date.today().isoformat())[:7]
+        where = ["c.kind = 'expense'", "c.hidden = 0", "substr(t.date,1,7) = ?"]
+        params: list = [month]
+        if ids:
+            where.append(f"t.account_id IN ({','.join('?' * len(ids))})"); params.extend(ids)
+        else:
+            where.insert(0, "ac.exclude = 0")
+        w = " AND ".join(where)
+        spent = {r["ckey"]: -r["s"] for r in con.execute(f"""
+            SELECT c.key ckey, SUM(t.amount) s
+            FROM transactions t
+            JOIN categories c ON c.id = t.category_id
+            JOIN accounts ac ON ac.id = t.account_id
+            WHERE {w}
+            GROUP BY c.key
+        """, params).fetchall()}
+        targets = {r["category_key"]: r["amount"]
+                   for r in con.execute("SELECT * FROM budgets").fetchall()
+                   if r["amount"] and r["amount"] > 0}
+        meta = {r["key"]: dict(r) for r in con.execute(
+            "SELECT key,name,color FROM categories WHERE kind='expense' AND hidden=0").fetchall()}
+
+    keys = set(targets) | set(spent)
+    rows = []
+    for k in keys:
+        m = meta.get(k, {})
+        tgt = round(targets.get(k, 0.0), 2)
+        sp = round(spent.get(k, 0.0), 2)
+        pct = round(sp / tgt * 100, 1) if tgt > 0 else None
+        rows.append({
+            "key": k, "name": m.get("name", k), "color": m.get("color", "#64748b"),
+            "budget": tgt, "spent": sp, "remaining": round(tgt - sp, 2),
+            "pct": pct,
+        })
+    # budgeted first (by pct spent desc), then the rest by spend desc
+    rows.sort(key=lambda r: (r["budget"] <= 0, -(r["pct"] or 0), -r["spent"]))
+
+    total_budget = round(sum(r["budget"] for r in rows), 2)
+    total_spent = round(sum(r["spent"] for r in rows if r["budget"] > 0), 2)
+    return {
+        "month": month,
+        "rows": rows,
+        "totals": {"budget": total_budget, "spent": total_spent},
+    }
+
+
+@app.post("/api/budgets")
+def set_budget(body: BudgetIn):
+    """Set (or clear) a category's monthly budget. amount<=0 clears it."""
+    with db() as con:
+        exists = con.execute("SELECT 1 FROM categories WHERE key=?", (body.category_key,)).fetchone()
+        if not exists:
+            raise HTTPException(404, f"unknown category: {body.category_key}")
+        if body.amount and body.amount > 0:
+            con.execute("""INSERT INTO budgets(category_key,amount,updated_at)
+                VALUES(?,?,CURRENT_TIMESTAMP)
+                ON CONFLICT(category_key) DO UPDATE SET amount=excluded.amount,
+                updated_at=CURRENT_TIMESTAMP""", (body.category_key, round(body.amount, 2)))
+        else:
+            con.execute("DELETE FROM budgets WHERE category_key=?", (body.category_key,))
+    return {"ok": True, "category_key": body.category_key,
+            "amount": round(body.amount, 2) if body.amount and body.amount > 0 else 0}
+
+
 # ---------- transactions ----------
 
 @app.get("/api/transactions")

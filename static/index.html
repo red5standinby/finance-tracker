@@ -146,6 +146,27 @@
   .bar-row .bar-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bar-row:hover .bar-lbl{color:var(--accent)}
 
+  /* budget card */
+  .budget-card{margin-top:16px}
+  .budget-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    flex-wrap:wrap;margin-bottom:14px}
+  .budget-head h2{margin:0}
+  .budget-sum{font-size:12.5px;color:var(--mut);font-weight:600}
+  .budget-sum b{color:var(--txt)}
+  .bg-row{display:grid;grid-template-columns:150px 1fr 132px;gap:12px;align-items:center;
+    font-size:13px;margin-bottom:11px}
+  .bg-track{background:var(--panel2);border-radius:6px;height:20px;overflow:hidden}
+  .bg-fill{height:100%;border-radius:6px;transition:width .4s}
+  .bg-fill.ok{background:var(--good)} .bg-fill.warn{background:#f59e0b} .bg-fill.over{background:var(--bad)}
+  .bg-nums{text-align:right;font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums}
+  .bg-nums .over{color:var(--bad)}
+  .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
+  .bg-row .bg-edit{background:none;border:1px dashed var(--bd);border-radius:6px;color:var(--mut);
+    font-size:11px;padding:2px 8px;cursor:pointer}
+  .bg-row .bg-edit:hover{color:var(--accent);border-color:var(--accent)}
+  .bg-input{width:96px;background:var(--panel2);border:1px solid var(--accent);border-radius:6px;
+    color:var(--txt);padding:3px 7px;font-size:12px;text-align:right}
+
   /* grade card */
   .grade-card{position:relative;overflow:hidden;margin-top:16px;
     display:flex;flex-direction:column;justify-content:center;align-items:center;
@@ -303,6 +324,14 @@
       <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
       <tbody id="acct-body"></tbody></table>
     </div>
+  </div>
+
+  <div class="card budget-card" id="budget-card" style="grid-column:1 / -1">
+    <div class="budget-head">
+      <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
+      <div class="budget-sum" id="bg-sum"></div>
+    </div>
+    <div id="budget-body"><div class="empty">No budgets set</div></div>
   </div>
 
   <div class="card grade-card" id="grade-card">
@@ -671,12 +700,89 @@ async function loadDashboard(){
 
   // monthly chart
   renderMonths(d.months);
+  // budgets (uses the latest month in the current dashboard window)
+  loadBudgets((d.months.length ? d.months[d.months.length-1].month : null), sel);
   // accounts
   $('#acct-body').innerHTML = d.accounts.map(a=>`
     <tr><td>${a.name}</td><td class="amt pos">${fmt(a.income)}</td>
     <td class="amt neg">${fmt(a.expense)}</td>
     <td class="amt ${a.income-a.expense>=0?'pos':'neg'}">${(a.income-a.expense<0?'-':'')+fmt(a.income-a.expense)}</td></tr>`).join('')
     || '<tr><td colspan=4 class="empty">No data</td></tr>';
+}
+
+// ---------- budgets ----------
+let _budgets = null;
+
+function budgetClass(pct){
+  if(pct === null) return '';
+  return pct >= 100 ? 'over' : (pct >= 80 ? 'warn' : 'ok');
+}
+
+async function loadBudgets(month, acctNames){
+  const q = new URLSearchParams();
+  if(month) q.set('month', month);
+  if(acctNames && acctNames.length){
+    const ids = acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
+    if(ids.length) q.set('accounts', ids.join(','));
+  }
+  let d;
+  try { d = await api('/budgets?'+q); } catch(e){ return; }
+  _budgets = d;
+  renderBudgets();
+}
+
+function renderBudgets(){
+  const d = _budgets; if(!d) return;
+  $('#bg-month').textContent = d.month;
+  const rows = d.rows.filter(r => r.budget > 0 || r.spent > 0);
+  const t = d.totals;
+  const pct = t.budget > 0 ? Math.round(t.spent / t.budget * 100) : null;
+  $('#bg-sum').innerHTML = t.budget > 0
+    ? `budgeted <b>${fmt(t.budget)}</b> · spent <b class="${pct>=100?'neg':''}">${fmt(t.spent)}</b>` +
+      ` · <b class="${t.budget-t.spent<0?'neg':'pos'}">` +
+      (t.budget - t.spent < 0 ? `${fmt(t.spent-t.budget)} over budget`
+                              : `${fmt(t.budget-t.spent)} left`) + `</b>`
+    : '<span class="muted">click “set budget” on a category to start</span>';
+
+  if(!rows.length){ $('#budget-body').innerHTML = '<div class="empty">No spend or budgets this month</div>'; return; }
+  const max = Math.max(1, ...rows.map(r => Math.max(r.budget, r.spent)));
+  $('#budget-body').innerHTML = rows.map(r => {
+    if(r.budget <= 0){
+      return `<div class="bg-row bg-none">
+        <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
+        <div class="bg-track"></div>
+        <div class="bg-nums">${fmt(r.spent)} spent
+          <button class="bg-edit" onclick="editBudget('${r.key}')">set budget</button></div>
+      </div>`;
+    }
+    const w = Math.min(100, r.spent / max * 100).toFixed(1);
+    const cls = budgetClass(r.pct);
+    const remTxt = r.remaining < 0
+      ? `<span class="over">${fmt(-r.remaining)} over</span>`
+      : `${fmt(r.remaining)} left`;
+    return `<div class="bg-row">
+      <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
+      <div class="bg-track"><div class="bg-fill ${cls}" style="width:${w}%"></div></div>
+      <div class="bg-nums">${fmt(r.spent)} / ${fmt(r.budget)}
+        <span class="muted">·</span> ${remTxt}
+        <button class="bg-edit" onclick="editBudget('${r.key}')">edit</button></div>
+    </div>`;
+  }).join('');
+}
+
+function editBudget(key){
+  const d = _budgets; if(!d) return;
+  const row = d.rows.find(r => r.key === key); if(!row) return;
+  const cur = row.budget > 0 ? row.budget : '';
+  const inp = prompt(`Monthly budget for “${row.name}” (blank to clear):`, cur);
+  if(inp === null) return;
+  const val = parseFloat(String(inp).replace(/[$,]/g,''));
+  if(String(inp).trim() !== '' && (isNaN(val) || val < 0)){ alert('Enter a positive number, or leave blank to clear.'); return; }
+  fetch('/api/budgets', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({category_key: key, amount: (String(inp).trim()==='' ? 0 : val)})})
+    .then(r => r.ok ? loadBudgets(d.month, msValues('d-account-ms')) : alert('Could not save budget'))
+    .catch(() => alert('Could not save budget'));
 }
 
 // Jump from a dashboard category bar into filtered Transactions.
