@@ -51,9 +51,15 @@
     color:var(--txt);border-radius:9px;width:38px;height:38px;font-size:17px;cursor:pointer;flex:0 0 38px}
   .sb-burger:hover{background:var(--panel2);border-color:var(--accent)}
   /* by-account + budgets side by side */
-  .inline-pair{grid-template-columns:1fr 1fr;align-items:start;margin-top:16px}
+  .inline-pair{grid-template-columns:1fr 1fr;align-items:stretch;margin-top:16px}
   .inline-pair > .panel{margin-top:0}
   .inline-pair > .card{margin-top:0}
+  .inline-pair > .card,.inline-pair > .panel{display:flex;flex-direction:column}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .panel-head h2{margin:0}
+  .btn.sm{padding:6px 12px;font-size:12.5px}
+  .more-row{display:flex;justify-content:center;margin-top:10px}
+  .more-row .btn{font-size:12.5px}
   main{padding:26px;flex:1 1 auto;min-width:0;max-width:1400px;margin:0}
   .grid{display:grid;gap:16px}
   .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
@@ -424,13 +430,18 @@ window.DEMO = true;
   </div>
 
   <div class="panel">
-    <h2>Spending by Category <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a bar to see its transactions</span></h2>
+    <div class="panel-head">
+      <h2>Spending by Category <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a bar to see its transactions</span></h2>
+      <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
+    </div>
     <div class="bars" id="cat-bars"></div>
-    <div class="legend" id="cat-legend"></div>
   </div>
 
   <div class="panel">
-    <h2>Income vs Expenses by Month</h2>
+    <div class="panel-head">
+      <h2>Income vs Expenses by Month</h2>
+      <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
+    </div>
     <div id="month-chart"></div>
   </div>
 
@@ -448,8 +459,9 @@ window.DEMO = true;
     <div class="card budget-card" id="budget-card">
       <div class="budget-head">
         <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
-        <div class="budget-sum" id="bg-sum"></div>
+        <button class="btn ghost sm" onclick="editBudgetPicker()">Edit budget</button>
       </div>
+      <div class="budget-sum" id="bg-sum" style="margin-top:6px"></div>
       <div id="budget-body"><div class="empty">No budgets set</div></div>
     </div>
   </div>
@@ -845,16 +857,19 @@ async function loadDashboard(){
   $('#k-unc').textContent = d.uncategorized.count;
   $('#k-unc-amt').textContent = d.uncategorized.count ? fmt(d.uncategorized.amount)+' to review' : 'all tagged';
 
-  // category bars (clickable -> jump to filtered transactions)
+  // category bars (top 3; clickable -> jump to filtered transactions)
   const cats = d.categories.filter(c=>c.kind!=='income');
-  const max = Math.max(1, ...cats.map(c=>c.total));
-  $('#cat-bars').innerHTML = cats.length ? cats.map(c=>`
+  const CAT_SHOWN = 3;
+  const shown = cats.slice(0, CAT_SHOWN);
+  const max = Math.max(1, ...shown.map(c=>c.total));
+  $('#cat-bars').innerHTML = (shown.length ? shown.map(c=>`
     <div class="bar-row clickable" onclick="gotoCategory('${c.key}')" title="View ${esc(c.name)} transactions">
       <span class="bar-lbl">${esc(c.name)}</span>
       <div class="bar-track"><div class="bar-fill"
         style="width:${(c.total/max*100).toFixed(1)}%;background:${c.color}"></div></div>
       <span class="amt">${fmt(c.total)}</span>
-    </div>`).join('') : '<div class="empty">No expense data in range</div>';
+    </div>`).join('') : '<div class="empty">No expense data in range</div>')
+    + (cats.length > CAT_SHOWN ? `<div class="more-row"><button class="btn ghost sm" onclick="gotoTrends()">${cats.length-CAT_SHOWN} more categories — View more ↗</button></div>` : '');
 
   // monthly chart
   renderMonths(d.months);
@@ -987,11 +1002,13 @@ let _lastTrends = null;
 
 function renderMonths(months){
   if(!months.length){ $('#month-chart').innerHTML='<div class="empty">No data</div>'; return; }
-  const W=760,H=220,pad=34, bw=(W-pad*2)/months.length;
-  const max = Math.max(1, ...months.map(m=>Math.max(m.income,m.expense)));
+  const MORE = months.length > 3;
+  const shown = months.slice(-3);
+  const W=760,H=220,pad=34, bw=(W-pad*2)/shown.length;
+  const max = Math.max(1, ...shown.map(m=>Math.max(m.income,m.expense)));
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
   svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#243044"/>`;
-  months.forEach((m,i)=>{
+  shown.forEach((m,i)=>{
     const x = pad + i*bw;
     const ih = (m.income/max)*(H-pad*2);
     const eh = (m.expense/max)*(H-pad*2);
@@ -1002,7 +1019,22 @@ function renderMonths(months){
   svg += '</svg>';
   $('#month-chart').innerHTML = svg +
     `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>
-     <span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
+     <span><span class="dot" style="background:#ef4444"></span>Expenses</span></span>` +
+    (MORE ? `<button class="btn ghost sm" style="margin-left:auto" onclick="gotoTrends()">last 3 of ${months.length} — View more ↗</button>` : '') +
+    `</div>`;
+}
+
+// jump from dashboard cards to the full Trends view
+function gotoTrends(){ showTab('trends'); }
+// quick pick a category to set/edit a budget from the budget card header
+function editBudgetPicker(){
+  const d=_budgets; if(!d || !d.rows.length){ toast('No categories to budget yet'); return; }
+  const opts = d.rows.slice().sort((a,b)=>a.name.localeCompare(b.name))
+    .map(r=>`<option value="${r.key}">${esc(r.name)}</option>`).join('');
+  const pick = prompt('Set a budget for which category?\n' + d.rows.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>r.name).join('\n'));
+  if(!pick) return;
+  const row = d.rows.find(r=>r.name.toLowerCase()===pick.trim().toLowerCase());
+  if(row) editBudget(row.key); else toast('Category not found');
 }
 
 // ---------- savings ----------
