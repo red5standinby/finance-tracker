@@ -602,7 +602,7 @@ window.DEMO = true;
     <h2>Accounts</h2>
     <div class="table-wrap">
     <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Bank</th>
-      <th class="no-sort">Txns</th><th class="no-sort">Range</th>
+      <th class="no-sort">Type</th><th class="no-sort">Txns</th><th class="no-sort">Range</th>
       <th class="no-sort">Include</th></tr></thead>
       <tbody id="acct-list"></tbody></table>
     </div>
@@ -1486,11 +1486,21 @@ async function loadImports(){
 }
 async function loadAcctList(){
   const rows = await api('/accounts');
-  $('#acct-list').innerHTML = rows.length ? rows.map(a=>`
-    <tr><td>${a.name}</td><td class="muted">${a.bank}</td><td>${a.cnt}</td>
+  const KIND_OPTS = [['checking','Checking'],['savings','Savings'],['credit','Credit card']];
+  $('#acct-list').innerHTML = rows.length ? rows.map(a=>{
+    const k = a.kind || 'checking';
+    const opts = KIND_OPTS.map(([v,l])=>`<option value="${v}"${v===k?' selected':''}>${l}</option>`).join('');
+    return `<tr><td>${a.name}</td><td class="muted">${a.bank}</td>
+    <td><select class="acct-kind" onchange="setAcctKind(${a.id}, this.value)">${opts}</select></td>
+    <td>${a.cnt}</td>
     <td class="muted">${a.first_date||'—'} → ${a.last_date||'—'}</td>
-    <td><input type="checkbox" ${a.exclude?'':'checked'} onchange="toggleAcct(${a.id}, this.checked)"></td></tr>`).join('')
-    : '<tr><td colspan=5 class="empty">No accounts yet</td></tr>';
+    <td><input type="checkbox" ${a.exclude?'':'checked'} onchange="toggleAcct(${a.id}, this.checked)"></td></tr>`;
+  }).join('')
+    : '<tr><td colspan=6 class="empty">No accounts yet</td></tr>';
+}
+async function setAcctKind(id, kind){
+  await api('/accounts/'+id+'?kind='+kind,{method:'PATCH'});
+  toast('Account type set to '+kind);
 }
 async function toggleAcct(id, include){
   await api('/accounts/'+id+'?exclude='+(!include),{method:'PATCH'});

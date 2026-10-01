@@ -809,12 +809,16 @@ def get_accounts():
 
 
 @app.patch("/api/accounts/{acct_id}")
-def patch_account(acct_id: int, exclude: bool = None, name: str = None):
+def patch_account(acct_id: int, exclude: bool = None, name: str = None, kind: str = None):
     with db() as con:
         if exclude is not None:
             con.execute("UPDATE accounts SET exclude=? WHERE id=?", (1 if exclude else 0, acct_id))
         if name:
             con.execute("UPDATE accounts SET name=? WHERE id=?", (name, acct_id))
+        if kind:
+            if kind not in ("checking", "savings", "credit"):
+                raise HTTPException(400, "kind must be checking|savings|credit")
+            con.execute("UPDATE accounts SET kind=? WHERE id=?", (kind, acct_id))
     return {"ok": True}
 
 
