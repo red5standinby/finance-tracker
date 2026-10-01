@@ -319,6 +319,7 @@ window.DEMO = true;
     else if(path.startsWith('/accounts')) body = d.accounts;
     else if(path.startsWith('/budgets')) body = d.budgets;
     else if(path.startsWith('/trends')) body = d.trends;
+    else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
     else if(path.startsWith('/transactions')) body = d.transactions;
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
@@ -347,6 +348,7 @@ window.DEMO = true;
   <nav>
     <button data-tab="dash" class="active">Dashboard</button>
     <button data-tab="trends">Trends</button>
+    <button data-tab="savings">Savings</button>
     <button data-tab="txns">Transactions</button>
     <button data-tab="rules">Rules</button>
   </nav>
@@ -479,6 +481,15 @@ window.DEMO = true;
     <div id="t-trend-chart"></div>
     <div class="muted" id="t-trend-legend" style="font-size:12px;margin-top:6px"></div>
   </div>
+</section>
+
+<!-- ============ SAVINGS ============ -->
+<section id="tab-savings" class="hidden">
+  <div class="panel">
+    <h2>Savings &amp; Reserves <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· money in/out of savings is a transfer, kept out of cash-flow totals</span></h2>
+    <div class="grid cards" id="sav-cards"></div>
+  </div>
+  <div id="sav-panels"></div>
 </section>
 
 <!-- ============ TRANSACTIONS ============ -->
@@ -685,9 +696,10 @@ function jpost(path, body){
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','txns','rules','import'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
+  if(name==='savings') loadSavings();
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
   if(name==='import'){ loadImports(); loadAcctList(); }
@@ -942,6 +954,48 @@ function renderMonths(months){
   $('#month-chart').innerHTML = svg +
     `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>
      <span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
+}
+
+// ---------- savings ----------
+async function loadSavings(){
+  const d = await api('/savings');
+  const t = d.totals || {};
+  const cards = [
+    ['Reserve accounts', String(t.count||0), ''],
+    ['Total deposits', fmt(t.deposits||0), 'pos'],
+    ['Total withdrawals', fmt(t.withdrawals||0), 'neg'],
+    ['Interest earned', fmt(t.interest||0), 'pos'],
+  ];
+  $('#sav-cards').innerHTML = cards.map(([lbl,val,cls])=>
+    `<div class="card"><div class="lbl">${lbl}</div><div class="val ${cls}">${val}</div></div>`).join('')
+    + `<div class="card"><div class="lbl">Net change</div><div class="val ${(t.net||0)>=0?'pos':'neg'}">${(t.net||0)<0?'-':''}${fmt(t.net||0)}</div></div>`;
+  if(!d.accounts.length){
+    $('#sav-panels').innerHTML = '<div class="panel"><div class="empty">No savings accounts</div></div>';
+    return;
+  }
+  $('#sav-panels').innerHTML = d.accounts.map(a=>{
+    const rows = (a.series||[]).slice().reverse().slice(0,6).map(x=>
+      `<tr><td>${x.date||''}</td><td class="sav-desc">${esc(x.description||'')}</td>
+       <td class="${x.amount>=0?'pos':'neg'}" style="text-align:right">${x.amount<0?'-':''}${fmt(x.amount)}</td></tr>`).join('')
+      || '<tr><td colspan=3 class="empty">No activity</td></tr>';
+    return `<div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0">${esc(a.name)} <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">${esc(a.bank||'')}</span></h2>
+        <span class="muted" style="font-size:12px">${a.count||0} txns${a.last_date?' · last '+a.last_date:''}</span>
+      </div>
+      <div class="grid cards" style="margin:14px 0">
+        <div class="card"><div class="lbl">Deposits</div><div class="val pos">${fmt(a.deposits)}</div></div>
+        <div class="card"><div class="lbl">Withdrawals</div><div class="val neg">${fmt(a.withdrawals)}</div></div>
+        <div class="card"><div class="lbl">Interest</div><div class="val pos">${fmt(a.interest)}</div></div>
+        <div class="card"><div class="lbl">Net</div><div class="val ${a.net>=0?'pos':'neg'}">${a.net<0?'-':''}${fmt(a.net)}</div></div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th class="no-sort">Date</th><th class="no-sort">Description</th>
+          <th class="no-sort" style="text-align:right">Amount</th></tr></thead>
+          <tbody>${rows}</tbody></table>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ---------- trends ----------

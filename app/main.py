@@ -743,6 +743,62 @@ def delete_category(key: str):
 
 # ---------- accounts / rules / misc ----------
 
+@app.get("/api/savings")
+def get_savings(accounts: str | None = None):
+    """Savings/reserve accounts with deposits, withdrawals, interest and net flows.
+
+    Savings accounts are separated from the cash-flow dashboard: money moved in or
+    out is a transfer, not income/expense. This endpoint summarises each savings
+    account independently.
+    """
+    ids = [int(x) for x in accounts.split(",") if x.strip().isdigit()] if accounts else []
+    where = "WHERE a.kind='savings'"
+    params: list = []
+    if ids:
+        where += " AND a.id IN (%s)" % ",".join("?" * len(ids))
+        params += ids
+    with db() as con:
+        accts = con.execute(
+            f"SELECT a.id, a.name, a.bank, a.exclude FROM accounts a {where} ORDER BY a.name",
+            params,
+        ).fetchall()
+        out = []
+        t_in = t_out = t_int = 0.0
+        for a in accts:
+            txns = con.execute(
+                """SELECT t.date, t.description, t.amount, c.key cat_key
+                   FROM transactions t LEFT JOIN categories c ON c.id=t.category_id
+                   WHERE t.account_id=? ORDER BY t.date""",
+                (a["id"],),
+            ).fetchall()
+            deposits = sum(t["amount"] for t in txns if t["amount"] > 0 and t["cat_key"] != "savings_interest")
+            withdrawals = sum(-t["amount"] for t in txns if t["amount"] < 0)
+            interest = sum(t["amount"] for t in txns if t["cat_key"] == "savings_interest" or
+                           (t["amount"] > 0 and "interest" in (t["description"] or "").lower()))
+            net = deposits + interest - withdrawals
+            t_in += deposits; t_out += withdrawals; t_int += interest
+            out.append({
+                "id": a["id"], "name": a["name"], "bank": a["bank"],
+                "deposits": round(deposits, 2),
+                "withdrawals": round(withdrawals, 2),
+                "interest": round(interest, 2),
+                "net": round(net, 2),
+                "count": len(txns),
+                "last_date": txns[-1]["date"] if txns else None,
+                "series": [dict(t) for t in txns],
+            })
+    return {
+        "accounts": out,
+        "totals": {
+            "deposits": round(t_in, 2),
+            "withdrawals": round(t_out, 2),
+            "interest": round(t_int, 2),
+            "net": round(t_in + t_int - t_out, 2),
+            "count": len(out),
+        },
+    }
+
+
 @app.get("/api/accounts")
 def get_accounts():
     with db() as con:

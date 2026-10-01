@@ -269,11 +269,6 @@
     "expense": 1076.62
    },
    {
-    "name": "Gaming Fund",
-    "income": 0,
-    "expense": 76.9
-   },
-   {
     "name": "War Chest",
     "income": 0,
     "expense": 307.6
@@ -437,16 +432,6 @@
    "kind": "checking",
    "exclude": 0,
    "cnt": 527,
-   "first_date": "2026-01-02",
-   "last_date": "2026-09-29"
-  },
-  {
-   "id": 6,
-   "name": "Gaming Fund",
-   "bank": "demo",
-   "kind": "checking",
-   "exclude": 0,
-   "cnt": 171,
    "first_date": "2026-01-02",
    "last_date": "2026-09-29"
   },
@@ -1466,5 +1451,65 @@
    "skipped": 4,
    "created_at": "2026-09-28 10:00:00"
   }
- ]
+ ],
+ "savings": {
+  "accounts": [
+   {
+    "id": 0,
+    "name": "War Chest",
+    "bank": "demo",
+    "deposits": 2000.0,
+    "withdrawals": 2665.0,
+    "interest": 169.67,
+    "net": -495.33,
+    "count": 10,
+    "last_date": "2026-08-31",
+    "series": [
+     {
+      "date": "2026-08-31",
+      "description": "Monthly Interest Paid",
+      "amount": 79.83,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-08-28",
+      "description": "Deposit from ACME PAYROLL",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-08-14",
+      "description": "Deposit from ACME PAYROLL",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-15",
+      "description": "Withdrawal to Checking",
+      "amount": -1565.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-13",
+      "description": "Deposit from ACME PAYROLL",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-28",
+      "description": "Monthly Interest Paid",
+      "amount": 89.84,
+      "cat_key": "savings_interest"
+     }
+    ]
+   }
+  ],
+  "totals": {
+   "deposits": 2000.0,
+   "withdrawals": 2665.0,
+   "interest": 169.67,
+   "net": -495.33,
+   "count": 1
+  }
+ }
 }
