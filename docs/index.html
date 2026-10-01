@@ -50,6 +50,10 @@
   .sb-burger{display:none;align-items:center;justify-content:center;background:none;border:1px solid var(--line);
     color:var(--txt);border-radius:9px;width:38px;height:38px;font-size:17px;cursor:pointer;flex:0 0 38px}
   .sb-burger:hover{background:var(--panel2);border-color:var(--accent)}
+  /* by-account + budgets side by side */
+  .inline-pair{grid-template-columns:1fr 1fr;align-items:start;margin-top:16px}
+  .inline-pair > .panel{margin-top:0}
+  .inline-pair > .card{margin-top:0}
   main{padding:26px;flex:1 1 auto;min-width:0;max-width:1400px;margin:0}
   .grid{display:grid;gap:16px}
   .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
@@ -181,7 +185,7 @@
   .acct-pager button:disabled{opacity:.4;cursor:default}
   .acct-pager .pg-info b{color:var(--txt)}
 
-  .budget-card{margin-top:16px}
+  .budget-card{margin-top:0}
   .budget-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
     flex-wrap:wrap;margin-bottom:14px}
   .budget-head h2{margin:0}
@@ -231,6 +235,7 @@
     #sb-toggle{display:none}
     main{padding:14px}
     .cards{grid-template-columns:1fr 1fr;gap:14px}
+    .inline-pair{grid-template-columns:1fr}
     .grade-card{grid-column:1 / -1}
     .grade-letter{font-size:46px}
     .card{padding:16px}
@@ -429,22 +434,24 @@ window.DEMO = true;
     <div id="month-chart"></div>
   </div>
 
-  <div class="panel">
-    <h2>By Account</h2>
-    <div class="table-wrap acct-wrap">
-    <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Income</th>
-      <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
-      <tbody id="acct-body"></tbody></table>
+  <div class="grid inline-pair">
+    <div class="panel">
+      <h2>By Account</h2>
+      <div class="table-wrap acct-wrap">
+      <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Income</th>
+        <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
+        <tbody id="acct-body"></tbody></table>
+      </div>
+      <div class="acct-pager" id="acct-pager"></div>
     </div>
-    <div class="acct-pager" id="acct-pager"></div>
-  </div>
 
-  <div class="card budget-card" id="budget-card" style="grid-column:1 / -1">
-    <div class="budget-head">
-      <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
-      <div class="budget-sum" id="bg-sum"></div>
+    <div class="card budget-card" id="budget-card">
+      <div class="budget-head">
+        <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
+        <div class="budget-sum" id="bg-sum"></div>
+      </div>
+      <div id="budget-body"><div class="empty">No budgets set</div></div>
     </div>
-    <div id="budget-body"><div class="empty">No budgets set</div></div>
   </div>
 
   <div class="card grade-card" id="grade-card">
@@ -923,7 +930,7 @@ async function loadBudgets(month, acctNames){
 function renderBudgets(){
   const d = _budgets; if(!d) return;
   $('#bg-month').textContent = d.month;
-  const rows = d.rows.filter(r => r.budget > 0 || r.spent > 0);
+  const rows = d.rows.filter(r => r.budget > 0);
   const t = d.totals;
   const pct = t.budget > 0 ? Math.round(t.spent / t.budget * 100) : null;
   $('#bg-sum').innerHTML = t.budget > 0
@@ -933,17 +940,9 @@ function renderBudgets(){
                               : `${fmt(t.budget-t.spent)} left`) + `</b>`
     : '<span class="muted">click “set budget” on a category to start</span>';
 
-  if(!rows.length){ $('#budget-body').innerHTML = '<div class="empty">No spend or budgets this month</div>'; return; }
+  if(!rows.length){ $('#budget-body').innerHTML = '<div class="empty">No active budgets yet — set one on a category</div>'; return; }
   const max = Math.max(1, ...rows.map(r => Math.max(r.budget, r.spent)));
   $('#budget-body').innerHTML = rows.map(r => {
-    if(r.budget <= 0){
-      return `<div class="bg-row bg-none">
-        <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
-        <div class="bg-track"></div>
-        <div class="bg-nums">${fmt(r.spent)} spent
-          <button class="bg-edit" onclick="editBudget('${r.key}')">set budget</button></div>
-      </div>`;
-    }
     const w = Math.min(100, r.spent / max * 100).toFixed(1);
     const cls = budgetClass(r.pct);
     const remTxt = r.remaining < 0
