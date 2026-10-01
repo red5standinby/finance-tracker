@@ -8,8 +8,15 @@
   :root{
     --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044;
     --txt:#e6edf7; --mut:#8899b3; --accent:#4f8cff; --good:#22c55e; --bad:#ef4444;
-    --radius:12px; --hdr:60px;
+    --radius:12px; --hdr:60px; --tint:79,140,255;
   }
+  /* ---------- themes (palette picker swaps data-theme on <html>) ---------- */
+  html[data-theme="midnight"]{ --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044; --txt:#e6edf7; --mut:#8899b3; --accent:#4f8cff; --good:#22c55e; --bad:#ef4444;  --tint:79,140,255;}
+  html[data-theme="rosegold"]{ --bg:#1a1113; --panel:#241820; --panel2:#2e1f28; --line:#3f2b34; --txt:#f7eaf0; --mut:#c4a3b0; --accent:#e8a0a8; --good:#7fc9a3; --bad:#e88a8a;  --tint:232,160,168;}
+  html[data-theme="forest"]{ --bg:#0c1410; --panel:#132119; --panel2:#1a2c22; --line:#26402f; --txt:#e6f2ea; --mut:#8fb3a0; --accent:#4fbf7a; --good:#4fbf7a; --bad:#e07a6a;  --tint:79,191,122;}
+  html[data-theme="sunset"]{ --bg:#170f10; --panel:#221417; --panel2:#2c1a1e; --line:#42262c; --txt:#f7ece6; --mut:#b99a90; --accent:#f0885a; --good:#8fc98a; --bad:#e8666a;  --tint:240,136,90;}
+  html[data-theme="grape"]{ --bg:#120f1c; --panel:#1b1628; --panel2:#241d34; --line:#332a48; --txt:#efeaf7; --mut:#a99cc4; --accent:#9b7bf0; --good:#6fc99a; --bad:#e879a0;  --tint:155,123,240;}
+  html[data-theme="linen"]{ --bg:#f4f1ea; --panel:#ffffff; --panel2:#faf8f3; --line:#e2dccf; --txt:#2b2a26; --mut:#7d7768; --accent:#b08968; --good:#4f9d69; --bad:#c65a4a;  --tint:176,137,104;}
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -22,6 +29,18 @@
   header h1 .lffd{color:var(--accent);font-weight:800}
   header .logo{font-size:23px}
   .spacer{flex:1}
+  /* ---- theme palette picker ---- */
+  .pal-wrap{position:relative}
+  #nav-palette{font-size:17px;line-height:1;padding:8px 11px}
+  .pal-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:8px;display:none;flex-direction:column;gap:2px;min-width:172px;z-index:40;
+    box-shadow:0 12px 30px rgba(0,0,0,.45)}
+  .pal-menu.open{display:flex}
+  .pal-menu button{display:flex;align-items:center;gap:10px;background:transparent;border:0;color:var(--txt);
+    font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;width:100%}
+  .pal-menu button:hover{background:var(--panel2)}
+  .pal-menu button.active{background:var(--panel2);outline:1px solid var(--accent)}
+  .sw{width:15px;height:15px;border-radius:5px;flex:0 0 auto;border:1px solid rgba(var(--tint),.35)}
   /* ---- layout: sidebar + content ---- */
   .layout{display:flex;align-items:stretch;min-height:calc(100vh - var(--hdr))}
   .sidebar{position:sticky;top:var(--hdr);align-self:flex-start;width:220px;flex:0 0 220px;
@@ -41,7 +60,7 @@
   .sidebar.collapsed nav button{justify-content:flex-start;padding:11px 13px;gap:0}
   nav button:hover{color:var(--txt);background:var(--panel2)}
   nav button.active{background:var(--accent);color:#fff;border-color:var(--accent);
-    box-shadow:0 2px 10px rgba(79,140,255,.4)}
+    box-shadow:0 2px 10px rgba(var(--tint),.4)}
   .sb-toggle{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;margin-top:auto;
     background:none;border:1px solid var(--line);color:var(--mut);border-radius:10px;
     padding:9px;cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden}
@@ -82,7 +101,7 @@
     border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;cursor:pointer;user-select:none}
   th.no-sort{cursor:default}
   td{padding:14px 12px;border-bottom:1px solid rgba(36,48,68,.5);vertical-align:middle}
-  tr:hover td{background:rgba(79,140,255,.05)}
+  tr:hover td{background:rgba(var(--tint),.05)}
   .amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
   .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;
     cursor:pointer;white-space:nowrap;border:1px solid transparent}
@@ -133,7 +152,7 @@
   .bar-row .amt{color:var(--mut);font-weight:600}
   .drop{border:2px dashed var(--line);border-radius:var(--radius);padding:34px;text-align:center;
     color:var(--mut);cursor:pointer;transition:.2s;background:var(--panel)}
-  .drop.hot{border-color:var(--accent);background:rgba(79,140,255,.08);color:var(--txt)}
+  .drop.hot{border-color:var(--accent);background:rgba(var(--tint),.08);color:var(--txt)}
   .src{font-size:10px;padding:1px 6px;border-radius:10px;background:var(--panel2);color:var(--mut);
     margin-left:6px;text-transform:uppercase;letter-spacing:.4px}
   .toast{position:fixed;bottom:22px;right:22px;background:var(--panel2);border:1px solid var(--line);
@@ -180,7 +199,7 @@
   .bulk-count{font-weight:700;color:var(--txt);white-space:nowrap}
   /* clickable category bars */
   .bar-row.clickable{cursor:pointer;border-radius:8px;padding:4px 8px;margin:-4px -8px;transition:background .12s}
-  .bar-row.clickable:hover{background:rgba(79,140,255,.09)}
+  .bar-row.clickable:hover{background:rgba(var(--tint),.09)}
   .bar-row .bar-lbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .bar-row:hover .bar-lbl{color:var(--accent)}
 
@@ -338,7 +357,7 @@
   .ms-panel .ms-actions .ms-left{display:flex;gap:4px;flex:0 0 auto}
   .ms-panel .ms-actions button{background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;
     padding:7px 9px;border-radius:7px;color:var(--accent)}
-  .ms-panel .ms-actions button:hover{background:rgba(79,140,255,.12)}
+  .ms-panel .ms-actions button:hover{background:rgba(var(--tint),.12)}
   .ms-panel .ms-actions .ms-apply{flex:1 1 auto;background:var(--accent);color:#fff;
     font-size:14px;font-weight:700;padding:11px 16px;border-radius:8px}
   .ms-panel .ms-actions .ms-apply:hover{filter:brightness(1.12);background:var(--accent)}
@@ -350,6 +369,10 @@
   <span class="logo">◈</span>
   <h1>Luna Family Finance Dashboard <span class="lffd">LFFD</span></h1>
   <div class="spacer"></div>
+  <div class="pal-wrap">
+    <button class="btn ghost" id="nav-palette" title="Theme palette" aria-label="Theme palette">🎨</button>
+    <div class="pal-menu" id="pal-menu"></div>
+  </div>
   <button class="btn" id="nav-import">+ Import</button>
 </header>
 <div class="layout">
@@ -726,6 +749,32 @@ function showTab(name){
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 $('#nav-import').onclick = ()=>showTab('import');
+
+// ---------- theme palette ----------
+(function(){
+  const THEMES = [
+    ['midnight','Midnight',   '#4f8cff'],
+    ['rosegold','Rose Gold',  '#e8a0a8'],
+    ['forest',  'Forest',     '#4fbf7a'],
+    ['sunset',  'Sunset',     '#f0885a'],
+    ['grape',   'Grape',      '#9b7bf0'],
+    ['linen',   'Linen (light)','#b08968'],
+  ];
+  const menu = $('#pal-menu');
+  function apply(id){
+    document.documentElement.setAttribute('data-theme', id);
+    try{ localStorage.setItem('lffd-theme', id); }catch(e){}
+    menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.theme===id));
+  }
+  menu.innerHTML = THEMES.map(([id,name,c])=>
+    `<button data-theme="${id}"><span class="sw" style="background:${c}"></span>${name}</button>`).join('');
+  menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{ apply(b.dataset.theme); menu.classList.remove('open'); });
+  $('#nav-palette').onclick = (e)=>{ e.stopPropagation(); menu.classList.toggle('open'); };
+  document.addEventListener('click',(e)=>{ if(!e.target.closest('.pal-wrap')) menu.classList.remove('open'); });
+  let saved=null; try{ saved=localStorage.getItem('lffd-theme'); }catch(e){}
+  const urlTheme = new URLSearchParams(location.search).get('theme');
+  apply(urlTheme || saved || 'midnight');
+})();
 // sidebar collapse toggle + mobile burger
 (function(){
   const sb=$('#sidebar');
@@ -996,14 +1045,14 @@ function renderMonths(months){
   const W=760,H=220,pad=34, bw=(W-pad*2)/shown.length;
   const max = Math.max(1, ...shown.map(m=>Math.max(m.income,m.expense)));
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
-  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#243044"/>`;
+  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--line)"/>`;
   shown.forEach((m,i)=>{
     const x = pad + i*bw;
     const ih = (m.income/max)*(H-pad*2);
     const eh = (m.expense/max)*(H-pad*2);
     svg += `<rect x="${x+bw*0.14}" y="${H-pad-ih}" width="${bw*0.32}" height="${ih}" rx="3" fill="#22c55e"/>`;
     svg += `<rect x="${x+bw*0.52}" y="${H-pad-eh}" width="${bw*0.32}" height="${eh}" rx="3" fill="#ef4444"/>`;
-    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="#8899b3" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
+    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="var(--mut)" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
   });
   svg += '</svg>';
   $('#month-chart').innerHTML = svg +
@@ -1161,11 +1210,11 @@ function renderPie(d){
     const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
     const xi1=cx+r*Math.cos(a1), yi1=cy+r*Math.sin(a1);
     const xi0=cx+r*Math.cos(a0), yi0=cy+r*Math.sin(a0);
-    svg += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${c.color}" stroke="#0b0f17" stroke-width="1.5"><title>${esc(c.name)}: ${fmt(c.total)} (${(frac*100).toFixed(1)}%)</title></path>`;
+    svg += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${c.color}" stroke="var(--bg)" stroke-width="1.5"><title>${esc(c.name)}: ${fmt(c.total)} (${(frac*100).toFixed(1)}%)</title></path>`;
     a0=a1;
   });
-  svg += `<text x="170" y="165" fill="#8899b3" font-size="13" text-anchor="middle">Total spend</text>`;
-  svg += `<text x="170" y="189" fill="#e6edf7" font-size="19" font-weight="700" text-anchor="middle">${fmt(total)}</text>`;
+  svg += `<text x="170" y="165" fill="var(--mut)" font-size="13" text-anchor="middle">Total spend</text>`;
+  svg += `<text x="170" y="189" fill="var(--txt)" font-size="19" font-weight="700" text-anchor="middle">${fmt(total)}</text>`;
   svg += '</svg>';
   $('#t-pie').innerHTML = svg;
   _pieRows = cats; _piePage = 0; _pieTotal = total;
@@ -1227,13 +1276,13 @@ function renderTrendChart(d){
   const W=760,H=240,pad=36, bw=(W-pad*2)/ms.length;
   const max = Math.max(1, ...ms.map(m=>Math.max(m.income,m.expense)));
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
-  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="#243044"/>`;
+  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--line)"/>`;
   ms.forEach((m,i)=>{
     const x = pad + i*bw;
     const ih=(m.income/max)*(H-pad*2), eh=(m.expense/max)*(H-pad*2);
     svg += `<rect x="${x+bw*0.16}" y="${H-pad-ih}" width="${bw*0.30}" height="${ih}" rx="3" fill="#22c55e"><title>${m.month} income ${fmt(m.income)}</title></rect>`;
     svg += `<rect x="${x+bw*0.54}" y="${H-pad-eh}" width="${bw*0.30}" height="${eh}" rx="3" fill="#ef4444"><title>${m.month} spend ${fmt(m.expense)}</title></rect>`;
-    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="#8899b3" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
+    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="var(--mut)" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
   });
   svg += '</svg>';
   $('#t-trend-chart').innerHTML = svg;
@@ -1277,7 +1326,7 @@ async function loadTxns(page){
   $('#txn-body').innerHTML = d.items.length ? d.items.map(t=>{
     const c = catByKey(t.ckey);
     const src = t.category_source!=='rule' ? `<span class="src">${t.category_source}</span>` : '';
-    const rowBg = SELECTED.has(t.id) ? ' style="background:rgba(79,140,255,.10)"' : '';
+    const rowBg = SELECTED.has(t.id) ? ' style="background:rgba(var(--tint),.10)"' : '';
     return `<tr${rowBg}>
       <td><input type="checkbox" class="row-chk" ${SELECTED.has(t.id)?'checked':''} onchange="toggleRow(${t.id}, this.checked)"></td>
       <td class="muted">${t.date}</td>
@@ -1338,12 +1387,12 @@ function updateSortIndicators(){
 // ---------- selection + bulk ----------
 function toggleRow(id, on){ on ? SELECTED.add(id) : SELECTED.delete(id);
   const row = document.querySelector(`.row-chk[onchange*="toggleRow(${id},"]`)?.closest('tr');
-  if(row) row.style.background = on ? 'rgba(79,140,255,.10)' : '';
+  if(row) row.style.background = on ? 'rgba(var(--tint),.10)' : '';
   syncSelectAll(); updateBulkBar(); }
 function toggleSelectAll(on){
   PAGE_ITEMS.forEach(t=> on ? SELECTED.add(t.id) : SELECTED.delete(t.id));
   document.querySelectorAll('.row-chk').forEach(cb=>cb.checked=on);
-  document.querySelectorAll('#txn-body tr').forEach(tr=>tr.style.background = on?'rgba(79,140,255,.10)':'');
+  document.querySelectorAll('#txn-body tr').forEach(tr=>tr.style.background = on?'rgba(var(--tint),.10)':'');
   updateBulkBar();
 }
 function clearSelection(){ SELECTED.clear(); document.querySelectorAll('.row-chk').forEach(cb=>cb.checked=false);
