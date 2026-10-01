@@ -429,20 +429,20 @@ window.DEMO = true;
       <div class="muted" style="font-size:12px" id="k-unc-amt"></div></div>
   </div>
 
-  <div class="panel">
-    <div class="panel-head">
+  <div class="grid inline-pair">
+    <div class="panel">
       <h2>Spending by Category <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a bar to see its transactions</span></h2>
-      <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
+      <div class="bars" id="cat-bars"></div>
+      <div class="legend" id="cat-legend"></div>
     </div>
-    <div class="bars" id="cat-bars"></div>
-  </div>
 
-  <div class="panel">
-    <div class="panel-head">
-      <h2>Income vs Expenses by Month</h2>
-      <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Income vs Expenses by Month</h2>
+        <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
+      </div>
+      <div id="month-chart"></div>
     </div>
-    <div id="month-chart"></div>
   </div>
 
   <div class="grid inline-pair">
@@ -857,19 +857,16 @@ async function loadDashboard(){
   $('#k-unc').textContent = d.uncategorized.count;
   $('#k-unc-amt').textContent = d.uncategorized.count ? fmt(d.uncategorized.amount)+' to review' : 'all tagged';
 
-  // category bars (top 3; clickable -> jump to filtered transactions)
+  // category bars (clickable -> jump to filtered transactions)
   const cats = d.categories.filter(c=>c.kind!=='income');
-  const CAT_SHOWN = 3;
-  const shown = cats.slice(0, CAT_SHOWN);
-  const max = Math.max(1, ...shown.map(c=>c.total));
-  $('#cat-bars').innerHTML = (shown.length ? shown.map(c=>`
+  const max = Math.max(1, ...cats.map(c=>c.total));
+  $('#cat-bars').innerHTML = cats.length ? cats.map(c=>`
     <div class="bar-row clickable" onclick="gotoCategory('${c.key}')" title="View ${esc(c.name)} transactions">
       <span class="bar-lbl">${esc(c.name)}</span>
       <div class="bar-track"><div class="bar-fill"
         style="width:${(c.total/max*100).toFixed(1)}%;background:${c.color}"></div></div>
       <span class="amt">${fmt(c.total)}</span>
-    </div>`).join('') : '<div class="empty">No expense data in range</div>')
-    + (cats.length > CAT_SHOWN ? `<div class="more-row"><button class="btn ghost sm" onclick="gotoTrends()">${cats.length-CAT_SHOWN} more categories — View more ↗</button></div>` : '');
+    </div>`).join('') : '<div class="empty">No expense data in range</div>';
 
   // monthly chart
   renderMonths(d.months);
