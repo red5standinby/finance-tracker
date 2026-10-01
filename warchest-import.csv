@@ -1,0 +1,59 @@
+Transaction Date,Post Date,Description,Category,Type,Amount,Memo
+2026-01-02,2026-01-02,BLUEFORGE ALLIAN,,Transfer,1500.00,balance 43337.65
+2026-01-03,2026-01-03,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1500.00,balance 41837.65
+2026-01-05,2026-01-05,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-719.00,balance 41118.65
+2026-01-06,2026-01-06,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-302.00,balance 40816.65
+2026-01-09,2026-01-09,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-380.00,balance 40436.65
+2026-01-13,2026-01-13,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-883.00,balance 39153.65
+2026-01-13,2026-01-13,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-400.00,balance 40036.65
+2026-01-16,2026-01-16,BLUEFORGE ALLIAN,,Transfer,500.00,balance 39653.65
+2026-01-21,2026-01-21,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-500.00,balance 39153.65
+2026-01-30,2026-01-30,BLUEFORGE ALLIAN,,Transfer,500.00,balance 39653.65
+2026-01-31,2026-01-31,Monthly Interest Paid,,Interest,111.36,balance 39765.01
+2026-02-04,2026-02-04,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-3000.00,balance 36765.01
+2026-02-05,2026-02-05,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-700.00,balance 36065.01
+2026-02-08,2026-02-08,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-70.00,balance 35632.26
+2026-02-08,2026-02-08,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-362.75,balance 35702.26
+2026-02-10,2026-02-10,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-375.00,balance 35257.26
+2026-02-13,2026-02-13,BLUEFORGE ALLIAN,,Transfer,500.00,balance 35757.26
+2026-02-19,2026-02-19,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-500.00,balance 35257.26
+2026-02-21,2026-02-21,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-100.00,balance 35157.26
+2026-02-27,2026-02-27,BLUEFORGE ALLIAN,,Transfer,500.00,balance 35657.26
+2026-02-28,2026-02-28,Monthly Interest Paid,,Interest,89.84,balance 35747.10
+2026-03-09,2026-03-09,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-500.00,balance 35247.10
+2026-03-13,2026-03-13,BLUEFORGE ALLIAN,,Transfer,500.00,balance 35747.10
+2026-03-15,2026-03-15,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1565.00,balance 34182.10
+2026-03-27,2026-03-27,BLUEFORGE ALLIAN,,Transfer,500.00,balance 34682.10
+2026-03-31,2026-03-31,Monthly Interest Paid,,Interest,94.54,balance 34776.64
+2026-04-03,2026-04-03,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1650.00,balance 33126.64
+2026-04-09,2026-04-09,Deposit from 360 Checking XXXXXXX2020,,Transfer,1650.00,balance 34776.64
+2026-04-10,2026-04-10,BLUEFORGE ALLIAN,,Transfer,500.00,balance 35276.64
+2026-04-20,2026-04-20,IRS,,Transfer,-5762.00,balance 29514.64
+2026-04-23,2026-04-23,"$1,017.00 Check deposit",,Check deposit,1017.00,balance 30531.64
+2026-04-24,2026-04-24,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31031.64
+2026-04-30,2026-04-30,Monthly Interest Paid,,Interest,85.07,balance 31116.71
+2026-05-02,2026-05-02,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1200.00,balance 29466.71
+2026-05-02,2026-05-02,Withdrawal to Gaming Fund XXXXX3427,,Transfer,-450.00,balance 30666.71
+2026-05-05,2026-05-05,Deposit from 360 Checking XXXXXXX2020,,Transfer,1650.00,balance 31116.71
+2026-05-08,2026-05-08,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31616.71
+2026-05-22,2026-05-22,BLUEFORGE ALLIAN,,Transfer,500.00,balance 32116.71
+2026-05-31,2026-05-31,Monthly Interest Paid,,Interest,81.66,balance 30548.37
+2026-05-31,2026-05-31,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1650.00,balance 30466.71
+2026-06-05,2026-06-05,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31048.37
+2026-06-07,2026-06-07,Withdrawal to Gaming Fund XXXXX3427,,Transfer,-450.00,balance 32248.37
+2026-06-07,2026-06-07,Deposit from 360 Checking XXXXXXX2020,,Transfer,1650.00,balance 32698.37
+2026-06-18,2026-06-18,BLUEFORGE ALLIAN,,Transfer,500.00,balance 32748.37
+2026-06-30,2026-06-30,Monthly Interest Paid,,Interest,78.31,balance 32826.68
+2026-07-03,2026-07-03,BLUEFORGE ALLIAN,,Transfer,500.00,balance 33326.68
+2026-07-17,2026-07-17,BLUEFORGE ALLIAN,,Transfer,500.00,balance 33826.68
+2026-07-22,2026-07-22,Deposit from 360 Checking XXXXXXX2020,,Transfer,520.00,balance 30822.91
+2026-07-22,2026-07-22,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-3523.77,balance 30302.91
+2026-07-31,2026-07-31,Monthly Interest Paid,,Interest,81.90,balance 31404.81
+2026-07-31,2026-07-31,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31322.91
+2026-08-14,2026-08-14,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31904.81
+2026-08-28,2026-08-28,BLUEFORGE ALLIAN,,Transfer,500.00,balance 32404.81
+2026-08-31,2026-08-31,Monthly Interest Paid,,Interest,79.83,balance 32484.64
+2026-09-01,2026-09-01,Withdrawal to 360 Checking XXXXXXX2020,,Transfer,-1450.00,balance 31034.64
+2026-09-11,2026-09-11,BLUEFORGE ALLIAN,,Transfer,500.00,balance 31534.64
+2026-09-21,2026-09-21,Deposit from 360 Checking XXXXXXX2020,,Transfer,1450.00,balance 32984.64
+2026-09-25,2026-09-25,BLUEFORGE ALLIAN,,Transfer,500.00,balance 33484.64

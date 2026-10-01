@@ -1455,43 +1455,133 @@
  "savings": {
   "accounts": [
    {
-    "id": 0,
+    "id": 11,
     "name": "War Chest",
-    "bank": "demo",
-    "deposits": 2000.0,
-    "withdrawals": 2665.0,
-    "interest": 169.67,
-    "net": -495.33,
-    "count": 10,
-    "last_date": "2026-08-31",
+    "bank": "capital_one",
+    "deposits": 18937.0,
+    "withdrawals": 27992.52,
+    "interest": 702.51,
+    "net": -8353.01,
+    "count": 58,
+    "last_date": "2026-09-25",
     "series": [
      {
-      "date": "2026-08-31",
+      "date": "2026-01-02",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 1500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-03",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-05",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -719.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-06",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -302.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-09",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -380.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-13",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -883.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-13",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -400.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-16",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-21",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-30",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-01-31",
       "description": "Monthly Interest Paid",
-      "amount": 79.83,
+      "amount": 111.36,
       "cat_key": "savings_interest"
      },
      {
-      "date": "2026-08-28",
-      "description": "Deposit from ACME PAYROLL",
+      "date": "2026-02-04",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -3000.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-05",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -700.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-08",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -70.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-08",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -362.75,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-10",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -375.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-02-13",
+      "description": "BLUEFORGE ALLIAN",
       "amount": 500.0,
       "cat_key": "transfer"
      },
      {
-      "date": "2026-08-14",
-      "description": "Deposit from ACME PAYROLL",
-      "amount": 500.0,
+      "date": "2026-02-19",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -500.0,
       "cat_key": "transfer"
      },
      {
-      "date": "2026-03-15",
-      "description": "Withdrawal to Checking",
-      "amount": -1565.0,
+      "date": "2026-02-21",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -100.0,
       "cat_key": "transfer"
      },
      {
-      "date": "2026-03-13",
-      "description": "Deposit from ACME PAYROLL",
+      "date": "2026-02-27",
+      "description": "BLUEFORGE ALLIAN",
       "amount": 500.0,
       "cat_key": "transfer"
      },
@@ -1500,15 +1590,237 @@
       "description": "Monthly Interest Paid",
       "amount": 89.84,
       "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-03-09",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-13",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-15",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1565.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-27",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-03-31",
+      "description": "Monthly Interest Paid",
+      "amount": 94.54,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-04-03",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1650.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-04-09",
+      "description": "Deposit from 360 Checking XXXXXXX2020",
+      "amount": 1650.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-04-10",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-04-20",
+      "description": "IRS",
+      "amount": -5762.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-04-23",
+      "description": "$1,017.00 Check deposit",
+      "amount": 1017.0,
+      "cat_key": "uncategorized"
+     },
+     {
+      "date": "2026-04-24",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-04-30",
+      "description": "Monthly Interest Paid",
+      "amount": 85.07,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-05-02",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1200.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-05-02",
+      "description": "Withdrawal to Gaming Fund XXXXX3427",
+      "amount": -450.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-05-05",
+      "description": "Deposit from 360 Checking XXXXXXX2020",
+      "amount": 1650.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-05-08",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-05-22",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-05-31",
+      "description": "Monthly Interest Paid",
+      "amount": 81.66,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-05-31",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1650.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-06-05",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-06-07",
+      "description": "Withdrawal to Gaming Fund XXXXX3427",
+      "amount": -450.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-06-07",
+      "description": "Deposit from 360 Checking XXXXXXX2020",
+      "amount": 1650.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-06-18",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-06-30",
+      "description": "Monthly Interest Paid",
+      "amount": 78.31,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-07-03",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-07-17",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-07-22",
+      "description": "Deposit from 360 Checking XXXXXXX2020",
+      "amount": 520.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-07-22",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -3523.77,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-07-31",
+      "description": "Monthly Interest Paid",
+      "amount": 81.9,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-07-31",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-08-14",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-08-28",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-08-31",
+      "description": "Monthly Interest Paid",
+      "amount": 79.83,
+      "cat_key": "savings_interest"
+     },
+     {
+      "date": "2026-09-01",
+      "description": "Withdrawal to 360 Checking XXXXXXX2020",
+      "amount": -1450.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-09-11",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-09-21",
+      "description": "Deposit from 360 Checking XXXXXXX2020",
+      "amount": 1450.0,
+      "cat_key": "transfer"
+     },
+     {
+      "date": "2026-09-25",
+      "description": "BLUEFORGE ALLIAN",
+      "amount": 500.0,
+      "cat_key": "transfer"
      }
     ]
    }
   ],
   "totals": {
-   "deposits": 2000.0,
-   "withdrawals": 2665.0,
-   "interest": 169.67,
-   "net": -495.33,
+   "deposits": 18937.0,
+   "withdrawals": 27992.52,
+   "interest": 702.51,
+   "net": -8353.01,
    "count": 1
   }
  }
