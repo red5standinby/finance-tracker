@@ -759,7 +759,7 @@ def get_savings(accounts: str | None = None):
         params += ids
     with db() as con:
         accts = con.execute(
-            f"SELECT a.id, a.name, a.bank, a.exclude FROM accounts a {where} ORDER BY a.name",
+            f"SELECT a.id, a.name, a.bank, a.exclude, a.balance, a.balance_date FROM accounts a {where} ORDER BY a.name",
             params,
         ).fetchall()
         out = []
@@ -776,6 +776,12 @@ def get_savings(accounts: str | None = None):
             interest = sum(t["amount"] for t in txns if t["cat_key"] == "savings_interest" or
                            (t["amount"] > 0 and "interest" in (t["description"] or "").lower()))
             net = deposits + interest - withdrawals
+            # current balance = stored anchor + activity after the anchor date
+            balance = None
+            if a["balance"] is not None:
+                bdate = a["balance_date"] or ""
+                post = sum(t["amount"] for t in txns if (t["date"] or "") > bdate)
+                balance = round(a["balance"] + post, 2)
             t_in += deposits; t_out += withdrawals; t_int += interest
             out.append({
                 "id": a["id"], "name": a["name"], "bank": a["bank"],
@@ -783,6 +789,8 @@ def get_savings(accounts: str | None = None):
                 "withdrawals": round(withdrawals, 2),
                 "interest": round(interest, 2),
                 "net": round(net, 2),
+                "balance": balance,
+                "balance_date": a["balance_date"],
                 "count": len(txns),
                 "last_date": txns[-1]["date"] if txns else None,
                 "series": [dict(t) for t in txns],
@@ -794,6 +802,7 @@ def get_savings(accounts: str | None = None):
             "withdrawals": round(t_out, 2),
             "interest": round(t_int, 2),
             "net": round(t_in + t_int - t_out, 2),
+            "balance": round(sum(a["balance"] for a in out if a["balance"] is not None), 2),
             "count": len(out),
         },
     }
@@ -820,6 +829,23 @@ def patch_account(acct_id: int, exclude: bool = None, name: str = None, kind: st
                 raise HTTPException(400, "kind must be checking|savings|credit")
             con.execute("UPDATE accounts SET kind=? WHERE id=?", (kind, acct_id))
     return {"ok": True}
+
+
+class BalanceBody(BaseModel):
+    balance: float
+    balance_date: str | None = None
+
+
+@app.post("/api/accounts/{acct_id}/balance")
+def set_account_balance(acct_id: int, body: BalanceBody):
+    from datetime import date as _date
+    bdate = body.balance_date or _date.today().isoformat()
+    with db() as con:
+        cur = con.execute("UPDATE accounts SET balance=?, balance_date=? WHERE id=?",
+                          (body.balance, bdate, acct_id))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "account not found")
+    return {"ok": True, "balance": body.balance, "balance_date": bdate}
 
 
 @app.get("/api/rules")

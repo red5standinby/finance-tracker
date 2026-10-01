@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS accounts (
     name TEXT NOT NULL UNIQUE,
     bank TEXT DEFAULT '',
     kind TEXT DEFAULT 'checking',   -- checking|savings|credit
-    exclude INTEGER DEFAULT 0       -- 1 = ignore in totals (e.g. Warchest)
+    exclude INTEGER DEFAULT 0,      -- 1 = ignore in totals (e.g. Warchest)
+    balance REAL DEFAULT NULL,      -- current balance (savings/reserve accounts)
+    balance_date TEXT DEFAULT NULL  -- date the balance was last confirmed
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -129,6 +131,12 @@ def init_db(seed_categories: Iterable[dict]):
         cols = {r[1] for r in con.execute("PRAGMA table_info(categories)")}
         if "hidden" not in cols:
             con.execute("ALTER TABLE categories ADD COLUMN hidden INTEGER DEFAULT 0")
+        # migration: add balance/balance_date to older DBs
+        acols = {r[1] for r in con.execute("PRAGMA table_info(accounts)")}
+        if "balance" not in acols:
+            con.execute("ALTER TABLE accounts ADD COLUMN balance REAL DEFAULT NULL")
+        if "balance_date" not in acols:
+            con.execute("ALTER TABLE accounts ADD COLUMN balance_date TEXT DEFAULT NULL")
         # seed built-in categories (INSERT OR IGNORE keeps any user edits/creations)
         for c in seed_categories:
             con.execute(

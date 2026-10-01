@@ -1813,7 +1813,9 @@
       "amount": 500.0,
       "cat_key": "transfer"
      }
-    ]
+    ],
+    "balance": null,
+    "balance_date": null
    }
   ],
   "totals": {
@@ -1821,7 +1823,8 @@
    "withdrawals": 27992.52,
    "interest": 702.51,
    "net": -8353.01,
-   "count": 1
+   "count": 1,
+   "balance": 0
   }
  }
 }
