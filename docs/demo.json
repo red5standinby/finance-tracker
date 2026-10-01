@@ -269,34 +269,14 @@
     "expense": 1076.62
    },
    {
-    "name": "360 Checking",
-    "income": 0,
-    "expense": 615.21
-   },
-   {
     "name": "Gaming Fund",
     "income": 0,
     "expense": 76.9
    },
    {
-    "name": "Vacation",
-    "income": 0,
-    "expense": 153.8
-   },
-   {
     "name": "War Chest",
     "income": 0,
     "expense": 307.6
-   },
-   {
-    "name": "Pet Deposit",
-    "income": 0,
-    "expense": 46.14
-   },
-   {
-    "name": "Jaime FUNds",
-    "income": 0,
-    "expense": 92.28
    }
   ],
   "uncategorized": {
@@ -461,16 +441,6 @@
    "last_date": "2026-09-29"
   },
   {
-   "id": 5,
-   "name": "360 Checking",
-   "bank": "demo",
-   "kind": "checking",
-   "exclude": 0,
-   "cnt": 431,
-   "first_date": "2026-01-02",
-   "last_date": "2026-09-29"
-  },
-  {
    "id": 6,
    "name": "Gaming Fund",
    "bank": "demo",
@@ -481,42 +451,12 @@
    "last_date": "2026-09-29"
   },
   {
-   "id": 7,
-   "name": "Vacation",
-   "bank": "demo",
-   "kind": "checking",
-   "exclude": 0,
-   "cnt": 353,
-   "first_date": "2026-01-02",
-   "last_date": "2026-09-29"
-  },
-  {
    "id": 8,
    "name": "War Chest",
    "bank": "demo",
    "kind": "checking",
    "exclude": 0,
    "cnt": 158,
-   "first_date": "2026-01-02",
-   "last_date": "2026-09-29"
-  },
-  {
-   "id": 9,
-   "name": "Pet Deposit",
-   "bank": "demo",
-   "kind": "checking",
-   "exclude": 0,
-   "cnt": 503,
-   "first_date": "2026-01-02",
-   "last_date": "2026-09-29"
-  },
-  {
-   "id": 10,
-   "name": "Jaime FUNds",
-   "bank": "demo",
-   "kind": "checking",
-   "exclude": 0,
-   "cnt": 434,
    "first_date": "2026-01-02",
    "last_date": "2026-09-29"
   }

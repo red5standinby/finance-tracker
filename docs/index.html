@@ -275,9 +275,10 @@
   .ms-btn .ms-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ms-btn .ms-caret{opacity:.6;font-size:10px;flex:0 0 auto}
   .ms-panel{position:absolute;z-index:40;top:calc(100% + 6px);left:0;right:0;min-width:220px;max-height:340px;
-    overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px;
+    overflow:hidden;background:var(--panel);border:1px solid var(--line);border-radius:10px;
     box-shadow:0 14px 34px rgba(0,0,0,.5);display:none;flex-direction:column}
   .ms-panel.open{display:flex}
+  .ms-list{overflow:auto;flex:1 1 auto;padding:8px}
   .ms-panel .ms-item,.ms-panel label.ms-item{display:flex;flex-direction:row!important;align-items:center;justify-content:space-between;
     gap:12px;width:100%;box-sizing:border-box;padding:11px 12px;border-radius:8px;cursor:pointer;
     font-size:14px;white-space:nowrap;overflow:hidden;color:var(--txt);min-height:44px}
@@ -285,8 +286,16 @@
   .ms-panel .ms-item .ms-text{overflow:hidden;text-overflow:ellipsis;flex:1 1 auto;min-width:0;color:var(--txt)}
   .ms-panel .ms-item input{width:20px;height:20px;flex:0 0 20px;order:2}
   .ms-panel .ms-item:hover{background:var(--panel2)}
-  .ms-panel .ms-actions{display:flex;flex-direction:row;justify-content:space-between;gap:8px;padding:9px 11px 4px;border-top:1px solid var(--line);margin-top:7px}
-  .ms-panel .ms-actions button{background:none;border:none;color:var(--accent);cursor:pointer;font-size:13px;font-weight:600;padding:3px 5px}
+  .ms-panel .ms-actions{display:flex;flex-direction:row;align-items:center;gap:8px;padding:8px 10px;
+    border-top:1px solid var(--line);margin:0;flex:0 0 auto;background:var(--panel2);
+    border-radius:0 0 10px 10px;position:sticky;bottom:-8px}
+  .ms-panel .ms-actions .ms-left{display:flex;gap:4px;flex:0 0 auto}
+  .ms-panel .ms-actions button{background:none;border:none;cursor:pointer;font-size:13px;font-weight:600;
+    padding:7px 9px;border-radius:7px;color:var(--accent)}
+  .ms-panel .ms-actions button:hover{background:rgba(79,140,255,.12)}
+  .ms-panel .ms-actions .ms-apply{flex:1 1 auto;background:var(--accent);color:#fff;
+    font-size:14px;font-weight:700;padding:11px 16px;border-radius:8px}
+  .ms-panel .ms-actions .ms-apply:hover{filter:brightness(1.12);background:var(--accent)}
 </style>
 
 <!-- ===== GitHub Pages demo bootstrap (injected by build_pages.py) ===== -->
@@ -627,17 +636,27 @@ function msRender(id){
     : (m.selected.size===1 ? [...m.selected][0] : `${m.selected.size} selected`);
   m.el.querySelector('.ms-label').textContent = label;
   m.el.querySelector('.ms-panel').innerHTML =
+    `<div class="ms-list">` +
     (m.options.length ? m.options.map(v=>
       `<label class="ms-item"><span class="ms-text">${esc(v)}</span><input type="checkbox" ${m.selected.has(v)?'checked':''} value="${esc(v)}"></label>`).join('')
-      : '<div class="ms-item muted">No accounts</div>')
-    + `<div class="ms-actions"><button type="button" data-ms-all>All</button>
-       <button type="button" data-ms-none>Clear</button></div>`;
+      : '<div class="ms-item muted">No accounts</div>') +
+    `</div>` +
+    `<div class="ms-actions">
+       <div class="ms-left">
+         <button type="button" data-ms-all>All</button>
+         <button type="button" data-ms-none>Clear</button>
+       </div>
+       <button type="button" class="ms-apply" data-ms-apply>Apply</button>
+     </div>`;
   m.el.querySelector('.ms-panel').querySelectorAll('input[type=checkbox]').forEach(cb=>{
     cb.onchange = ()=>{ cb.checked ? m.selected.add(cb.value) : m.selected.delete(cb.value);
       msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
   });
   m.el.querySelector('[data-ms-all]').onclick = ()=>{ m.selected = new Set(m.options); msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
   m.el.querySelector('[data-ms-none]').onclick = ()=>{ m.selected = new Set(); msRender(id); msOpen(id); if(m.onChange) m.onChange(msValues(id)); };
+  m.el.querySelector('[data-ms-apply]').onclick = (e)=>{ e.stopPropagation();
+    const p = m.el.querySelector('.ms-panel'); p.classList.remove('open');
+    if(m.onChange) m.onChange(msValues(id)); };
 }
 function msOpen(id){ const p = MS[id].el.querySelector('.ms-panel'); p.classList.add('open'); }
 function msValues(id){ const m=MS[id]; return m ? [...m.selected] : []; }
