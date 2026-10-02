@@ -154,6 +154,12 @@
   .cx-result img{width:20px;height:20px;border-radius:50%}
   .cx-result .sym{color:var(--mut);font-size:12px}
   .cx-result .rk{margin-left:auto;font-size:11.5px}
+  #cx-top-search{padding-right:34px}
+  .cx-search-clear{position:absolute;top:50%;right:8px;transform:translateY(-50%);
+    width:22px;height:22px;border-radius:50%;border:0;background:var(--panel2);color:var(--mut);
+    font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cx-search-clear:hover{background:var(--bad);color:#fff}
+  .cx-no-coins{padding:14px 12px;font-size:13px;color:var(--mut);text-align:center}
   .btn.sm{padding:6px 12px;font-size:12.5px}
   .more-row{display:flex;justify-content:center;margin-top:10px}
   .more-row .btn{font-size:12.5px}
@@ -772,6 +778,12 @@
 
   <div class="panel">
     <div class="panel-head"><h2>Top 10 <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a row to chart it · ★ to favorite</span></h2></div>
+    <div class="cx-search-wrap" style="margin:0 0 12px">
+      <input type="text" id="cx-top-search" placeholder="🔍 Search any coin — BTC, Solana, Dogecoin…" autocomplete="off"
+             oninput="cxTopSearchInput()" onkeydown="cxTopSearchKey(event)">
+      <button type="button" id="cx-top-clear" class="cx-search-clear hidden" onclick="cxTopSearchClear()" title="Clear search">✕</button>
+      <div id="cx-top-results" class="cx-results hidden"></div>
+    </div>
     <div class="table-wrap">
       <table><thead><tr>
         <th class="no-sort"></th><th class="no-sort">#</th><th class="no-sort">Coin</th>
@@ -901,7 +913,7 @@ function jpost(path, body){
 
 // =================== CRYPTO ===================
 let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto',
-           chartType: 'area', log: false, vol: false, prices: [], candles: [] };
+           chartType: 'area', log: false, vol: false, prices: [], candles: [], filter: '' };
 
 function cxFmt(n, d=2){
   if(n==null || isNaN(n)) return '—';
@@ -985,7 +997,17 @@ function cxRenderQuick(){
 }
 
 function cxRenderTop(){
-  $('#cx-top').innerHTML = CX.markets.map(c=>`
+  const q = (CX.filter || '').trim().toLowerCase();
+  const rows = q
+    ? CX.markets.filter(c => (c.name||'').toLowerCase().includes(q) || (c.symbol||'').toLowerCase().includes(q))
+    : CX.markets;
+  const body = $('#cx-top');
+  if(!rows.length){
+    body.innerHTML = `<tr><td colspan="8" class="cx-no-coins">No top-10 coins match “${q}”. ${
+      ($('#cx-top-search').value.trim().length >= 2) ? 'Pick from the dropdown above to chart any coin.' : ''}</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(c=>`
     <tr onclick="cxPickChart('${c.id}')">
       <td onclick="event.stopPropagation();cxToggleFav('${c.id}')"><span class="cx-star ${CX.favorites.includes(c.id)?'on':''}">★</span></td>
       <td class="muted">${c.rank||''}</td>
@@ -1032,6 +1054,60 @@ function cxPickChart(id){
   $('#cx-coin').value = id;
   cxRenderQuick();
   cxLoadChart(id, $('#cx-days').value);
+}
+
+// ---- Top 10 coin search ----
+let cxTopTimer = null;
+function cxTopSearchInput(){
+  const q = $('#cx-top-search').value.trim();
+  CX.filter = q;
+  $('#cx-top-clear').classList.toggle('hidden', !q);
+  cxRenderTop();
+  const box = $('#cx-top-results');
+  if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  clearTimeout(cxTopTimer);
+  cxTopTimer = setTimeout(()=>cxTopSearch(q), 250);
+}
+async function cxTopSearch(q){
+  const box = $('#cx-top-results');
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="cx-result muted">Searching…</div>';
+  try{
+    const d = await api('/crypto/search?q=' + encodeURIComponent(q));
+    const items = d.results || [];
+    if(!items.length){ box.innerHTML = '<div class="cx-result muted">No coins found.</div>'; return; }
+    box.innerHTML = items.slice(0,8).map(c=>`
+      <div class="cx-result" onclick='cxTopPick(${JSON.stringify(c)})'>
+        ${c.thumb?`<img src="${c.thumb}" alt="" onerror="this.style.display='none'">`:''}
+        <span>${c.name}</span> <span class="sym">${c.symbol}</span>
+        ${c.rank?`<span class="rk muted">#${c.rank}</span>`:''}
+      </div>`).join('');
+  }catch(e){
+    box.innerHTML = `<div class="cx-result muted">Search failed: ${e.message}</div>`;
+  }
+}
+function cxTopSearchKey(e){
+  if(e.key === 'Escape'){ cxTopSearchClear(); return; }
+  if(e.key === 'Enter'){
+    const first = $('#cx-top-results .cx-result[onclick]');
+    if(first) first.click();
+  }
+}
+function cxTopPick(c){
+  $('#cx-top-results').classList.add('hidden');
+  // Make sure the coin is available in the chart selector, then chart it.
+  if(![...$('#cx-coin').options].some(o=>o.value===c.id)){
+    $('#cx-coin').insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.name}</option>`);
+  }
+  toast(`Charting ${c.name} (${c.symbol})`);
+  cxPickChart(c.id);
+}
+function cxTopSearchClear(){
+  $('#cx-top-search').value = '';
+  CX.filter = '';
+  $('#cx-top-clear').classList.add('hidden');
+  $('#cx-top-results').classList.add('hidden');
+  cxRenderTop();
 }
 
 async function cxLoadChart(id, days){
