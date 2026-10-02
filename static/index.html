@@ -142,7 +142,13 @@
   #tab-crypto .panel{min-width:0}
   .cx-wallet-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   .cx-wallet-wrap table{min-width:640px;width:100%}
+  /* wallet + news side by side */
+  .cx-wallet-news{align-items:stretch}
+  .cx-wallet-news > .panel{margin-top:0;min-width:0;display:flex;flex-direction:column}
+  .cx-wallet-news .cx-wallet-wrap table{min-width:520px}
+  @media (max-width:1180px){ .cx-wallet-news{grid-template-columns:1fr} }
   .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
+  .cx-wallet-news #cx-news{overflow-y:auto;max-height:420px;padding-right:4px}
   /* ---- coin search ---- */
   .cx-search-wrap{position:relative}
   .cx-search-wrap input[type=text]{width:100%}
@@ -800,36 +806,38 @@
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-head"><h2>My Wallet</h2>
-      <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
-    <div id="cx-add" class="hidden" style="margin-bottom:12px">
-      <div class="filters">
-        <label class="f-half cx-search-wrap">Coin
-          <input type="text" id="cx-add-search" placeholder="Search any coin — BTC, Solana, Dogecoin…" autocomplete="off">
-          <input type="hidden" id="cx-add-coin">
-          <div id="cx-add-results" class="cx-results hidden"></div>
-          </label>
-          <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
-          <button class="btn" id="cx-add-save" onclick="cxAddSave()" disabled>Save</button>
+  <div class="grid inline-pair cx-wallet-news">
+    <div class="panel">
+      <div class="panel-head"><h2>My Wallet</h2>
+        <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
+      <div id="cx-add" class="hidden" style="margin-bottom:12px">
+        <div class="filters">
+          <label class="f-half cx-search-wrap">Coin
+            <input type="text" id="cx-add-search" placeholder="Search any coin — BTC, Solana, Dogecoin…" autocomplete="off">
+            <input type="hidden" id="cx-add-coin">
+            <div id="cx-add-results" class="cx-results hidden"></div>
+            </label>
+            <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
+            <button class="btn" id="cx-add-save" onclick="cxAddSave()" disabled>Save</button>
+          </div>
+          <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
         </div>
-        <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
-      </div>
-      <div class="table-wrap cx-wallet-wrap">
-        <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
-          <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
-          <tbody id="cx-wallet"></tbody></table>
-      </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head"><h2>News</h2>
-      <div class="cat-pager">
-        <button class="btn ghost cx-news-btn active" data-cat="crypto" onclick="cxNews('crypto')">Crypto</button>
-        <button class="btn ghost cx-news-btn" data-cat="gov" onclick="cxNews('gov')">Gov / Policy</button>
-      </div>
+        <div class="table-wrap cx-wallet-wrap">
+          <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
+            <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
+            <tbody id="cx-wallet"></tbody></table>
+        </div>
     </div>
-    <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>News</h2>
+        <div class="cat-pager">
+          <button class="btn ghost cx-news-btn active" data-cat="crypto" onclick="cxNews('crypto')">Crypto</button>
+          <button class="btn ghost cx-news-btn" data-cat="gov" onclick="cxNews('gov')">Gov / Policy</button>
+        </div>
+      </div>
+      <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+    </div>
   </div>
 </section>
 
