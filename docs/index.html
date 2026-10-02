@@ -123,6 +123,21 @@
     border-radius:8px;padding:6px 9px;font-size:11.5px;color:var(--txt);box-shadow:0 8px 20px rgba(0,0,0,.4);
     z-index:30;white-space:nowrap;display:none}
   .cx-chart-wrap{position:relative}
+  /* portfolio full-width; holdings + 24h in a 2-col row */
+  .cx-portfolio{margin-top:0}
+  .grid.cx-statpair{grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+  .cx-statpair > .card{margin-top:0}
+  .cx-chart-controls{margin-bottom:14px}
+  /* favorites as quick-filter pills */
+  .cx-pills{display:flex;flex-wrap:wrap;gap:8px}
+  .cx-pill{display:inline-flex;align-items:baseline;gap:8px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:999px;padding:7px 14px;cursor:pointer;color:var(--txt);font-size:13px;transition:border-color .12s,background .12s}
+  .cx-pill:hover{border-color:var(--accent)}
+  .cx-pill.active{border-color:var(--accent);background:var(--tint)}
+  .cx-pill .sym{font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--mut)}
+  .cx-pill.active .sym{color:var(--accent)}
+  .cx-pill .px{font-weight:600;font-variant-numeric:tabular-nums}
+  .cx-pill .ch{font-size:12px;font-variant-numeric:tabular-nums}
   /* wallet: let the table scroll horizontally instead of blowing out the panel */
   #tab-crypto .panel{min-width:0}
   .cx-wallet-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
@@ -790,37 +805,21 @@ window.DEMO = true;
 
 <!-- ============ CRYPTO ============ -->
 <section id="tab-crypto" class="hidden">
-  <div class="filters">
-    <label class="f-half">Chart coin
-      <select id="cx-coin"></select></label>
-    <label class="f-half">Range
-      <select id="cx-days">
-        <option value="1">24h</option>
-        <option value="7" selected>7d</option>
-        <option value="30">30d</option>
-        <option value="90">90d</option>
-        <option value="365">1y</option>
-      </select></label>
-    <button class="btn ghost" onclick="loadCrypto()">Refresh</button>
-    <span class="muted" id="cx-updated" style="font-size:12px;align-self:center"></span>
-  </div>
+  <div class="card cx-portfolio"><div class="lbl">Portfolio value</div><div class="val" id="cx-total">$0</div>
+    <div class="muted" style="font-size:12px" id="cx-total-sub">no holdings yet</div></div>
 
-  <div class="grid cards">
-    <div class="card"><div class="lbl">Portfolio value</div><div class="val" id="cx-total">$0</div>
-      <div class="muted" style="font-size:12px" id="cx-total-sub">no holdings yet</div></div>
-    <div class="card"><div class="lbl">24h change</div><div class="val" id="cx-24h">$0</div>
-      <div class="muted" style="font-size:12px" id="cx-24h-pct">—</div></div>
-    <div class="card"><div class="lbl">BTC price</div><div class="val" id="cx-btc">$0</div>
-      <div class="muted" style="font-size:12px" id="cx-btc-chg">—</div></div>
+  <div class="grid cx-statpair">
     <div class="card"><div class="lbl">Holdings</div><div class="val" id="cx-count">0</div>
       <div class="muted" style="font-size:12px">coins tracked</div></div>
+    <div class="card"><div class="lbl">24h change</div><div class="val" id="cx-24h">$0</div>
+      <div class="muted" style="font-size:12px" id="cx-24h-pct">—</div></div>
   </div>
 
   <div class="panel">
     <div class="panel-head">
-      <h2>★ Quick View <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· your favorited coins</span></h2>
+      <h2>★ Favorites <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· tap to chart</span></h2>
     </div>
-    <div class="tv-wrap" id="cx-quick"><div class="muted" style="font-size:13px">Star coins below to pin them here.</div></div>
+    <div class="cx-pills" id="cx-quick"><div class="muted" style="font-size:13px">Star coins in the Top 10 to pin them here.</div></div>
   </div>
 
   <div class="panel">
@@ -835,6 +834,19 @@ window.DEMO = true;
         <div class="cx-toggle" id="cx-log" onclick="cxToggleLog()" title="Logarithmic price scale">Log</div>
         <div class="cx-toggle" id="cx-vol" onclick="cxToggleVol()" title="Volume bars">Vol</div>
       </div>
+    </div>
+    <div class="filters cx-chart-controls">
+      <label class="f-half">Coin <select id="cx-coin"></select></label>
+      <label class="f-half">Range
+        <select id="cx-days">
+          <option value="1">24h</option>
+          <option value="7" selected>7d</option>
+          <option value="30">30d</option>
+          <option value="90">90d</option>
+          <option value="365">1y</option>
+        </select></label>
+      <button class="btn ghost" onclick="loadCrypto()">Refresh</button>
+      <span class="muted" id="cx-updated" style="font-size:12px;align-self:center"></span>
     </div>
     <div class="cx-chart-wrap"><div id="cx-chart" style="width:100%"></div><div class="cx-tip" id="cx-tip"></div></div>
   </div>
@@ -1037,24 +1049,20 @@ function cxRenderSummary(){
   $('#cx-total-sub').textContent = haveHold ? CX.holdings.length + ' coin' + (CX.holdings.length>1?'s':'') + ' in wallet' : 'no holdings yet';
   $('#cx-24h').innerHTML = `<span class="${chg24>=0?'cx-pos':'cx-neg'}">${chg24>=0?'+':''}${cxFmt(chg24)}</span>`;
   $('#cx-24h-pct').textContent = total>0 ? ((chg24/total)*100).toFixed(2)+'% today' : '—';
-  const btc = byId['bitcoin'];
-  if(btc){
-    $('#cx-btc').textContent = cxFmt(btc.price);
-    $('#cx-btc-chg').innerHTML = cxPct(btc.chg_24h) + ' 24h';
-  }
   $('#cx-count').textContent = CX.holdings.length;
 }
 
 function cxRenderQuick(){
   const el = $('#cx-quick');
   const favs = CX.markets.filter(c=>CX.favorites.includes(c.id));
-  if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins below to pin them here.</div>'; return; }
+  if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins in the Top 10 to pin them here.</div>'; return; }
+  const active = $('#cx-coin').value;
   el.innerHTML = favs.map(c=>`
-    <div class="tv-card">
-      <div class="sym">${c.symbol}</div>
-      <div class="px">${cxFmt(c.price)}</div>
-      <div class="ch">${cxPct(c.chg_24h)} 24h</div>
-    </div>`).join('');
+    <button class="cx-pill ${c.id===active?'active':''}" onclick="cxPickChart('${c.id}')" title="Chart ${c.name}">
+      <span class="sym">${c.symbol}</span>
+      <span class="px">${cxFmt(c.price)}</span>
+      <span class="ch ${c.chg_24h>=0?'cx-pos':'cx-neg'}">${c.chg_24h>=0?'+':''}${(c.chg_24h||0).toFixed(2)}%</span>
+    </button>`).join('');
 }
 
 function cxRenderTop(){
@@ -1103,6 +1111,7 @@ async function cxToggleFav(id){
 
 function cxPickChart(id){
   $('#cx-coin').value = id;
+  cxRenderQuick();
   cxLoadChart(id, $('#cx-days').value);
 }
 
