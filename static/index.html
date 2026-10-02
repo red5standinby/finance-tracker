@@ -160,6 +160,11 @@
     font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .cx-search-clear:hover{background:var(--bad);color:#fff}
   .cx-no-coins{padding:14px 12px;font-size:13px;color:var(--mut);text-align:center}
+  #cx-chart-title{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0}
+  .cx-title-star{background:none;border:0;cursor:pointer;padding:0;font-size:17px;line-height:1;
+    color:var(--mut);transition:color .15s,transform .1s}
+  .cx-title-star:hover{transform:scale(1.15);color:var(--good)}
+  .cx-title-star.on{color:#f5c451}
   .btn.sm{padding:6px 12px;font-size:12.5px}
   .more-row{display:flex;justify-content:center;margin-top:10px}
   .more-row .btn{font-size:12.5px}
@@ -1048,12 +1053,36 @@ async function cxToggleFav(id){
     CX.favorites.push(id);
   }
   cxRenderTop(); cxRenderQuick();
+  // Keep the chart-title star in sync if it's the coin on screen.
+  if(CX.chartCoin === id){
+    const name = ($('#cx-coin').selectedOptions[0]||{}).text || id;
+    const lab = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String($('#cx-days').value)] || $('#cx-days').value+'d';
+    cxRenderChartTitle(name, lab, id);
+  }
 }
 
 function cxPickChart(id){
   $('#cx-coin').value = id;
   cxRenderQuick();
   cxLoadChart(id, $('#cx-days').value);
+}
+
+function cxRenderChartTitle(name, label, id){
+  const on = CX.favorites.includes(id);
+  $('#cx-chart-title').innerHTML =
+    `<button class="cx-title-star ${on?'on':''}" onclick="cxToggleChartFav()" `+
+    `title="${on?'Remove from':'Add to'} favorites">${on?'★':'☆'}</button>`+
+    `<span>${name} — ${label}</span>`;
+}
+
+async function cxToggleChartFav(){
+  const id = CX.chartCoin;
+  if(!id) return;
+  await cxToggleFav(id);
+  const name = ($('#cx-coin').selectedOptions[0]||{}).text || id;
+  const lab = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String($('#cx-days').value)] || $('#cx-days').value+'d';
+  cxRenderChartTitle(name, lab, id);
+  toast(CX.favorites.includes(id) ? 'Added to favorites ★' : 'Removed from favorites');
 }
 
 // ---- Top 10 coin search ----
@@ -1097,7 +1126,8 @@ function cxTopPick(c){
   $('#cx-top-results').classList.add('hidden');
   // Make sure the coin is available in the chart selector, then chart it.
   if(![...$('#cx-coin').options].some(o=>o.value===c.id)){
-    $('#cx-coin').insertAdjacentHTML('beforeend', `<option value="${c.id}">${c.name}</option>`);
+    const nice = c.name ? c.name.toLowerCase().replace(/\b\w/g, m=>m.toUpperCase()) : c.id;
+    $('#cx-coin').insertAdjacentHTML('beforeend', `<option value="${c.id}">${nice}</option>`);
   }
   toast(`Charting ${c.name} (${c.symbol})`);
   cxPickChart(c.id);
@@ -1111,9 +1141,10 @@ function cxTopSearchClear(){
 }
 
 async function cxLoadChart(id, days){
+  CX.chartCoin = id;
   const title = ($('#cx-coin').selectedOptions[0]||{}).text || id;
   const label = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String(days)] || days+'d';
-  $('#cx-chart-title').textContent = `${title} — ${label}`;
+  cxRenderChartTitle(title, label, id);
   $('#cx-chart').innerHTML = '<div class="muted" style="font-size:13px">Loading chart…</div>';
   try{
     const d = await api(`/crypto/chart?id=${encodeURIComponent(id)}&days=${days}`);
