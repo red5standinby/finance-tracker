@@ -94,12 +94,13 @@
   .cx-neg{color:var(--bad)}
   .cx-top tr{cursor:pointer}
   .cx-top tr:hover{background:var(--panel2)}
-  .tv-wrap{display:flex;flex-wrap:wrap;gap:10px}
-  .tv-card{flex:1 1 150px;min-width:150px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:10px;padding:12px 14px}
-  .tv-card .sym{font-size:11px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
-  .tv-card .px{font-size:19px;font-weight:600;margin:4px 0;color:var(--txt)}
-  .tv-card .ch{font-size:12.5px;font-variant-numeric:tabular-nums}
+  .tv-wrap{display:flex;flex-wrap:wrap;gap:8px}
+  .tv-card{flex:0 1 128px;min-width:128px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:9px;padding:8px 10px}
+  .tv-card .sym{font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
+  .tv-card .px{font-size:15px;font-weight:600;margin:2px 0;color:var(--txt)}
+  .tv-card .ch{font-size:11px;font-variant-numeric:tabular-nums}
+  .tv-card .cx-spark{margin-top:2px}
   .cx-spark{display:block}
   .cx-news-item{padding:11px 0;border-bottom:1px solid var(--line)}
   .cx-news-item:last-child{border-bottom:0}
@@ -108,6 +109,20 @@
   .cx-news-meta{font-size:11.5px;color:var(--mut);margin-top:4px}
   .cx-win{color:var(--good)} .cx-loss{color:var(--bad)}
   #cx-chart svg{display:block}
+  .cx-tools{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .cx-seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .cx-seg button{background:transparent;border:0;color:var(--mut);padding:5px 11px;font-size:12px;
+    cursor:pointer;border-right:1px solid var(--line)}
+  .cx-seg button:last-child{border-right:0}
+  .cx-seg button:hover{color:var(--txt);background:var(--panel2)}
+  .cx-seg button.active{background:var(--tint);color:var(--txt)}
+  .cx-tools .cx-toggle{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--mut);cursor:pointer;
+    padding:5px 10px;border:1px solid var(--line);border-radius:8px;user-select:none}
+  .cx-tools .cx-toggle.on{color:var(--txt);background:var(--tint)}
+  .cx-tip{position:absolute;pointer-events:none;background:var(--panel);border:1px solid var(--line);
+    border-radius:8px;padding:6px 9px;font-size:11.5px;color:var(--txt);box-shadow:0 8px 20px rgba(0,0,0,.4);
+    z-index:30;white-space:nowrap;display:none}
+  .cx-chart-wrap{position:relative}
   .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
   /* ---- coin search ---- */
   .cx-search-wrap{position:relative}
@@ -423,6 +438,18 @@ window.DEMO = true;
       const id = qs.get('id') || 'bitcoin';
       const series = (cx.charts && cx.charts[id]) || [];
       return {id, days: qs.get('days')||'7', vs:'usd', prices: series};
+    }
+    if(path.startsWith('/crypto/ohlc')){
+      const id = qs.get('id') || 'bitcoin';
+      const series = (cx.charts && cx.charts[id]) || [];
+      // synthesize candles from the price series for the offline demo
+      const candles = series.map((p,i)=>{
+        const o = i? series[i-1][1] : p[1];
+        const c = p[1];
+        const h = Math.max(o,c) * 1.004, l = Math.min(o,c) * 0.996;
+        return [p[0], o, h, l, c];
+      });
+      return {id, days: qs.get('days')||'7', vs:'usd', candles};
     }
     if(path.startsWith('/crypto/news')){
       const cat = qs.get('category') || 'crypto';
@@ -796,8 +823,17 @@ window.DEMO = true;
   <div class="panel">
     <div class="panel-head">
       <h2 id="cx-chart-title">Bitcoin — 7d</h2>
+      <div class="cx-tools">
+        <div class="cx-seg" id="cx-type">
+          <button data-type="area" class="active" onclick="cxSetType('area')">Area</button>
+          <button data-type="line" onclick="cxSetType('line')">Line</button>
+          <button data-type="candle" onclick="cxSetType('candle')">Candles</button>
+        </div>
+        <div class="cx-toggle" id="cx-log" onclick="cxToggleLog()" title="Logarithmic price scale">Log</div>
+        <div class="cx-toggle" id="cx-vol" onclick="cxToggleVol()" title="Volume bars">Vol</div>
+      </div>
     </div>
-    <div id="cx-chart" style="width:100%"></div>
+    <div class="cx-chart-wrap"><div id="cx-chart" style="width:100%"></div><div class="cx-tip" id="cx-tip"></div></div>
   </div>
 
   <div class="panel">
@@ -932,7 +968,8 @@ function jpost(path, body){
 }
 
 // =================== CRYPTO ===================
-let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto' };
+let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto',
+           chartType: 'area', log: false, vol: false, prices: [], candles: [] };
 
 function cxFmt(n, d=2){
   if(n==null || isNaN(n)) return '—';
@@ -1016,7 +1053,7 @@ function cxRenderQuick(){
       <div class="sym">${c.symbol}</div>
       <div class="px">${cxFmt(c.price)}</div>
       <div class="ch">${cxPct(c.chg_24h)} 24h</div>
-      ${cxSparkline(c.spark, 150, 30)}
+      ${cxSparkline(c.spark, 108, 24)}
     </div>`).join('');
 }
 
@@ -1076,50 +1113,172 @@ async function cxLoadChart(id, days){
   $('#cx-chart').innerHTML = '<div class="muted" style="font-size:13px">Loading chart…</div>';
   try{
     const d = await api(`/crypto/chart?id=${encodeURIComponent(id)}&days=${days}`);
-    cxDrawChart(d.prices);
+    CX.prices = d.prices || [];
+    CX.candles = [];
+    if(CX.chartType === 'candle'){
+      const o = await api(`/crypto/ohlc?id=${encodeURIComponent(id)}&days=${days}`);
+      CX.candles = o.candles || [];
+    }
+    cxDrawChart();
   }catch(e){ $('#cx-chart').innerHTML = `<div class="muted">Chart unavailable: ${e.message}</div>`; }
 }
 
-function cxDrawChart(prices){
+function cxSetType(t){
+  CX.chartType = t;
+  document.querySelectorAll('#cx-type button').forEach(b=>b.classList.toggle('active', b.dataset.type===t));
+  if(t === 'candle' && !CX.candles.length){
+    $('#cx-chart').innerHTML = '<div class="muted" style="font-size:13px">Loading candles…</div>';
+    cxLoadChart($('#cx-coin').value, $('#cx-days').value);
+  }else{
+    cxDrawChart();
+  }
+}
+function cxToggleLog(){ CX.log = !CX.log; $('#cx-log').classList.toggle('on', CX.log); cxDrawChart(); }
+function cxToggleVol(){ CX.vol = !CX.vol; $('#cx-vol').classList.toggle('on', CX.vol); cxDrawChart(); }
+
+function cxDrawChart(){
   const el = $('#cx-chart');
-  if(!prices || prices.length < 2){ el.innerHTML = '<div class="muted">No data.</div>'; return; }
-  const W = Math.max(el.clientWidth || 800, 320), H = 300, PAD = 44;
-  const vals = prices.map(p=>p[1]);
-  const min = Math.min(...vals), max = Math.max(...vals), rng = max-min || 1;
-  const n = prices.length;
-  const x = i => PAD + (i/(n-1)) * (W - PAD - 12);
-  const y = v => 12 + (H - PAD - 12) * (1 - (v-min)/rng);
-  const pts = prices.map((p,i)=>`${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
-  const up = vals[n-1] >= vals[0];
-  const col = up ? 'var(--good)' : 'var(--bad)';
+  const tip = $('#cx-tip');
+  if(tip) tip.style.display = 'none';
+  const useCandles = CX.chartType === 'candle' && CX.candles.length >= 2;
+  const prices = CX.prices;
+  if(!useCandles && (!prices || prices.length < 2)){ el.innerHTML = '<div class="muted">No data.</div>'; return; }
+
+  const W = Math.max(el.clientWidth || 800, 320);
+  const volOn = CX.vol;
+  const H = 320;
+  const PAD_L = 52, PAD_R = 14, PAD_T = 12;
+  const volH = volOn ? 54 : 0;
+  const PAD_B = 26 + volH;
+  const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+
+  // build series of {t, o,h,l,c}
+  let bars;
+  if(useCandles){
+    bars = CX.candles.map(c=>({t:c[0], o:c[1], h:c[2], l:c[3], c:c[4], v:null}));
+  }else{
+    bars = prices.map(p=>({t:p[0], c:p[1], v:null}));
+  }
+  const n = bars.length;
+  let vals = useCandles ? bars.flatMap(b=>[b.h,b.l]) : bars.map(b=>b.c);
+  let min = Math.min(...vals), max = Math.max(...vals);
+  if(min === max){ min -= 1; max += 1; }
+  const useLog = CX.log && min > 0;
+  const yScale = v => {
+    if(useLog) return Math.log(v);
+    return v;
+  };
+  const yMin = yScale(min), yMax = yScale(max), yRng = (yMax - yMin) || 1;
+  const x = i => PAD_L + (n===1 ? plotW/2 : (i/(n-1)) * plotW);
+  const yv = v => PAD_T + plotH * (1 - (yScale(v)-yMin)/yRng);
+
+  const up = bars[n-1].c >= (useCandles ? bars[n-1].o : bars[0].c);
+  const mainCol = up ? 'var(--good)' : 'var(--bad)';
+
   // gridlines + y labels
   let grid = '';
   for(let g=0; g<=4; g++){
-    const gv = min + (rng * g/4), gy = y(gv);
-    grid += `<line x1="${PAD}" y1="${gy.toFixed(1)}" x2="${W-12}" y2="${gy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
-    grid += `<text x="${PAD-8}" y="${(gy+4).toFixed(1)}" fill="var(--mut)" font-size="11" text-anchor="end">${cxFmt(gv,0)}</text>`;
+    const frac = g/4;
+    const sv = yMin + yRng*frac;
+    const gv = useLog ? Math.exp(sv) : sv;
+    const gy = PAD_T + plotH*(1-frac);
+    grid += `<line x1="${PAD_L}" y1="${gy.toFixed(1)}" x2="${W-PAD_R}" y2="${gy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
+    grid += `<text x="${PAD_L-8}" y="${(gy+4).toFixed(1)}" fill="var(--mut)" font-size="11" text-anchor="end">${cxFmt(gv,0)}</text>`;
   }
-  // x labels (a few)
+
+  // x labels
   let xlab = '';
   const tick = Math.max(1, Math.floor(n/5));
+  const isIntraday = (bars[n-1].t - bars[0].t) < 3*86400000;
   for(let i=0;i<n;i+=tick){
-    const dt = new Date(prices[i][0]);
+    const dt = new Date(bars[i].t);
     const s = n > 400 ? dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'})
-            : n > 50 ? dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})
-            : dt.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric'});
+            : isIntraday ? dt.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric'})
+            : dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});
     xlab += `<text x="${x(i).toFixed(1)}" y="${H-8}" fill="var(--mut)" font-size="10.5" text-anchor="middle">${s}</text>`;
   }
-  const area = `M ${x(0).toFixed(1)},${(H-PAD).toFixed(1)} L ` + prices.map((p,i)=>`${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' L ') + ` L ${x(n-1).toFixed(1)},${(H-PAD).toFixed(1)} Z`;
+
+  // main plot: candle / area / line
+  let plot = '';
+  if(useCandles){
+    const bw = Math.max(1.5, Math.min(9, (plotW/n) * 0.62));
+    plot = bars.map((b,i)=>{
+      const cx = x(i), wick = `M ${cx.toFixed(1)},${yv(b.h).toFixed(1)} L ${cx.toFixed(1)},${yv(b.l).toFixed(1)}`;
+      const green = b.c >= b.o;
+      const col = green ? 'var(--good)' : 'var(--bad)';
+      const yo = yv(b.o), yc = yv(b.c);
+      const top = Math.min(yo,yc), hgt = Math.max(1, Math.abs(yc-yo));
+      return `<path d="${wick}" stroke="${col}" stroke-width="1"/>
+        <rect x="${(cx-bw/2).toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}" fill="${col}"/>`;
+    }).join('');
+  }else{
+    const pts = bars.map((b,i)=>`${x(i).toFixed(1)},${yv(b.c).toFixed(1)}`).join(' ');
+    const area = `M ${x(0).toFixed(1)},${(PAD_T+plotH).toFixed(1)} L ` + bars.map((b,i)=>`${x(i).toFixed(1)},${yv(b.c).toFixed(1)}`).join(' L ') + ` L ${x(n-1).toFixed(1)},${(PAD_T+plotH).toFixed(1)} Z`;
+    plot = (CX.chartType === 'area' ? `<path d="${area}" fill="url(#cxg)"/>` : '') +
+           `<polyline points="${pts}" fill="none" stroke="${mainCol}" stroke-width="2"/>`;
+  }
+
+  // volume bars (derived from |price change| as a proxy when no real volume data)
+  let volBars = '';
+  if(volOn){
+    const volTop = H - PAD_B + 8, volBase = H - 26;
+    const mags = bars.map((b,i)=>Math.abs(useCandles ? (b.h-b.l) : (b.c - (bars[i-1]?bars[i-1].c:b.c))));
+    const vmax = Math.max(...mags) || 1;
+    const bw = Math.max(1, Math.min(9, (plotW/n)*0.62));
+    volBars = bars.map((b,i)=>{
+      const mag = mags[i], hgt = Math.max(1, (mag/vmax)*(volBase-volTop));
+      const col = useCandles ? (b.c>=b.o?'var(--good)':'var(--bad)') : (b.c>=(bars[i-1]?bars[i-1].c:b.c)?'var(--good)':'var(--bad)');
+      return `<rect x="${(x(i)-bw/2).toFixed(1)}" y="${(volBase-hgt).toFixed(1)}" width="${bw.toFixed(1)}" height="${hgt.toFixed(1)}" fill="${col}" opacity="0.5"/>`;
+    }).join('');
+    volBars = `<line x1="${PAD_L}" y1="${volBase}" x2="${W-PAD_R}" y2="${volBase}" stroke="var(--line)"/>` + volBars;
+  }
+
   el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs><linearGradient id="cxg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${col}" stop-opacity="0.28"/>
-      <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+      <stop offset="0%" stop-color="${mainCol}" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="${mainCol}" stop-opacity="0"/>
     </linearGradient></defs>
     ${grid}
-    <path d="${area}" fill="url(#cxg)"/>
-    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2"/>
+    ${plot}
+    ${volBars}
     ${xlab}
+    <line id="cx-hair" x1="-99" y1="${PAD_T}" x2="-99" y2="${(PAD_T+plotH).toFixed(1)}" stroke="var(--mut)" stroke-width="1" stroke-dasharray="3 3" opacity="0.7"/>
   </svg>`;
+
+  cxAttachHover(bars, {x, yv, W, H, PAD_L, PAD_R, PAD_T, plotH, useCandles});
+}
+
+function cxAttachHover(bars, g){
+  const wrap = document.querySelector('.cx-chart-wrap');
+  const svg = document.querySelector('#cx-chart svg');
+  const tip = $('#cx-tip');
+  if(!svg || !tip) return;
+  const hair = svg.querySelector('#cx-hair');
+  const n = bars.length;
+  svg.addEventListener('mousemove', ev=>{
+    const rect = svg.getBoundingClientRect();
+    const px = (ev.clientX - rect.left) * (g.W / rect.width);
+    let i = Math.round(((px - g.PAD_L) / (g.W - g.PAD_L - g.PAD_R)) * (n-1));
+    i = Math.max(0, Math.min(n-1, i));
+    const b = bars[i];
+    if(hair){
+      hair.setAttribute('x1', g.x(i).toFixed(1));
+      hair.setAttribute('x2', g.x(i).toFixed(1));
+      hair.setAttribute('opacity', '0.7');
+    }
+    const dt = new Date(b.t);
+    const when = g.useCandles ? dt.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : dt.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric'});
+    tip.innerHTML = g.useCandles
+      ? `<b>${cxFmt(b.c)}</b><br><span class="muted">O ${cxFmt(b.o)} · H ${cxFmt(b.h)}<br>L ${cxFmt(b.l)} · C ${cxFmt(b.c)}</span><br>${when}`
+      : `<b>${cxFmt(b.c)}</b><br><span class="muted">${when}</span>`;
+    tip.style.display = 'block';
+    const wrapRect = wrap.getBoundingClientRect();
+    let tx = ev.clientX - wrapRect.left + 14;
+    if(tx + tip.offsetWidth > wrapRect.width) tx = ev.clientX - wrapRect.left - tip.offsetWidth - 14;
+    tip.style.left = tx + 'px';
+    tip.style.top = Math.max(0, ev.clientY - wrapRect.top - 10) + 'px';
+  });
+  svg.addEventListener('mouseleave', ()=>{ if(tip) tip.style.display='none'; if(hair) hair.setAttribute('opacity','0'); });
 }
 
 async function cxNews(cat){

@@ -48,6 +48,18 @@ window.DEMO = true;
       const series = (cx.charts && cx.charts[id]) || [];
       return {id, days: qs.get('days')||'7', vs:'usd', prices: series};
     }
+    if(path.startsWith('/crypto/ohlc')){
+      const id = qs.get('id') || 'bitcoin';
+      const series = (cx.charts && cx.charts[id]) || [];
+      // synthesize candles from the price series for the offline demo
+      const candles = series.map((p,i)=>{
+        const o = i? series[i-1][1] : p[1];
+        const c = p[1];
+        const h = Math.max(o,c) * 1.004, l = Math.min(o,c) * 0.996;
+        return [p[0], o, h, l, c];
+      });
+      return {id, days: qs.get('days')||'7', vs:'usd', candles};
+    }
     if(path.startsWith('/crypto/news')){
       const cat = qs.get('category') || 'crypto';
       const items = (cx.news || []).filter(i => !i.category || i.category === cat);

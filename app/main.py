@@ -991,6 +991,22 @@ def _cg(path: str, params: dict | None = None):
     return json.loads(_http_get(url))
 
 
+@app.get("/api/crypto/ohlc")
+def crypto_ohlc(id: str = "bitcoin", days: int = 7, vs: str = "usd"):
+    """OHLC candles for candlestick view. CoinGecko allows 1/7/14/30/90/180/365."""
+    allowed = [1, 7, 14, 30, 90, 180, 365]
+    d = min(allowed, key=lambda a: abs(a - days))
+
+    def fetch():
+        return _cg(f"/coins/{urllib.parse.quote(id)}/ohlc",
+                   {"vs_currency": vs, "days": d})
+    ttl = 120 if d <= 1 else 300
+    data = _cached(f"ohlc:{id}:{d}:{vs}", ttl, fetch)
+    candles = [[int(c[0]), c[1], c[2], c[3], c[4]] for c in (data or [])]
+    return {"id": id, "days": d, "vs": vs, "candles": candles,
+            "fetched_at": int(time.time())}
+
+
 @app.get("/api/crypto/search")
 def crypto_search(q: str = ""):
     """Search any coin by name/symbol via CoinGecko /search."""
