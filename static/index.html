@@ -94,13 +94,13 @@
   .cx-neg{color:var(--bad)}
   .cx-top tr{cursor:pointer}
   .cx-top tr:hover{background:var(--panel2)}
-  .tv-wrap{display:flex;flex-wrap:wrap;gap:8px}
-  .tv-card{flex:0 1 128px;min-width:128px;background:var(--panel2);border:1px solid var(--line);
-    border-radius:9px;padding:8px 10px}
-  .tv-card .sym{font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
-  .tv-card .px{font-size:15px;font-weight:600;margin:2px 0;color:var(--txt)}
-  .tv-card .ch{font-size:11px;font-variant-numeric:tabular-nums}
-  .tv-card .cx-spark{margin-top:2px}
+  .tv-wrap{display:flex;flex-wrap:wrap;gap:10px}
+  .tv-card{flex:0 1 150px;min-width:150px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:9px 12px}
+  .tv-card .sym{font-size:10.5px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
+  .tv-card .px{font-size:16px;font-weight:600;margin:3px 0;color:var(--txt)}
+  .tv-card .ch{font-size:12px;font-variant-numeric:tabular-nums}
+  .tv-card .cx-spark{display:none}
   .cx-spark{display:block}
   .cx-news-item{padding:11px 0;border-bottom:1px solid var(--line)}
   .cx-news-item:last-child{border-bottom:0}
@@ -972,7 +972,6 @@ function cxRenderQuick(){
       <div class="sym">${c.symbol}</div>
       <div class="px">${cxFmt(c.price)}</div>
       <div class="ch">${cxPct(c.chg_24h)} 24h</div>
-      ${cxSparkline(c.spark, 108, 24)}
     </div>`).join('');
 }
 
