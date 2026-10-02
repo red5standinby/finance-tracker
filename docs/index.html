@@ -142,7 +142,13 @@
   #tab-crypto .panel{min-width:0}
   .cx-wallet-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
   .cx-wallet-wrap table{min-width:640px;width:100%}
+  /* wallet + news side by side */
+  .cx-wallet-news{align-items:stretch}
+  .cx-wallet-news > .panel{margin-top:0;min-width:0;display:flex;flex-direction:column}
+  .cx-wallet-news .cx-wallet-wrap table{min-width:520px}
+  @media (max-width:1180px){ .cx-wallet-news{grid-template-columns:1fr} }
   .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
+  .cx-wallet-news #cx-news{overflow-y:auto;max-height:420px;padding-right:4px}
   /* ---- coin search ---- */
   .cx-search-wrap{position:relative}
   .cx-search-wrap input[type=text]{width:100%}
@@ -154,6 +160,17 @@
   .cx-result img{width:20px;height:20px;border-radius:50%}
   .cx-result .sym{color:var(--mut);font-size:12px}
   .cx-result .rk{margin-left:auto;font-size:11.5px}
+  #cx-top-search{padding-right:34px}
+  .cx-search-clear{position:absolute;top:50%;right:8px;transform:translateY(-50%);
+    width:22px;height:22px;border-radius:50%;border:0;background:var(--panel2);color:var(--mut);
+    font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+  .cx-search-clear:hover{background:var(--bad);color:#fff}
+  .cx-no-coins{padding:14px 12px;font-size:13px;color:var(--mut);text-align:center}
+  #cx-chart-title{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0}
+  .cx-title-star{background:none;border:0;cursor:pointer;padding:0;font-size:17px;line-height:1;
+    color:var(--mut);transition:color .15s,transform .1s}
+  .cx-title-star:hover{transform:scale(1.15);color:var(--good)}
+  .cx-title-star.on{color:#f5c451}
   .btn.sm{padding:6px 12px;font-size:12.5px}
   .more-row{display:flex;justify-content:center;margin-top:10px}
   .more-row .btn{font-size:12.5px}
@@ -836,7 +853,14 @@ window.DEMO = true;
       </div>
     </div>
     <div class="filters cx-chart-controls">
-      <label class="f-half">Coin <select id="cx-coin"></select></label>
+      <label class="f-half cx-search-wrap">Coin
+        <input type="text" id="cx-top-search" placeholder="🔍 Search any coin — BTC, Solana, Dogecoin…" autocomplete="off"
+               oninput="cxTopSearchInput()" onkeydown="cxTopSearchKey(event)"
+               onfocus="cxTopSearchFocus()" onblur="cxTopSearchBlur()"
+               onmouseup="if(cxSearchFocused)this.select()">
+        <button type="button" id="cx-top-clear" class="cx-search-clear hidden" onclick="cxTopSearchClear()" title="Clear search">✕</button>
+        <div id="cx-top-results" class="cx-results hidden"></div>
+      </label>
       <label class="f-half">Range
         <select id="cx-days">
           <option value="1">24h</option>
@@ -848,6 +872,7 @@ window.DEMO = true;
       <button class="btn ghost" onclick="loadCrypto()">Refresh</button>
       <span class="muted" id="cx-updated" style="font-size:12px;align-self:center"></span>
     </div>
+    <select id="cx-coin" class="hidden"></select>
     <div class="cx-chart-wrap"><div id="cx-chart" style="width:100%"></div><div class="cx-tip" id="cx-tip"></div></div>
   </div>
 
@@ -862,36 +887,38 @@ window.DEMO = true;
     </div>
   </div>
 
-  <div class="panel">
-    <div class="panel-head"><h2>My Wallet</h2>
-      <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
-    <div id="cx-add" class="hidden" style="margin-bottom:12px">
-      <div class="filters">
-        <label class="f-half cx-search-wrap">Coin
-          <input type="text" id="cx-add-search" placeholder="Search any coin — BTC, Solana, Dogecoin…" autocomplete="off">
-          <input type="hidden" id="cx-add-coin">
-          <div id="cx-add-results" class="cx-results hidden"></div>
-          </label>
-          <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
-          <button class="btn" id="cx-add-save" onclick="cxAddSave()" disabled>Save</button>
+  <div class="grid inline-pair cx-wallet-news">
+    <div class="panel">
+      <div class="panel-head"><h2>My Wallet</h2>
+        <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
+      <div id="cx-add" class="hidden" style="margin-bottom:12px">
+        <div class="filters">
+          <label class="f-half cx-search-wrap">Coin
+            <input type="text" id="cx-add-search" placeholder="Search any coin — BTC, Solana, Dogecoin…" autocomplete="off">
+            <input type="hidden" id="cx-add-coin">
+            <div id="cx-add-results" class="cx-results hidden"></div>
+            </label>
+            <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
+            <button class="btn" id="cx-add-save" onclick="cxAddSave()" disabled>Save</button>
+          </div>
+          <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
         </div>
-        <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
-      </div>
-      <div class="table-wrap cx-wallet-wrap">
-        <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
-          <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
-          <tbody id="cx-wallet"></tbody></table>
-      </div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head"><h2>News</h2>
-      <div class="cat-pager">
-        <button class="btn ghost cx-news-btn active" data-cat="crypto" onclick="cxNews('crypto')">Crypto</button>
-        <button class="btn ghost cx-news-btn" data-cat="gov" onclick="cxNews('gov')">Gov / Policy</button>
-      </div>
+        <div class="table-wrap cx-wallet-wrap">
+          <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
+            <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
+            <tbody id="cx-wallet"></tbody></table>
+        </div>
     </div>
-    <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>News</h2>
+        <div class="cat-pager">
+          <button class="btn ghost cx-news-btn active" data-cat="crypto" onclick="cxNews('crypto')">Crypto</button>
+          <button class="btn ghost cx-news-btn" data-cat="gov" onclick="cxNews('gov')">Gov / Policy</button>
+        </div>
+      </div>
+      <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+    </div>
   </div>
 </section>
 
@@ -982,7 +1009,7 @@ function jpost(path, body){
 
 // =================== CRYPTO ===================
 let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto',
-           chartType: 'area', log: false, vol: false, prices: [], candles: [] };
+           chartType: 'area', log: false, vol: false, prices: [], candles: [], filter: '' };
 
 function cxFmt(n, d=2){
   if(n==null || isNaN(n)) return '—';
@@ -1066,7 +1093,17 @@ function cxRenderQuick(){
 }
 
 function cxRenderTop(){
-  $('#cx-top').innerHTML = CX.markets.map(c=>`
+  const q = (CX.filter || '').trim().toLowerCase();
+  const rows = q
+    ? CX.markets.filter(c => (c.name||'').toLowerCase().includes(q) || (c.symbol||'').toLowerCase().includes(q))
+    : CX.markets;
+  const body = $('#cx-top');
+  if(!rows.length){
+    body.innerHTML = `<tr><td colspan="8" class="cx-no-coins">No top-10 coins match “${q}”. ${
+      ($('#cx-top-search').value.trim().length >= 2) ? 'Pick from the dropdown above to chart any coin.' : ''}</td></tr>`;
+    return;
+  }
+  body.innerHTML = rows.map(c=>`
     <tr onclick="cxPickChart('${c.id}')">
       <td onclick="event.stopPropagation();cxToggleFav('${c.id}')"><span class="cx-star ${CX.favorites.includes(c.id)?'on':''}">★</span></td>
       <td class="muted">${c.rank||''}</td>
@@ -1107,6 +1144,12 @@ async function cxToggleFav(id){
     CX.favorites.push(id);
   }
   cxRenderTop(); cxRenderQuick();
+  // Keep the chart-title star in sync if it's the coin on screen.
+  if(CX.chartCoin === id){
+    const name = ($('#cx-coin').selectedOptions[0]||{}).text || id;
+    const lab = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String($('#cx-days').value)] || $('#cx-days').value+'d';
+    cxRenderChartTitle(name, lab, id);
+  }
 }
 
 function cxPickChart(id){
@@ -1115,10 +1158,126 @@ function cxPickChart(id){
   cxLoadChart(id, $('#cx-days').value);
 }
 
+function cxRenderChartTitle(name, label, id){
+  const on = CX.favorites.includes(id);
+  $('#cx-chart-title').innerHTML =
+    `<button class="cx-title-star ${on?'on':''}" onclick="cxToggleChartFav()" `+
+    `title="${on?'Remove from':'Add to'} favorites">${on?'★':'☆'}</button>`+
+    `<span>${name} — ${label}</span>`;
+}
+
+async function cxToggleChartFav(){
+  const id = CX.chartCoin;
+  if(!id) return;
+  await cxToggleFav(id);
+  const name = ($('#cx-coin').selectedOptions[0]||{}).text || id;
+  const lab = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String($('#cx-days').value)] || $('#cx-days').value+'d';
+  cxRenderChartTitle(name, lab, id);
+  toast(CX.favorites.includes(id) ? 'Added to favorites ★' : 'Removed from favorites');
+}
+
+// ---- coin search (lives in the graph card) ----
+let cxTopTimer = null;
+let cxSearchFocused = false;
+
+// Show the active coin in the search box when the user isn't typing in it.
+function cxSyncSearchToChart(){
+  const input = $('#cx-top-search');
+  if(!input) return;
+  const name = ($('#cx-coin').selectedOptions[0]||{}).text || '';
+  input.dataset.active = name;
+  if(!cxSearchFocused && !CX.filter){
+    input.value = name;
+    $('#cx-top-clear').classList.add('hidden');
+  }
+}
+
+function cxTopSearchInput(){
+  const q = $('#cx-top-search').value.trim();
+  CX.filter = q;
+  $('#cx-top-clear').classList.toggle('hidden', !q);
+  cxRenderTop();
+  const box = $('#cx-top-results');
+  if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  clearTimeout(cxTopTimer);
+  cxTopTimer = setTimeout(()=>cxTopSearch(q), 250);
+}
+
+function cxTopSearchFocus(){
+  cxSearchFocused = true;
+  // Select the existing text so typing replaces it (no jarring pre-clear).
+  const input = $('#cx-top-search');
+  setTimeout(()=>{ try{ input.select(); }catch(e){} }, 0);
+}
+function cxTopSearchBlur(){
+  cxSearchFocused = false;
+  setTimeout(()=>{
+    const input = $('#cx-top-search');
+    // If nothing was chosen, drop the filter and restore the active coin label.
+    if(!input.value.trim()){
+      CX.filter=''; $('#cx-top-clear').classList.add('hidden'); cxRenderTop();
+      input.value = input.dataset.active || '';
+    }
+  }, 180);
+}
+
+async function cxTopSearch(q){
+  const box = $('#cx-top-results');
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="cx-result muted">Searching…</div>';
+  try{
+    const d = await api('/crypto/search?q=' + encodeURIComponent(q));
+    const items = d.results || [];
+    if(!items.length){ box.innerHTML = '<div class="cx-result muted">No coins found.</div>'; return; }
+    box.innerHTML = items.slice(0,8).map(c=>`
+      <div class="cx-result" onclick='cxTopPick(${JSON.stringify(c)})'>
+        ${c.thumb?`<img src="${c.thumb}" alt="" onerror="this.style.display='none'">`:''}
+        <span>${c.name}</span> <span class="sym">${c.symbol}</span>
+        ${c.rank?`<span class="rk muted">#${c.rank}</span>`:''}
+      </div>`).join('');
+  }catch(e){
+    box.innerHTML = `<div class="cx-result muted">Search failed: ${e.message}</div>`;
+  }
+}
+function cxTopSearchKey(e){
+  if(e.key === 'Escape'){ $('#cx-top-search').blur(); cxTopSearchClear(); return; }
+  if(e.key === 'Enter'){
+    const first = $('#cx-top-results .cx-result[onclick]');
+    if(first) first.click();
+  }
+}
+function cxTopPick(c){
+  $('#cx-top-results').classList.add('hidden');
+  // Make sure the coin is available in the chart selector, then chart it.
+  if(![...$('#cx-coin').options].some(o=>o.value===c.id)){
+    const nice = c.name ? c.name.toLowerCase().replace(/\b\w/g, m=>m.toUpperCase()) : c.id;
+    $('#cx-coin').insertAdjacentHTML('beforeend', `<option value="${c.id}">${nice}</option>`);
+  }
+  const input = $('#cx-top-search');
+  const niceName = ($('#cx-coin').options.namedItem(c.id)||{}).text || c.name;
+  input.value = niceName;
+  input.dataset.active = niceName;
+  CX.filter = '';
+  $('#cx-top-clear').classList.add('hidden');
+  cxRenderTop();
+  toast(`Charting ${c.name} (${c.symbol})`);
+  cxPickChart(c.id);
+}
+function cxTopSearchClear(){
+  $('#cx-top-search').value = '';
+  $('#cx-top-search').dataset.active = '';
+  CX.filter = '';
+  $('#cx-top-clear').classList.add('hidden');
+  $('#cx-top-results').classList.add('hidden');
+  cxRenderTop();
+}
+
 async function cxLoadChart(id, days){
+  CX.chartCoin = id;
   const title = ($('#cx-coin').selectedOptions[0]||{}).text || id;
   const label = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String(days)] || days+'d';
-  $('#cx-chart-title').textContent = `${title} — ${label}`;
+  cxRenderChartTitle(title, label, id);
+  cxSyncSearchToChart();
   $('#cx-chart').innerHTML = '<div class="muted" style="font-size:13px">Loading chart…</div>';
   try{
     const d = await api(`/crypto/chart?id=${encodeURIComponent(id)}&days=${days}`);
