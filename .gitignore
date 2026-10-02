@@ -21,3 +21,4 @@ server.log
 probe_*.py
 *_shot.png
 .probe_*.py
+crypto_tab.png

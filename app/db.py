@@ -52,6 +52,19 @@ CREATE INDEX IF NOT EXISTS idx_txn_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_txn_cat ON transactions(category_id);
 CREATE INDEX IF NOT EXISTS idx_txn_acct ON transactions(account_id);
 
+CREATE TABLE IF NOT EXISTS crypto_holdings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    coin_id TEXT NOT NULL UNIQUE,   -- e.g. 'bitcoin'
+    symbol TEXT DEFAULT '',
+    name TEXT DEFAULT '',
+    amount REAL NOT NULL DEFAULT 0,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS crypto_favorites (
+    coin_id TEXT PRIMARY KEY
+);
+
 CREATE TABLE IF NOT EXISTS learned_rules (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     cleaned TEXT NOT NULL UNIQUE,   -- lowercase cleaned merchant

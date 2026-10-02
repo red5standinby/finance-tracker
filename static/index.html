@@ -83,6 +83,32 @@
   .pg-btn:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
   .pg-btn:disabled{opacity:.35;cursor:default}
   .pg-info{font-size:12px;color:var(--mut);font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+  /* ---- crypto ---- */
+  .cx-star{cursor:pointer;font-size:16px;line-height:1;color:var(--mut);user-select:none}
+  .cx-star.on{color:#f5b301}
+  .cx-star:hover{color:#f5b301}
+  .cx-coin{display:flex;align-items:center;gap:9px}
+  .cx-coin img{width:20px;height:20px;border-radius:50%}
+  .cx-coin .sym{color:var(--mut);font-size:12px}
+  .cx-pos{color:var(--good)}
+  .cx-neg{color:var(--bad)}
+  .cx-top tr{cursor:pointer}
+  .cx-top tr:hover{background:var(--panel2)}
+  .tv-wrap{display:flex;flex-wrap:wrap;gap:10px}
+  .tv-card{flex:1 1 150px;min-width:150px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:10px;padding:12px 14px}
+  .tv-card .sym{font-size:11px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase}
+  .tv-card .px{font-size:19px;font-weight:600;margin:4px 0;color:var(--txt)}
+  .tv-card .ch{font-size:12.5px;font-variant-numeric:tabular-nums}
+  .cx-spark{display:block}
+  .cx-news-item{padding:11px 0;border-bottom:1px solid var(--line)}
+  .cx-news-item:last-child{border-bottom:0}
+  .cx-news-item a{color:var(--txt);text-decoration:none;font-weight:500;font-size:13.5px;line-height:1.4}
+  .cx-news-item a:hover{color:var(--accent)}
+  .cx-news-meta{font-size:11.5px;color:var(--mut);margin-top:4px}
+  .cx-win{color:var(--good)} .cx-loss{color:var(--bad)}
+  #cx-chart svg{display:block}
+  .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
   .btn.sm{padding:6px 12px;font-size:12.5px}
   .more-row{display:flex;justify-content:center;margin-top:10px}
   .more-row .btn{font-size:12.5px}
@@ -381,6 +407,7 @@
       <button data-tab="dash" class="active"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
+      <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
       <button data-tab="txns"><span class="ic">≡</span><span class="lb">Transactions</span></button>
       <button data-tab="rules"><span class="ic">⚙</span><span class="lb">Rules</span></button>
     </nav>
@@ -651,6 +678,89 @@
   </div>
 </section>
 
+<!-- ============ CRYPTO ============ -->
+<section id="tab-crypto" class="hidden">
+  <div class="filters">
+    <label class="f-half">Chart coin
+      <select id="cx-coin"></select></label>
+    <label class="f-half">Range
+      <select id="cx-days">
+        <option value="1">24h</option>
+        <option value="7" selected>7d</option>
+        <option value="30">30d</option>
+        <option value="90">90d</option>
+        <option value="365">1y</option>
+      </select></label>
+    <button class="btn ghost" onclick="loadCrypto()">Refresh</button>
+    <span class="muted" id="cx-updated" style="font-size:12px;align-self:center"></span>
+  </div>
+
+  <div class="grid cards">
+    <div class="card"><div class="lbl">Portfolio value</div><div class="val" id="cx-total">$0</div>
+      <div class="muted" style="font-size:12px" id="cx-total-sub">no holdings yet</div></div>
+    <div class="card"><div class="lbl">24h change</div><div class="val" id="cx-24h">$0</div>
+      <div class="muted" style="font-size:12px" id="cx-24h-pct">—</div></div>
+    <div class="card"><div class="lbl">BTC price</div><div class="val" id="cx-btc">$0</div>
+      <div class="muted" style="font-size:12px" id="cx-btc-chg">—</div></div>
+    <div class="card"><div class="lbl">Holdings</div><div class="val" id="cx-count">0</div>
+      <div class="muted" style="font-size:12px">coins tracked</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2>★ Quick View <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· your favorited coins</span></h2>
+    </div>
+    <div class="tv-wrap" id="cx-quick"><div class="muted" style="font-size:13px">Star coins below to pin them here.</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head">
+      <h2 id="cx-chart-title">Bitcoin — 7d</h2>
+    </div>
+    <div id="cx-chart" style="width:100%"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Top 10 <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a row to chart it · ★ to favorite</span></h2></div>
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th class="no-sort"></th><th class="no-sort">#</th><th class="no-sort">Coin</th>
+        <th class="no-sort">Price</th><th class="no-sort">24h</th><th class="no-sort">7d</th>
+        <th class="no-sort">Mkt cap</th><th class="no-sort">7d trend</th></tr></thead>
+        <tbody id="cx-top"></tbody></table>
+    </div>
+  </div>
+
+  <div class="grid inline-pair">
+    <div class="panel">
+      <div class="panel-head"><h2>My Wallet</h2>
+        <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
+      <div id="cx-add" class="hidden" style="margin-bottom:12px">
+        <div class="filters">
+          <label class="f-half">Coin <select id="cx-add-coin"></select></label>
+          <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
+          <button class="btn" onclick="cxAddSave()">Save</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
+          <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
+          <tbody id="cx-wallet"></tbody></table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>News</h2>
+        <div class="cat-pager">
+          <button class="btn ghost cx-news-btn active" data-cat="crypto" onclick="cxNews('crypto')">Crypto</button>
+          <button class="btn ghost cx-news-btn" data-cat="gov" onclick="cxNews('gov')">Gov / Policy</button>
+        </div>
+      </div>
+      <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+    </div>
+  </div>
+</section>
+
 </main>
 </div><!-- /layout -->
 <div class="toast" id="toast"></div>
@@ -736,13 +846,246 @@ function jpost(path, body){
   return api(path, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
 }
 
+// =================== CRYPTO ===================
+let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto' };
+
+function cxFmt(n, d=2){
+  if(n==null || isNaN(n)) return '—';
+  if(Math.abs(n) >= 1000) return '$' + n.toLocaleString('en-US',{minimumFractionDigits:.5,maximumFractionDigits:2});
+  if(Math.abs(n) < 1 && n !== 0) return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:6});
+  return '$' + n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function cxCap(n){
+  if(n==null) return '—';
+  if(n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
+  if(n >= 1e9) return '$' + (n/1e9).toFixed(2) + 'B';
+  if(n >= 1e6) return '$' + (n/1e6).toFixed(2) + 'M';
+  return '$' + Math.round(n).toLocaleString();
+}
+function cxPct(n){
+  if(n==null || isNaN(n)) return '<span class="muted">—</span>';
+  const c = n >= 0 ? 'cx-pos' : 'cx-neg';
+  return `<span class="${c}">${n>=0?'+':''}${n.toFixed(2)}%</span>`;
+}
+function cxSparkline(vals, w=110, h=28){
+  if(!vals || vals.length < 2) return '';
+  const min = Math.min(...vals), max = Math.max(...vals), rng = max-min || 1;
+  const step = w/(vals.length-1);
+  const pts = vals.map((v,i)=>`${(i*step).toFixed(1)},${(h-((v-min)/rng)*h).toFixed(1)}`).join(' ');
+  const up = vals[vals.length-1] >= vals[0];
+  const col = up ? 'var(--good)' : 'var(--bad)';
+  return `<svg class="cx-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
+}
+
+async function loadCrypto(){
+  const days = $('#cx-days').value;
+  try{
+    const [mk, favs, hold] = await Promise.all([
+      api('/crypto/markets?per_page=10'),
+      api('/crypto/favorites'),
+      api('/crypto/holdings'),
+    ]);
+    CX.markets = mk.coins || [];
+    CX.favorites = favs || [];
+    CX.holdings = hold || [];
+    if(!$('#cx-coin').options.length){
+      $('#cx-coin').innerHTML = CX.markets.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+      $('#cx-add-coin').innerHTML = CX.markets.map(c=>`<option value="${c.id}">${c.name} (${c.symbol})</option>`).join('');
+    }
+    cxRenderTop();
+    cxRenderQuick();
+    cxRenderWallet();
+    cxRenderSummary();
+    $('#cx-updated').textContent = 'updated ' + new Date().toLocaleTimeString();
+    await cxLoadChart($('#cx-coin').value, days);
+  }catch(e){ toast('Crypto load failed: ' + e.message); }
+}
+
+function cxRenderSummary(){
+  const byId = Object.fromEntries(CX.markets.map(c=>[c.id,c]));
+  let total = 0, chg24 = 0, haveHold = false;
+  for(const h of CX.holdings){
+    const c = byId[h.coin_id];
+    if(!c) continue;
+    total += (c.price||0) * h.amount;
+    chg24 += (c.price||0) * h.amount * ((c.chg_24h||0)/100);
+    haveHold = true;
+  }
+  $('#cx-total').textContent = cxFmt(total);
+  $('#cx-total-sub').textContent = haveHold ? CX.holdings.length + ' coin' + (CX.holdings.length>1?'s':'') + ' in wallet' : 'no holdings yet';
+  $('#cx-24h').innerHTML = `<span class="${chg24>=0?'cx-pos':'cx-neg'}">${chg24>=0?'+':''}${cxFmt(chg24)}</span>`;
+  $('#cx-24h-pct').textContent = total>0 ? ((chg24/total)*100).toFixed(2)+'% today' : '—';
+  const btc = byId['bitcoin'];
+  if(btc){
+    $('#cx-btc').textContent = cxFmt(btc.price);
+    $('#cx-btc-chg').innerHTML = cxPct(btc.chg_24h) + ' 24h';
+  }
+  $('#cx-count').textContent = CX.holdings.length;
+}
+
+function cxRenderQuick(){
+  const el = $('#cx-quick');
+  const favs = CX.markets.filter(c=>CX.favorites.includes(c.id));
+  if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins below to pin them here.</div>'; return; }
+  el.innerHTML = favs.map(c=>`
+    <div class="tv-card">
+      <div class="sym">${c.symbol}</div>
+      <div class="px">${cxFmt(c.price)}</div>
+      <div class="ch">${cxPct(c.chg_24h)} 24h</div>
+      ${cxSparkline(c.spark, 150, 30)}
+    </div>`).join('');
+}
+
+function cxRenderTop(){
+  $('#cx-top').innerHTML = CX.markets.map(c=>`
+    <tr onclick="cxPickChart('${c.id}')">
+      <td onclick="event.stopPropagation();cxToggleFav('${c.id}')"><span class="cx-star ${CX.favorites.includes(c.id)?'on':''}">★</span></td>
+      <td class="muted">${c.rank||''}</td>
+      <td><div class="cx-coin"><img src="${c.image}" alt="" onerror="this.style.display='none'"><span>${c.name}</span> <span class="sym">${c.symbol}</span></div></td>
+      <td>${cxFmt(c.price)}</td>
+      <td>${cxPct(c.chg_24h)}</td>
+      <td>${cxPct(c.chg_7d)}</td>
+      <td class="muted">${cxCap(c.market_cap)}</td>
+      <td>${cxSparkline(c.spark)}</td>
+    </tr>`).join('');
+}
+
+function cxRenderWallet(){
+  const byId = Object.fromEntries(CX.markets.map(c=>[c.id,c]));
+  const body = $('#cx-wallet');
+  if(!CX.holdings.length){ body.innerHTML = '<tr><td colspan="6" class="muted" style="font-size:13px">No holdings yet — add one to track market value.</td></tr>'; return; }
+  body.innerHTML = CX.holdings.map(h=>{
+    const c = byId[h.coin_id] || {};
+    const val = (c.price||0) * h.amount;
+    const ch = (c.chg_24h!=null) ? (val * (c.chg_24h/100)) : null;
+    return `<tr>
+      <td><div class="cx-coin"><span>${h.name||c.name||h.coin_id}</span> <span class="sym">${h.symbol||c.symbol||''}</span></div></td>
+      <td>${h.amount}</td>
+      <td>${cxFmt(c.price)}</td>
+      <td><b>${cxFmt(val)}</b></td>
+      <td>${ch==null?'<span class="muted">—</span>':`<span class="${ch>=0?'cx-pos':'cx-neg'}">${ch>=0?'+':''}${cxFmt(ch)}</span>`}</td>
+      <td><button class="btn ghost sm" onclick="cxDel(${h.id})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function cxToggleFav(id){
+  if(CX.favorites.includes(id)){
+    await api('/crypto/favorites/'+id, {method:'DELETE'});
+    CX.favorites = CX.favorites.filter(x=>x!==id);
+  }else{
+    await jpost('/crypto/favorites', {coin_id:id});
+    CX.favorites.push(id);
+  }
+  cxRenderTop(); cxRenderQuick();
+}
+
+function cxPickChart(id){
+  $('#cx-coin').value = id;
+  cxLoadChart(id, $('#cx-days').value);
+}
+
+async function cxLoadChart(id, days){
+  const title = ($('#cx-coin').selectedOptions[0]||{}).text || id;
+  const label = {'1':'24h','7':'7d','30':'30d','90':'90d','365':'1y'}[String(days)] || days+'d';
+  $('#cx-chart-title').textContent = `${title} — ${label}`;
+  $('#cx-chart').innerHTML = '<div class="muted" style="font-size:13px">Loading chart…</div>';
+  try{
+    const d = await api(`/crypto/chart?id=${encodeURIComponent(id)}&days=${days}`);
+    cxDrawChart(d.prices);
+  }catch(e){ $('#cx-chart').innerHTML = `<div class="muted">Chart unavailable: ${e.message}</div>`; }
+}
+
+function cxDrawChart(prices){
+  const el = $('#cx-chart');
+  if(!prices || prices.length < 2){ el.innerHTML = '<div class="muted">No data.</div>'; return; }
+  const W = Math.max(el.clientWidth || 800, 320), H = 300, PAD = 44;
+  const vals = prices.map(p=>p[1]);
+  const min = Math.min(...vals), max = Math.max(...vals), rng = max-min || 1;
+  const n = prices.length;
+  const x = i => PAD + (i/(n-1)) * (W - PAD - 12);
+  const y = v => 12 + (H - PAD - 12) * (1 - (v-min)/rng);
+  const pts = prices.map((p,i)=>`${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' ');
+  const up = vals[n-1] >= vals[0];
+  const col = up ? 'var(--good)' : 'var(--bad)';
+  // gridlines + y labels
+  let grid = '';
+  for(let g=0; g<=4; g++){
+    const gv = min + (rng * g/4), gy = y(gv);
+    grid += `<line x1="${PAD}" y1="${gy.toFixed(1)}" x2="${W-12}" y2="${gy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
+    grid += `<text x="${PAD-8}" y="${(gy+4).toFixed(1)}" fill="var(--mut)" font-size="11" text-anchor="end">${cxFmt(gv,0)}</text>`;
+  }
+  // x labels (a few)
+  let xlab = '';
+  const tick = Math.max(1, Math.floor(n/5));
+  for(let i=0;i<n;i+=tick){
+    const dt = new Date(prices[i][0]);
+    const s = n > 400 ? dt.toLocaleDateString('en-US',{month:'short',year:'2-digit'})
+            : n > 50 ? dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})
+            : dt.toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric'});
+    xlab += `<text x="${x(i).toFixed(1)}" y="${H-8}" fill="var(--mut)" font-size="10.5" text-anchor="middle">${s}</text>`;
+  }
+  const area = `M ${x(0).toFixed(1)},${(H-PAD).toFixed(1)} L ` + prices.map((p,i)=>`${x(i).toFixed(1)},${y(p[1]).toFixed(1)}`).join(' L ') + ` L ${x(n-1).toFixed(1)},${(H-PAD).toFixed(1)} Z`;
+  el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+    <defs><linearGradient id="cxg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="${col}" stop-opacity="0.28"/>
+      <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+    </linearGradient></defs>
+    ${grid}
+    <path d="${area}" fill="url(#cxg)"/>
+    <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2"/>
+    ${xlab}
+  </svg>`;
+}
+
+async function cxNews(cat){
+  CX.newsCat = cat;
+  document.querySelectorAll('.cx-news-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
+  $('#cx-news').innerHTML = '<div class="muted" style="font-size:13px">Loading headlines…</div>';
+  try{
+    const d = await api(`/crypto/news?category=${cat}&limit=10`);
+    if(!d.items || !d.items.length){ $('#cx-news').innerHTML = '<div class="muted" style="font-size:13px">No headlines right now.</div>'; return; }
+    $('#cx-news').innerHTML = d.items.map(i=>{
+      const t = i.published ? new Date(i.published) : null;
+      const when = t && !isNaN(t) ? t.toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+      return `<div class="cx-news-item">
+        <a href="${i.url}" target="_blank" rel="noopener">${i.title}</a>
+        <div class="cx-news-meta">${i.source}${when?' · '+when:''}</div>
+      </div>`;
+    }).join('');
+  }catch(e){ $('#cx-news').innerHTML = `<div class="muted">News unavailable: ${e.message}</div>`; }
+}
+
+function cxAddOpen(){ $('#cx-add').classList.toggle('hidden'); $('#cx-add-amt').focus(); }
+async function cxAddSave(){
+  const coin_id = $('#cx-add-coin').value;
+  const amt = parseFloat($('#cx-add-amt').value);
+  if(!isFinite(amt) || amt < 0){ toast('Enter a valid amount'); return; }
+  const c = CX.markets.find(x=>x.id===coin_id) || {};
+  await jpost('/crypto/holdings', {coin_id, symbol:c.symbol, name:c.name, amount:amt});
+  $('#cx-add-amt').value = '';
+  CX.holdings = await api('/crypto/holdings');
+  cxRenderWallet(); cxRenderSummary();
+  toast('Holding saved');
+}
+async function cxDel(id){
+  await api('/crypto/holdings/'+id, {method:'DELETE'});
+  CX.holdings = CX.holdings.filter(h=>h.id!==id);
+  cxRenderWallet(); cxRenderSummary();
+}
+
+$('#cx-days').addEventListener('change', ()=>cxLoadChart($('#cx-coin').value, $('#cx-days').value));
+$('#cx-coin').addEventListener('change', ()=>cxLoadChart($('#cx-coin').value, $('#cx-days').value));
+window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains('hidden')) cxLoadChart($('#cx-coin').value, $('#cx-days').value); });
+
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import','crypto'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
+  if(name==='crypto') loadCrypto();
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
   if(name==='import'){ loadImports(); loadAcctList(); }
@@ -1663,7 +2006,9 @@ async function toggleAcct(id, include){
   await loadMeta();
   $('#d-quick').value='all';
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
-  loadDashboard();
+  const h = (location.hash||'').replace('#','');
+  if(h && ['dash','trends','savings','txns','rules','crypto','import'].includes(h)) showTab(h);
+  else loadDashboard();
 })();
 </script>
 </body>

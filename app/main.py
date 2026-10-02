@@ -7,6 +7,11 @@ import os
 import re
 import difflib
 import uuid
+import time
+import urllib.request
+import urllib.parse
+import urllib.error
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 from datetime import date, timedelta
 
@@ -947,6 +952,224 @@ def _totals_for(con, start=None, end=None, exclude_zero_income=True) -> tuple[fl
     income = sum(r["amount"] for r in rows if r["amount"] > 0)
     expense = sum(-r["amount"] for r in rows if r["amount"] < 0)
     return round(income, 2), round(expense, 2)
+
+
+# ---------- crypto ----------
+
+_CG = "https://api.coingecko.com/api/v3"
+_UA = {"User-Agent": "Mozilla/5.0 (LFFD/1.0) FinanceTracker", "Accept": "application/json"}
+_cache: dict = {}
+
+
+def _http_get(url: str, timeout: int = 12, headers: dict | None = None) -> bytes:
+    ctx = None
+    try:
+        import ssl as _ssl
+        import certifi
+        ctx = _ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        ctx = None
+    req = urllib.request.Request(url, headers=headers or _UA)
+    with urllib.request.urlopen(req, timeout=timeout, context=ctx) as r:
+        return r.read()
+
+
+def _cached(key: str, ttl: int, fn):
+    """Tiny in-process TTL cache so rapid refreshes don't hammer the API."""
+    now = time.time()
+    hit = _cache.get(key)
+    if hit and now - hit[0] < ttl:
+        return hit[1]
+    val = fn()
+    _cache[key] = (now, val)
+    return val
+
+
+def _cg(path: str, params: dict | None = None):
+    q = urllib.parse.urlencode(params or {})
+    url = f"{_CG}{path}" + (f"?{q}" if q else "")
+    return json.loads(_http_get(url))
+
+
+@app.get("/api/crypto/markets")
+def crypto_markets(per_page: int = 10, vs: str = "usd"):
+    """Top coins by market cap (default top 10)."""
+    def fetch():
+        return _cg("/coins/markets", {
+            "vs_currency": vs, "order": "market_cap_desc",
+            "per_page": per_page, "page": 1, "sparkline": "true",
+            "price_change_percentage": "1h,24h,7d",
+        })
+    data = _cached(f"markets:{per_page}:{vs}", 60, fetch)
+    out = []
+    for c in data:
+        out.append({
+            "id": c.get("id"), "symbol": (c.get("symbol") or "").upper(),
+            "name": c.get("name"), "image": c.get("image"),
+            "price": c.get("current_price"),
+            "market_cap": c.get("market_cap"), "rank": c.get("market_cap_rank"),
+            "chg_24h": c.get("price_change_percentage_24h"),
+            "chg_7d": c.get("price_change_percentage_7d_in_currency"),
+            "high_24h": c.get("high_24h"), "low_24h": c.get("low_24h"),
+            "spark": (c.get("sparkline_in_7d") or {}).get("price") or [],
+        })
+    return {"coins": out, "vs": vs, "fetched_at": int(time.time())}
+
+
+@app.get("/api/crypto/chart")
+def crypto_chart(id: str = "bitcoin", days: int = 7, vs: str = "usd"):
+    """Price series for a coin. days: 1|7|30|90|365|max."""
+    def fetch():
+        return _cg(f"/coins/{urllib.parse.quote(id)}/market_chart",
+                   {"vs_currency": vs, "days": days})
+    ttl = 60 if days <= 1 else 300
+    data = _cached(f"chart:{id}:{days}:{vs}", ttl, fetch)
+    prices = [[int(p[0]), p[1]] for p in (data.get("prices") or [])]
+    return {"id": id, "days": days, "vs": vs, "prices": prices,
+            "fetched_at": int(time.time())}
+
+
+# ---------- crypto news (RSS, no key) ----------
+
+_NEWS_FEEDS = {
+    "crypto": [
+        ("CoinDesk", "https://www.coindesk.com/arc/outboundfeeds/rss/"),
+        ("Cointelegraph", "https://cointelegraph.com/rss"),
+        ("Decrypt", "https://decrypt.co/feed"),
+    ],
+    "gov": [
+        ("SEC", "https://www.sec.gov/news/pressreleases.rss"),
+        ("CoinDesk Policy", "https://www.coindesk.com/policy/arc/outboundfeeds/rss/"),
+        ("The Block", "https://www.theblock.co/rss.xml"),
+    ],
+}
+
+_GOV_KEYWORDS = ("sec", "cftc", "regulat", "senate", "congress", "white house",
+                 "treasury", "federal reserve", "fed ", "law", "bill", "policy",
+                 "court", "lawsuit", "government", "irs", "clarity act", "etf")
+
+
+def _parse_feed(source: str, url: str, limit: int = 12) -> list[dict]:
+    try:
+        raw = _http_get(url, timeout=10)
+    except Exception:
+        return []
+    try:
+        root = ET.fromstring(raw)
+    except ET.ParseError:
+        return []
+    items = root.iter("item")
+    out = []
+    ns = {"atom": "http://www.w3.org/2005/Atom"}
+    for it in items:
+        def g(tag):
+            el = it.find(tag)
+            return (el.text or "").strip() if el is not None and el.text else ""
+        title = g("title")
+        link = g("link")
+        pub = g("pubDate") or g("published")
+        if not title:
+            continue
+        out.append({"title": title, "url": link, "published": pub, "source": source})
+        if len(out) >= limit:
+            break
+    return out
+
+
+@app.get("/api/crypto/news")
+def crypto_news(category: str = "crypto", limit: int = 12):
+    """Latest headlines. category: crypto|gov|all."""
+    cats = ["crypto", "gov"] if category == "all" else [category if category in _NEWS_FEEDS else "crypto"]
+
+    def fetch():
+        items: list[dict] = []
+        for c in cats:
+            for source, url in _NEWS_FEEDS[c]:
+                items += _parse_feed(source, url, limit=8)
+        seen, dedup = set(), []
+        for it in items:
+            k = it["title"].lower()[:80]
+            if k in seen:
+                continue
+            seen.add(k)
+            dedup.append(it)
+        # for gov filter, prefer headlines that actually mention regulation
+        if category == "gov":
+            gov = [i for i in dedup if any(w in i["title"].lower() for w in _GOV_KEYWORDS)]
+            dedup = gov or dedup
+        return dedup[:limit]
+    return {"category": category, "items": _cached(f"news:{category}:{limit}", 600, fetch),
+            "fetched_at": int(time.time())}
+
+
+# ---------- crypto portfolio (manual holdings, stored in DB) ----------
+
+@app.get("/api/crypto/holdings")
+def get_holdings():
+    with db() as con:
+        rows = con.execute(
+            "SELECT id, coin_id, symbol, name, amount, updated_at FROM crypto_holdings ORDER BY id"
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+class HoldingIn(BaseModel):
+    coin_id: str
+    symbol: str | None = None
+    name: str | None = None
+    amount: float
+
+
+@app.post("/api/crypto/holdings")
+def add_holding(body: HoldingIn):
+    if body.amount is None or body.amount < 0:
+        raise HTTPException(400, "amount must be >= 0")
+    with db() as con:
+        existing = con.execute("SELECT id FROM crypto_holdings WHERE coin_id=?", (body.coin_id,)).fetchone()
+        if existing:
+            con.execute("UPDATE crypto_holdings SET amount=?, symbol=COALESCE(?,symbol), "
+                        "name=COALESCE(?,name), updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                        (body.amount, body.symbol, body.name, existing["id"]))
+            rid = existing["id"]
+        else:
+            cur = con.execute("INSERT INTO crypto_holdings(coin_id,symbol,name,amount) VALUES(?,?,?,?)",
+                              (body.coin_id, body.symbol, body.name, body.amount))
+            rid = cur.lastrowid
+    return {"ok": True, "id": rid}
+
+
+@app.delete("/api/crypto/holdings/{hold_id}")
+def delete_holding(hold_id: int):
+    with db() as con:
+        con.execute("DELETE FROM crypto_holdings WHERE id=?", (hold_id,))
+    return {"ok": True}
+
+
+# ---------- favorites (starred coins) ----------
+
+@app.get("/api/crypto/favorites")
+def get_favorites():
+    with db() as con:
+        rows = con.execute("SELECT coin_id FROM crypto_favorites ORDER BY coin_id").fetchall()
+    return [r["coin_id"] for r in rows]
+
+
+class FavIn(BaseModel):
+    coin_id: str
+
+
+@app.post("/api/crypto/favorites")
+def add_favorite(body: FavIn):
+    with db() as con:
+        con.execute("INSERT OR IGNORE INTO crypto_favorites(coin_id) VALUES(?)", (body.coin_id,))
+    return {"ok": True}
+
+
+@app.delete("/api/crypto/favorites/{coin_id}")
+def del_favorite(coin_id: str):
+    with db() as con:
+        con.execute("DELETE FROM crypto_favorites WHERE coin_id=?", (coin_id,))
+    return {"ok": True}
 
 
 # ---------- static ----------

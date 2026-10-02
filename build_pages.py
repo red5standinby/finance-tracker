@@ -32,6 +32,25 @@ window.DEMO = true;
   if(!window.DEMO) return;
   let DATA = null;
   async function demoData(){ if(!DATA){ DATA = await (await fetch('demo.json')).json(); } return DATA; }
+  // Crypto is live-data (CoinGecko/RSS). In demo mode we serve a small static
+  // snapshot from demo.json so the tab is browsable offline.
+  function demoCrypto(path, qs, d){
+    const cx = d.crypto || {markets:[], favorites:[], holdings:[], news:[]};
+    if(path.startsWith('/crypto/markets')) return {coins: cx.markets || [], vs:'usd'};
+    if(path.startsWith('/crypto/chart')){
+      const id = qs.get('id') || 'bitcoin';
+      const series = (cx.charts && cx.charts[id]) || [];
+      return {id, days: qs.get('days')||'7', vs:'usd', prices: series};
+    }
+    if(path.startsWith('/crypto/news')){
+      const cat = qs.get('category') || 'crypto';
+      const items = (cx.news || []).filter(i => !i.category || i.category === cat);
+      return {category: cat, items: items.length ? items : (cx.news || [])};
+    }
+    if(path.startsWith('/crypto/favorites')) return cx.favorites || [];
+    if(path.startsWith('/crypto/holdings')) return cx.holdings || [];
+    return {};
+  }
   const origFetch = window.fetch;
   window.fetch = async function(url, opts){
     const u = String(url);
@@ -49,6 +68,7 @@ window.DEMO = true;
     else if(path.startsWith('/transactions')) body = d.transactions;
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
+    else if(path.startsWith('/crypto')) body = demoCrypto(path, qs, d);
     else body = {};
     return new Response(JSON.stringify(body), {status:200, headers:{'Content-Type':'application/json'}});
   };
