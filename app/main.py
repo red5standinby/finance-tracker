@@ -991,6 +991,34 @@ def _cg(path: str, params: dict | None = None):
     return json.loads(_http_get(url))
 
 
+@app.get("/api/crypto/search")
+def crypto_search(q: str = ""):
+    """Search any coin by name/symbol via CoinGecko /search."""
+    q = (q or "").strip()
+    if len(q) < 2:
+        return {"results": []}
+
+    def fetch():
+        return _cg("/search", {"query": q})
+    try:
+        data = _cached(f"search:{q.lower()}", 300, fetch)
+    except Exception:
+        return {"results": []}
+    out = []
+    for c in (data.get("coins") or [])[:12]:
+        out.append({
+            "id": c.get("id"), "name": c.get("name"),
+            "symbol": (c.get("symbol") or "").upper(),
+            "rank": c.get("market_cap_rank"),
+            "thumb": c.get("thumb"),
+        })
+    # exact/prefix symbols first, then by rank
+    ql = q.lower()
+    out.sort(key=lambda c: (0 if c["symbol"].lower() == ql or c["name"].lower() == ql else 1,
+                            c["rank"] if c["rank"] else 10**9))
+    return {"results": out[:10]}
+
+
 @app.get("/api/crypto/markets")
 def crypto_markets(per_page: int = 10, vs: str = "usd"):
     """Top coins by market cap (default top 10)."""

@@ -109,6 +109,17 @@
   .cx-win{color:var(--good)} .cx-loss{color:var(--bad)}
   #cx-chart svg{display:block}
   .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
+  /* ---- coin search ---- */
+  .cx-search-wrap{position:relative}
+  .cx-search-wrap input[type=text]{width:100%}
+  .cx-results{position:absolute;top:100%;left:0;right:0;z-index:40;margin-top:4px;
+    background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 12px 30px rgba(0,0,0,.4);max-height:280px;overflow-y:auto}
+  .cx-result{display:flex;align-items:center;gap:9px;padding:9px 12px;cursor:pointer;font-size:13.5px;color:var(--txt)}
+  .cx-result:hover{background:var(--panel2)}
+  .cx-result img{width:20px;height:20px;border-radius:50%}
+  .cx-result .sym{color:var(--mut);font-size:12px}
+  .cx-result .rk{margin-left:auto;font-size:11.5px}
   .btn.sm{padding:6px 12px;font-size:12.5px}
   .more-row{display:flex;justify-content:center;margin-top:10px}
   .more-row .btn{font-size:12.5px}
@@ -737,10 +748,15 @@
         <button class="btn ghost" onclick="cxAddOpen()">+ Add holding</button></div>
       <div id="cx-add" class="hidden" style="margin-bottom:12px">
         <div class="filters">
-          <label class="f-half">Coin <select id="cx-add-coin"></select></label>
+          <label class="f-half cx-search-wrap">Coin
+            <input type="text" id="cx-add-search" placeholder="Search any coin — BTC, Solana, Dogecoin…" autocomplete="off">
+            <input type="hidden" id="cx-add-coin">
+            <div id="cx-add-results" class="cx-results hidden"></div>
+          </label>
           <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-add-amt" placeholder="0.0"></label>
-          <button class="btn" onclick="cxAddSave()">Save</button>
+          <button class="btn" id="cx-add-save" onclick="cxAddSave()" disabled>Save</button>
         </div>
+        <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
       </div>
       <div class="table-wrap">
         <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
@@ -890,7 +906,6 @@ async function loadCrypto(){
     CX.holdings = hold || [];
     if(!$('#cx-coin').options.length){
       $('#cx-coin').innerHTML = CX.markets.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
-      $('#cx-add-coin').innerHTML = CX.markets.map(c=>`<option value="${c.id}">${c.name} (${c.symbol})</option>`).join('');
     }
     cxRenderTop();
     cxRenderQuick();
@@ -1056,18 +1071,85 @@ async function cxNews(cat){
   }catch(e){ $('#cx-news').innerHTML = `<div class="muted">News unavailable: ${e.message}</div>`; }
 }
 
-function cxAddOpen(){ $('#cx-add').classList.toggle('hidden'); $('#cx-add-amt').focus(); }
+function cxAddOpen(){ $('#cx-add').classList.toggle('hidden'); if(!$('#cx-add').classList.contains('hidden')) $('#cx-add-search').focus(); }
+
+// ---- coin search ----
+let cxSearchTimer = null;
+function cxSearchInput(){
+  const q = $('#cx-add-search').value.trim();
+  const box = $('#cx-add-results');
+  $('#cx-add-coin').value = '';
+  $('#cx-add-save').disabled = true;
+  $('#cx-add-picked').textContent = '';
+  if(q.length < 2){ box.classList.add('hidden'); box.innerHTML=''; return; }
+  clearTimeout(cxSearchTimer);
+  cxSearchTimer = setTimeout(()=>cxSearch(q), 250);
+}
+async function cxSearch(q){
+  const box = $('#cx-add-results');
+  box.classList.remove('hidden');
+  box.innerHTML = '<div class="cx-result muted">Searching…</div>';
+  try{
+    const d = await api('/crypto/search?q=' + encodeURIComponent(q));
+    const items = d.results || [];
+    if(!items.length){ box.innerHTML = '<div class="cx-result muted">No coins found.</div>'; return; }
+    box.innerHTML = items.map(c=>`
+      <div class="cx-result" onclick='cxPick(${JSON.stringify(c)})'>
+        ${c.thumb?`<img src="${c.thumb}" alt="" onerror="this.style.display='none'">`:''}
+        <span>${c.name}</span> <span class="sym">${c.symbol}</span>
+        ${c.rank?`<span class="rk muted">#${c.rank}</span>`:''}
+      </div>`).join('');
+  }catch(e){
+    box.innerHTML = `<div class="cx-result muted">Search failed: ${e.message}</div>`;
+  }
+}
+function cxPick(c){
+  $('#cx-add-coin').value = c.id;
+  $('#cx-add-search').value = `${c.name} (${c.symbol})`;
+  $('#cx-add-results').classList.add('hidden');
+  $('#cx-add-save').disabled = false;
+  $('#cx-add-picked').textContent = `Selected: ${c.name} · ${c.symbol}`;
+}
+
 async function cxAddSave(){
   const coin_id = $('#cx-add-coin').value;
   const amt = parseFloat($('#cx-add-amt').value);
+  if(!coin_id){ toast('Search and pick a coin first'); return; }
   if(!isFinite(amt) || amt < 0){ toast('Enter a valid amount'); return; }
   const c = CX.markets.find(x=>x.id===coin_id) || {};
-  await jpost('/crypto/holdings', {coin_id, symbol:c.symbol, name:c.name, amount:amt});
+  // fall back to whatever we can scrape from the search-selected label
+  let symbol = c.symbol, name = c.name;
+  if(!name){
+    const m = ($('#cx-add-search').value||'').match(/^(.*)\s\(([A-Z0-9]+)\)$/);
+    if(m){ name = m[1].trim(); symbol = m[2]; }
+  }
+  await jpost('/crypto/holdings', {coin_id, symbol, name, amount:amt});
   $('#cx-add-amt').value = '';
+  $('#cx-add-search').value = '';
+  $('#cx-add-coin').value = '';
+  $('#cx-add-picked').textContent = '';
+  $('#cx-add-save').disabled = true;
   CX.holdings = await api('/crypto/holdings');
+  // Pull a fresh market row so the new coin shows a price immediately.
+  await cxEnsureMarket(coin_id);
   cxRenderWallet(); cxRenderSummary();
   toast('Holding saved');
 }
+
+async function cxEnsureMarket(coin_id){
+  if(CX.markets.some(m=>m.id===coin_id)) return;
+  try{
+    const d = await api(`/crypto/chart?id=${encodeURIComponent(coin_id)}&days=1`);
+    if(d && d.prices && d.prices.length){
+      const last = d.prices[d.prices.length-1][1];
+      const first = d.prices[0][1];
+      const chg = first ? ((last-first)/first)*100 : null;
+      CX.markets.push({id:coin_id, symbol:'', name:'', price:last, chg_24h:chg,
+                       chg_7d:null, market_cap:null, rank:null, spark:d.prices.map(p=>p[1])});
+    }
+  }catch(e){ /* wallet row shows — for price until next refresh */ }
+}
+
 async function cxDel(id){
   await api('/crypto/holdings/'+id, {method:'DELETE'});
   CX.holdings = CX.holdings.filter(h=>h.id!==id);
@@ -1076,6 +1158,14 @@ async function cxDel(id){
 
 $('#cx-days').addEventListener('change', ()=>cxLoadChart($('#cx-coin').value, $('#cx-days').value));
 $('#cx-coin').addEventListener('change', ()=>cxLoadChart($('#cx-coin').value, $('#cx-days').value));
+$('#cx-add-search').addEventListener('input', cxSearchInput);
+$('#cx-add-search').addEventListener('keydown', e=>{
+  if(e.key==='Enter'){ const first = $('#cx-add-results .cx-result[onclick]'); if(first) first.click(); }
+  if(e.key==='Escape'){ $('#cx-add-results').classList.add('hidden'); }
+});
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.cx-search-wrap')) $('#cx-add-results').classList.add('hidden');
+});
 window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains('hidden')) cxLoadChart($('#cx-coin').value, $('#cx-days').value); });
 
 // ---------- tabs ----------

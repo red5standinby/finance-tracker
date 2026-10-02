@@ -36,6 +36,12 @@ window.DEMO = true;
   // snapshot from demo.json so the tab is browsable offline.
   function demoCrypto(path, qs, d){
     const cx = d.crypto || {markets:[], favorites:[], holdings:[], news:[]};
+    if(path.startsWith('/crypto/search')){
+      const q = (qs.get('q') || '').toLowerCase();
+      const res = (cx.markets || []).filter(c =>
+        c.name.toLowerCase().includes(q) || c.symbol.toLowerCase().includes(q));
+      return {results: res.slice(0,10).map(c=>({id:c.id,name:c.name,symbol:c.symbol,rank:c.rank,thumb:c.image}))};
+    }
     if(path.startsWith('/crypto/markets')) return {coins: cx.markets || [], vs:'usd'};
     if(path.startsWith('/crypto/chart')){
       const id = qs.get('id') || 'bitcoin';
