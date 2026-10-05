@@ -181,6 +181,30 @@
   .card .lbl{color:var(--mut);font-size:12.5px;text-transform:uppercase;letter-spacing:.6px}
   .card .val{font-size:28px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
   .pos{color:var(--good)} .neg{color:var(--bad)}
+  /* ---------- HOME / glance screen ---------- */
+  .home-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
+  .home-title{font-size:20px;margin:0}
+  .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
+  .home-hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .hero-card{border-left:3px solid var(--accent)}
+  .hero-card.bad{border-left-color:var(--bad)}
+  .hero-card.good{border-left-color:var(--good)}
+  .hero-card .val{font-size:34px}
+  .hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
+  .hb-row:last-child{border-bottom:none}
+  .hb-sep{background:rgba(var(--tint),.08);border-radius:8px;padding:8px 10px;margin:2px -2px}\n  .hb-name{font-weight:600;font-size:14px}
+  .hb-due{color:var(--mut);font-size:12px;margin-left:8px}
+  .hb-amt{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .hb-bar{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden;margin-top:6px}
+  .hb-bar>span{display:block;height:100%;border-radius:5px}
+  .hb-grid{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
+  .hb-grid:last-child{border-bottom:none}
+  .hb-sub{color:var(--mut);font-size:12px}
+  .hero-card.clickable,.hb-row.clickable{cursor:pointer}
+  .hb-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
+  .hb-badge.ok{background:rgba(34,197,94,.15);color:var(--good)}
+  .hb-badge.warn{background:rgba(234,179,8,.18);color:#eab308}
+  .hb-badge.over{background:rgba(239,68,68,.18);color:var(--bad)}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     padding:18px;margin-top:16px}
   .panel h2{font-size:15px;margin:0 0 14px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
@@ -465,6 +489,7 @@
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <nav>
+      <button data-tab="home"><span class="ic">⌂</span><span class="lb">Home</span></button>
       <button data-tab="dash" class="active"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
@@ -475,6 +500,62 @@
     <button class="sb-toggle" id="sb-toggle"><span id="sb-toggle-ic">‹</span><span class="lb" id="sb-toggle-lb">Collapse</span></button>
   </aside>
   <main>
+
+<!-- ============ HOME (family glance screen) ============ -->
+<section id="tab-home" class="hidden">
+  <div class="home-head">
+    <h2 class="home-title">Home</h2>
+    <div class="home-when" id="home-when"></div>
+  </div>
+
+  <!-- TIER 1: big decision numbers -->
+  <div class="grid home-hero">
+    <div class="card hero-card" id="hero-spend">
+      <div class="lbl">Left to spend this month</div>
+      <div class="val" id="h-spend">$0</div>
+      <div class="muted" style="font-size:12px" id="h-spend-sub">—</div>
+    </div>
+    <div class="card hero-card" id="hero-net">
+      <div class="lbl">This month net</div>
+      <div class="val" id="h-net">$0</div>
+      <div class="muted" style="font-size:12px" id="h-net-sub">—</div>
+    </div>
+    <div class="card hero-card" id="hero-acct">
+      <div class="lbl">Cash on hand</div>
+      <div class="val" id="h-cash">$0</div>
+      <div class="muted" style="font-size:12px" id="h-acct-sub">—</div>
+    </div>
+  </div>
+
+  <div class="grid inline-pair">
+    <!-- Upcoming bills -->
+    <div class="panel">
+      <div class="panel-head"><h2>Recurring bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· this month's checklist</span></h2></div>
+      <div id="h-bills"><div class="empty">Nothing scheduled</div></div>
+    </div>
+
+    <!-- Budget health -->
+    <div class="panel">
+      <div class="panel-head"><h2>Budget health <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0" id="h-bud-month">· —</span></h2>
+        <button class="btn ghost sm" onclick="showTab('dash')">Open budgets ↗</button></div>
+      <div id="h-budgets"><div class="empty">No budgets set</div></div>
+    </div>
+  </div>
+
+  <div class="grid inline-pair">
+    <!-- Where money went this month -->
+    <div class="panel">
+      <div class="panel-head"><h2>Top spending this month</h2></div>
+      <div id="h-topcat"><div class="empty">No spending yet</div></div>
+    </div>
+
+    <!-- Credit vs cash + savings rate -->
+    <div class="panel">
+      <div class="panel-head"><h2>Credit &amp; savings</h2></div>
+      <div id="h-credit"></div>
+    </div>
+  </div>
+</section>
 
 <!-- ============ DASHBOARD ============ -->
 <section id="tab-dash">
@@ -1486,7 +1567,8 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import','crypto'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import','crypto','home'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='home') loadHome();
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
@@ -1605,6 +1687,206 @@ function renderGrade(g){
 }
 
 // ---------- dashboard ----------
+async function loadHome(){
+  // ---- context ----
+  const now = new Date();
+  $('#home-when').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const mStart = ym + '-01';
+  const mEnd = ym + '-31';
+
+  let D = {}, B = {};
+  try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
+  try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
+
+  const income = (D.totals && D.totals.income) || 0;
+  const expense = (D.totals && D.totals.expense) || 0;
+  const net = income - expense;
+
+  // ---- HERO 1: left to spend this month ----
+  // budgeted total (if any) minus spent; else income-to-date minus spent
+  const budTot = (B.totals && B.totals.budget) || 0;
+  const budSpent = (B.totals && B.totals.spent) || 0;
+  let left, leftSub;
+  if(budTot > 0){
+    left = budTot - budSpent;
+    leftSub = 'of ' + fmt(budTot) + ' budgeted across ' + (B.rows || []).filter(r=>r.budget>0).length + ' categories';
+  } else {
+    left = income - expense;
+    leftSub = 'income so far this month minus spending';
+  }
+  const hs = $('#h-spend');
+  hs.textContent = (left<0?'-':'') + fmt(left);
+  hs.className = 'val ' + (left<0?'neg':'pos');
+  $('#h-spend-sub').textContent = leftSub;
+  $('#hero-spend').className = 'card hero-card ' + (left<0?'bad':'good');
+
+  // ---- HERO 2: this month net ----
+  const hn = $('#h-net');
+  hn.textContent = (net<0?'-':'') + fmt(net);
+  hn.className = 'val ' + (net>=0?'pos':'neg');
+  $('#hero-net').className = 'card hero-card ' + (net>=0?'good':'bad');
+  // trend vs last month
+  let sub = 'in ' + fmt(income) + ' · out ' + fmt(expense);
+  try {
+    const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    const pym = prev.getFullYear() + '-' + String(prev.getMonth()+1).padStart(2,'0');
+    const PD = await api('/dashboard?start=' + pym + '-01&end=' + pym + '-31');
+    const pnet = (PD.totals.income||0) - (PD.totals.expense||0);
+    const delta = net - pnet;
+    sub += ' · ' + (delta>=0?'▲ ':'▼ ') + fmt(Math.abs(delta)) + ' vs last month';
+  } catch(e){}
+  $('#h-net-sub').textContent = sub;
+
+  // ---- HERO 3: cash position ----
+  try {
+    const ac = await api('/accounts');
+    const cash = ac.filter(a=>!a.exclude && (a.kind==='checking'||a.kind==='savings'));
+    const withBal = cash.filter(a=>a.balance != null);
+    const hc = $('#h-cash');
+    if(withBal.length){
+      const total = withBal.reduce((s,a)=>s + (a.balance||0), 0);
+      hc.textContent = fmt(total); hc.className = 'val pos';
+      $('#h-acct-sub').textContent = withBal.map(a=>a.name).join(' · ');
+    } else if(cash.length){
+      // No tracked balances yet — show lifetime net flow for the cash accounts, clearly labelled.
+      const dn = await api('/dashboard');
+      const cashNames = cash.map(a=>a.name);
+      const acctRows = (dn.accounts||[]).filter(a=>cashNames.includes(a.name));
+      const netflow = acctRows.reduce((s,a)=>s + (a.income - a.expense), 0);
+      hc.textContent = (netflow<0?'-':'') + fmt(netflow);
+      hc.className = 'val ' + (netflow>=0?'pos':'neg');
+      $('#hero-acct').querySelector('.lbl').textContent = 'Net flow (cash accts)';
+      $('#h-acct-sub').textContent = cash.map(a=>a.name).join(' · ') + ' — no balance sync yet';
+    } else {
+      hc.textContent = '—';
+    }
+  } catch(e){}
+
+  // ---- Upcoming bills (heuristic: recurring-ish merchants seen before, not yet posted this month) ----
+  renderHomeBills(D);
+
+  // ---- Budget health ----
+  renderHomeBudgets(B);
+
+  // ---- Top spending this month ----
+  renderHomeTopCats(D);
+
+  // ---- Credit & savings ----
+  renderHomeCredit(D);
+}
+
+async function renderHomeBills(D){
+  // Known recurring bills look for by merchant text (best-effort; upgrades later)
+  const KNOWN = [
+    [/DUCK POND/i,'Duck Pond (daycare?)'],
+    [/T-MOBILE/i,'T-Mobile'],
+    [/VERIZON/i,'Verizon'],
+    [/NETFLIX/i,'Netflix'],
+    [/CRUNCHYROLL/i,'Crunchyroll'],
+    [/PRIME VIDEO|AMZN.*PRIME/i,'Prime Video'],
+    [/ELEVENLABS/i,'ElevenLabs'],
+    [/LEDGER-LIVE|TOPPER/i,'Ledger Live'],
+    [/ON THE MARK/i,'On The Mark Mgmt'],
+    [/LEXINGTON GREEN/i,'Lexington Green'],
+    [/UNITED ILLUMINATING/i,'United Illuminating'],
+    [/SOUTHERN CONNECTICUT GAS/i,'SCG (gas)'],
+    [/OPTIMUM/i,'Optimum'],
+    [/TRAVELERS/i,'Travelers Ins'],
+    [/NATIONAL GENERAL/i,'National General'],
+    [/SERVICE FINANCE/i,'Service Finance'],
+    [/GEMINI CARDPYMT/i,'Gemini card payment'],
+    [/CHASE MASTERCARD|WEB PMT CHASE/i,'Chase card payment'],
+  ];
+  const box = $('#h-bills');
+  // Which of these already posted this month (by description in current month txns)?
+  let monthDescs = [];
+  try {
+    const t = await api('/transactions?start=' + ymRange('start') + '&end=' + ymRange('end') + '&limit=500');
+    monthDescs = (t.items||[]).map(x=>x.description);
+  } catch(e){}
+  const rows = [];
+  for(const [re,label] of KNOWN){
+    const hit = monthDescs.find(d=>re.test(d));
+    rows.push({label, posted: !!hit});
+  }
+  if(!rows.length){ box.innerHTML = '<div class="empty">Nothing scheduled</div>'; return; }
+  box.innerHTML = rows.slice(0,8).map(r=>
+    `<div class="hb-row"><span class="hb-name">${esc(r.label)}</span>` +
+    `<span class="hb-badge ${r.posted?'ok':'warn'}">${r.posted?'paid':'due'}</span></div>`).join('');
+}
+function ymRange(which){
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  return which==='start' ? ym+'-01' : ym+'-31';
+}
+
+function renderHomeBudgets(B){
+  const box = $('#h-budgets');
+  $('#h-bud-month').textContent = '· ' + (B.month || '');
+  const rows = (B.rows || []).filter(r=>r.budget>0);
+  if(!rows.length){ box.innerHTML = '<div class="empty">No budgets set</div>'; return; }
+  const over = rows.filter(r=>r.pct>=100).length;
+  const near = rows.filter(r=>r.pct>=80 && r.pct<100).length;
+  let head = '';
+  if(over) head += `<div class="hb-badge over" style="margin-right:6px">${over} over</div>`;
+  if(near) head += `<div class="hb-badge warn" style="margin-right:6px">${near} near limit</div>`;
+  if(!over && !near) head += `<div class="hb-badge ok">on track</div>`;
+  const sortd = rows.slice().sort((a,b)=>b.pct-a.pct).slice(0,5);
+  box.innerHTML = `<div style="margin-bottom:8px">${head}</div>` + sortd.map(r=>{
+    const pct = Math.min(100, Math.round(r.pct));
+    const col = r.pct>=100 ? 'var(--bad)' : (r.pct>=80 ? '#eab308' : 'var(--good)');
+    return `<div class="hb-grid"><div style="min-width:0">
+      <div class="hb-name">${esc(r.name)}</div>
+      <div class="hb-bar"><span style="width:${pct}%;background:${col}"></span></div>
+      </div><div style="text-align:right;white-space:nowrap">
+      <div class="hb-amt">${fmt(r.spent)}</div><div class="hb-sub">of ${fmt(r.budget)}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function renderHomeTopCats(D){
+  const box = $('#h-topcat');
+  const cats = (D.categories||[]).filter(c=>c.kind!=='income' && (c.total||0)>0)
+    .sort((a,b)=>b.total-a.total).slice(0,6);
+  if(!cats.length){ box.innerHTML = '<div class="empty">No spending yet</div>'; return; }
+  const max = cats[0].total || 1;
+  box.innerHTML = cats.map(c=>{
+    const pct = Math.max(4, Math.round(c.total/max*100));
+    return `<div class="hb-grid"><div style="min-width:0;flex:1">
+      <div class="hb-name">${esc(c.name)}</div>
+      <div class="hb-bar"><span style="width:${pct}%;background:${c.color||'var(--accent)'}"></span></div>
+      </div><div style="text-align:right;white-space:nowrap">
+      <div class="hb-amt">${fmt(c.total)}</div><div class="hb-sub">${c.count} txn${c.count===1?'':'s'}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function renderHomeCredit(D){
+  const box = $('#h-credit');
+  const g = D.grade || {};
+  const rate = g.rate;
+  let html = '';
+  if(rate != null){
+    const col = rate>=20?'var(--good)':(rate>=0?'#eab308':'var(--bad)');
+    html += `<div class="hb-grid"><div><div class="hb-name">Savings rate this month</div>
+      <div class="hb-sub">net ÷ income</div></div>
+      <div class="hb-amt" style="color:${col};font-size:20px">${rate>=0?'+':''}${rate.toFixed(1)}%</div></div>`;
+  }
+  if(g.grade){
+    html += `<div class="hb-grid"><div><div class="hb-name">Financial grade</div>
+      <div class="hb-sub">all-time: ${esc((g.all_time||{}).grade||'–')}</div></div>
+      <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:22px">${esc(g.grade)}</div></div>`;
+  }
+  const unc = D.uncategorized;
+  if(unc && unc.count){
+    html += `<div class="hb-grid clickable" onclick="showTab('txns')"><div>
+      <div class="hb-name">Needs review</div><div class="hb-sub">uncategorized</div></div>
+      <div class="hb-amt"><span class="hb-badge warn">${unc.count} · ${fmt(unc.amount)}</span></div></div>`;
+  }
+  box.innerHTML = html || '<div class="empty">No data</div>';
+}
+
 async function loadDashboard(){
   const q = new URLSearchParams();
   const s=$('#d-start').value, e=$('#d-end').value, sel=msValues('d-account-ms');

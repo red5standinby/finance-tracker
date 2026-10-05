@@ -79,8 +79,12 @@ def clean_merchant(desc: str) -> str:
 
 
 # ---- transfer detection (independent of taxonomy rules) ----
+# NOTE: VENMO is intentionally NOT a blanket transfer pattern. It is used both
+# for real money-moves AND for purchases (e.g. paying a swim instructor), so it
+# must fall through to normal categorization. Only an explicit 'VENMO CASHOUT'
+# is treated as a transfer.
 _TRANSFER_PATTERNS = [
-    r"\bZELLE\b", r"\bVENMO\b", r"\bCASHOUT\b", r"\bCARD ?PYMT\b", r"CARD PYMT",
+    r"\bZELLE\b", r"\bVENMO\s+CASHOUT\b", r"\bCASHOUT\b", r"\bCARD ?PYMT\b", r"CARD PYMT",
     r"\bCARDPYMT\b", r"PAYMENT THANK YOU", r"\bBILL PAY\b", r"CREDIT LINE TRANSFER",
     r"FROM SAVINGS", r"SCHEDULED TRANSFER", r"WITHdrawal TO \d+ CHECKING",
     r"WITHDRAWAL TO \d+", r"DEPOSIT FROM .*PAYROLL", r"ONLINE TRANSFER", r"\bTRANSFER\b",
