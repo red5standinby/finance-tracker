@@ -22,6 +22,7 @@ from pydantic import BaseModel
 
 from . import categorize as cat
 from .adapters import AdapterError, detect_adapter, parse_any
+from .adapters.pdf import parse_pdf_any, PdfAdapterError, detect_pdf_parser
 from .db import db, init_db, make_fitid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -86,15 +87,45 @@ def _startup():
 
 # ---------- import ----------
 
+def pdf_to_text(raw_bytes: bytes) -> str:
+    """Extract text from a PDF using pypdf. Raises HTTPException on failure."""
+    try:
+        import pypdf
+    except Exception:
+        raise HTTPException(500, "PDF support unavailable (pypdf not installed)")
+    try:
+        rd = pypdf.PdfReader(io.BytesIO(raw_bytes))
+        if getattr(rd, "is_encrypted", False):
+            try:
+                rd.decrypt("")
+            except Exception:
+                raise HTTPException(400, "PDF is password-protected")
+        return "\n".join((p.extract_text() or "") for p in rd.pages)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(400, f"Could not read PDF: {e}")
+
+
 @app.post("/api/import")
 async def import_csv(file: UploadFile = File(...), account: str = Form(...),
                      bank: str = Form(""), kind: str = Form("checking"),
                      exclude: bool = Form(False)):
-    raw = (await file.read()).decode("utf-8-sig", errors="replace")
-    try:
-        txns, detected = parse_any(raw, account)
-    except AdapterError as e:
-        raise HTTPException(400, str(e))
+    raw_bytes = await file.read()
+    fname = file.filename or ""
+    is_pdf = fname.lower().endswith(".pdf") or raw_bytes[:5] == b"%PDF-"
+    if is_pdf:
+        text = pdf_to_text(raw_bytes)
+        try:
+            txns, detected = parse_pdf_any(text, account)
+        except PdfAdapterError as e:
+            raise HTTPException(400, str(e))
+    else:
+        raw = raw_bytes.decode("utf-8-sig", errors="replace")
+        try:
+            txns, detected = parse_any(raw, account)
+        except AdapterError as e:
+            raise HTTPException(400, str(e))
     if not txns:
         raise HTTPException(400, "No transactions parsed from file")
 
@@ -201,7 +232,21 @@ def import_statement(body: StatementImport):
 
 @app.post("/api/import/preview")
 async def import_preview(file: UploadFile = File(...)):
-    raw = (await file.read()).decode("utf-8-sig", errors="replace")
+    raw_bytes = await file.read()
+    fname = file.filename or ""
+    is_pdf = fname.lower().endswith(".pdf") or raw_bytes[:5] == b"%PDF-"
+    if is_pdf:
+        text = pdf_to_text(raw_bytes)
+        parser, label = detect_pdf_parser(text)
+        if parser is None:
+            return {"detected": None, "error": "Unknown PDF format"}
+        txns = parser(text, "preview")[:8]
+        return {"detected": label, "bank": "pdf", "sample": [
+            {"date": t.date.isoformat(), "description": t.description, "amount": t.amount,
+             "cleaned": cat.clean_merchant(t.description),
+             "suggested": cat.categorize(t.description, cat.clean_merchant(t.description))[0]}
+            for t in txns]}
+    raw = raw_bytes.decode("utf-8-sig", errors="replace")
     a = detect_adapter(raw)
     if a is None:
         return {"detected": None, "error": "Unknown format"}

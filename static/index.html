@@ -783,7 +783,7 @@
 <!-- ============ IMPORT ============ -->
 <section id="tab-import" class="hidden">
   <div class="panel">
-    <h2>Upload Bank CSV</h2>
+    <h2>Upload Bank Statement</h2>
     <div class="filters">
       <label>Account <input type="text" id="imp-account" list="imp-account-list"
         placeholder="pick existing or type a new one" autocomplete="off">
@@ -797,10 +797,10 @@
     <div id="imp-account-hint" style="margin-top:-6px"></div>
     <div class="drop" id="drop">
       <div style="font-size:32px">⬆</div>
-      Drop a CSV here or click to browse
+      Drop a CSV or PDF statement here, or click to browse
       <div class="muted" style="font-size:12px;margin-top:8px">
-        Auto-detects M&amp;T, Citizens, Chase, Gemini, Capital One formats</div>
-      <input type="file" id="file" accept=".csv" class="hidden">
+        Auto-detects M&amp;T, Citizens, Chase, Gemini, Capital One — CSV or PDF</div>
+      <input type="file" id="file" accept=".csv,.pdf,text/csv,application/pdf" class="hidden">
     </div>
     <div id="imp-result" style="margin-top:16px"></div>
   </div>
