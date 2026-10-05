@@ -166,5 +166,23 @@ def init_db(seed_categories: Iterable[dict]):
 
 
 def make_fitid(account: str, d: date, amount: float, desc: str) -> str:
-    h = hashlib.sha1(f"{account}|{d.isoformat()}|{amount:.2f}|{desc.strip().lower()}".encode()).hexdigest()
+    """Stable dedup id for a transaction.
+
+    Keyed on account + date + amount + a *normalized raw* description. We
+    deliberately normalize whitespace and case so that cosmetic export
+    differences ("PIN BIG Y #121  MILF" vs "PIN BIG Y #121 MILF", trailing
+    backslashes, collapsed spaces) do NOT produce different fitids.
+
+    NOTE: callers must pass the RAW bank description here, not the merchant-
+    'cleaned' value. The cleaned text is produced by the categorizer and can
+    legitimately change over time; hashing it made every categorizer tweak
+    look like a brand-new transaction and produced cross-import duplicates.
+    """
+    norm = " ".join((desc or "").strip().lower().split())
+    # Drop stray trailing export artifacts: M&T sometimes emits a dangling
+    # backslash/quote at end-of-line (e.g. 'ZELLE ... 09/29 \\' from an
+    # escaped quote). These are not part of the merchant and must not change
+    # the dedup identity.
+    norm = norm.rstrip("\\\"'` ")
+    h = hashlib.sha1(f"{account}|{d.isoformat()}|{amount:.2f}|{norm}".encode()).hexdigest()
     return h[:20]

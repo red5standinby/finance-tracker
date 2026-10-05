@@ -106,7 +106,7 @@ async def import_csv(file: UploadFile = File(...), account: str = Form(...),
         cats = cat_by_key(con)
         for t in txns:
             cleaned = cat.clean_merchant(t.description)
-            fid = make_fitid(account, t.date, t.amount, cleaned or t.description)
+            fid = make_fitid(account, t.date, t.amount, t.description)
             ckey, src = cat.categorize(t.description, cleaned, lm, t.raw_type, t.amount)
             if ckey not in cats:
                 ckey, src = "uncategorized", "uncategorized"
@@ -174,7 +174,7 @@ def import_statement(body: StatementImport):
                 amt = float(t.get("amount", 0))
                 raw_type = t.get("raw_type", "")
                 cleaned = cat.clean_merchant(desc)
-                fid = make_fitid(acct.name, d_obj, amt, cleaned or desc)
+                fid = make_fitid(acct.name, d_obj, amt, desc)
                 ckey, src = cat.categorize(desc, cleaned, lm, raw_type, amt)
                 if ckey not in cats:
                     ckey, src = "uncategorized", "uncategorized"

@@ -305,66 +305,49 @@ class MTHeaderlessAdapter(BaseAdapter):
 
     @staticmethod
     def parse(text, account_label):
-        """Headerless M&T export. Rows: [idx, date, desc, amount_or_blank, balance, (extra)].
+        """Headerless M&T export. Rows: [idx, date, desc, outflow, inflow, balance, (extra)].
 
-        Some exports leave the amount column blank and only carry a running balance.
-        So: derive the amount from the BALANCE DELTA between consecutive rows.
-        If the delta is 0 (or unavailable), fall back to the amount column magnitude
-        with M&T's sign convention (negative = outflow).
+        Column roles (VERIFIED against real exports):
+          index 3 = OUTFLOW amount  (negative, BLANK when money came in)
+          index 4 = INFLOW amount   (positive, BLANK when money went out)
+          index 5 = running BALANCE (its own sign convention: negative = overdrawn,
+                    positive = normal). NEVER derive amounts from this column.
+
+        So the amount is whichever of cells 3/4 is populated; a blank cell is NOT zero
+        and does NOT inherit a neighbour's value.
+
+        IMPORTANT: rows are NOT guaranteed to be strictly chronological (deposits can
+        appear out of file order relative to card charges). Deriving the amount from a
+        balance delta mislabels deposits as whatever postings happen to precede them in
+        file order. Parse the amount cells positionally instead.
+
+        Layouts tolerated:
+          [idx, date, desc, outflow, inflow, balance]        (5/6 cols)
+          [idx, date, desc, outflow, inflow, '',  balance]  (trailing cols ignored)
         """
         text = text.lstrip("\ufeff")
         reader = csv.reader(io.StringIO(text))
         out = []
-        prev_balance = None
         for row in reader:
             if len(row) < 5:
                 continue
             if not re.match(r"^\d{1,2}/\d{1,2}/\d{2,4}$", (row[1] or "").strip()):
                 continue
             d = _parse_date(row[1])
+            if d is None:
+                continue
             desc = row[2]
-            # Layout varies: [idx, date, desc, amount, balance] with an optional blank cell
-            # inserted before the balance.
-            #
-            # Column-role detection is positional, NOT "last numeric col": some M&T
-            # exports truncate the balance (e.g. '-150' instead of '-150.00') or leave the
-            # amount cell blank. Blank cells are preserved as None so we can tell the two
-            # numeric columns apart by *position* rather than by which one happens to be
-            # last/non-null.
-            cells = [(_money(c), i) for i, c in enumerate(row)]
-            numerics = [(v, i) for v, i in cells if i >= 3]
-            if not numerics:
-                continue
 
-            # The real balance sits in the LAST column of the row (trailing extra cols
-            # tolerated: pick the last numeric cell at idx>=3, but never the amount cell).
-            # Amount is the first numeric-bearing column at/after index 3 that is not the
-            # balance column. A blank amount cell yields None here (not a fallback).
-            bal = numerics[-1][0] if numerics else None
-            bal_idx = numerics[-1][1] if numerics else None
-            amt_col = None
-            for v, i in numerics:
-                if i == bal_idx and bal_idx != 3:
-                    continue
-                if i == bal_idx and bal_idx == 3:
-                    # only one numeric col (balance at idx 3): no explicit amount present
-                    break
-                amt_col = v
-                break
-            # If there is exactly one numeric cell at idx>=3 and it's the amount column
-            # position for this layout (idx 3), treat it as an explicit amount, not balance.
-            if len(numerics) == 1:
-                amt_col = numerics[0][0]
-                bal = numerics[0][0]
-
-            if d is None or bal is None:
+            # Amount is whichever of the two amount cells (idx 3 = outflow,
+            # idx 4 = inflow) is populated. Blank means "not this direction",
+            # NOT zero-by-inheritance.
+            outflow = _money(row[3]) if len(row) > 3 else None
+            inflow = _money(row[4]) if len(row) > 4 else None
+            if outflow is None and inflow is None:
+                # Both cells blank -> no amount information; skip rather than emit 0.
                 continue
-            if amt_col is None:
-                # no explicit amount -> use signed delta vs previous row (best effort)
-                amount = round(bal - prev_balance, 2) if prev_balance is not None else 0.0
-            else:
-                amount = amt_col
-            prev_balance = bal
+            amount = outflow if outflow is not None else inflow
+
             out.append(NormalizedTxn(
                 date=d, description=desc, amount=round(amount, 2),
                 account=account_label, bank="mt",
