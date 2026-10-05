@@ -1189,6 +1189,28 @@ def delete_holding(hold_id: int):
     return {"ok": True}
 
 
+class HoldingPatch(BaseModel):
+    amount: float | None = None
+    symbol: str | None = None
+    name: str | None = None
+
+
+@app.patch("/api/crypto/holdings/{hold_id}")
+def update_holding(hold_id: int, body: HoldingPatch):
+    if body.amount is not None and body.amount < 0:
+        raise HTTPException(400, "amount must be >= 0")
+    with db() as con:
+        existing = con.execute("SELECT id FROM crypto_holdings WHERE id=?", (hold_id,)).fetchone()
+        if not existing:
+            raise HTTPException(404, "holding not found")
+        con.execute(
+            "UPDATE crypto_holdings SET amount=COALESCE(?,amount), symbol=COALESCE(?,symbol), "
+            "name=COALESCE(?,name), updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (body.amount, body.symbol, body.name, hold_id),
+        )
+    return {"ok": True, "id": hold_id}
+
+
 # ---------- favorites (starred coins) ----------
 
 @app.get("/api/crypto/favorites")

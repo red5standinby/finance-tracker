@@ -149,6 +149,10 @@
   @media (max-width:1180px){ .cx-wallet-news{grid-template-columns:1fr} }
   .cx-news-btn.active{border-color:var(--accent);color:var(--accent)}
   .cx-wallet-news #cx-news{overflow-y:auto;max-height:420px;padding-right:4px}
+  .cx-row-actions{display:flex;gap:6px;justify-content:flex-end}
+  .cx-edit-box{background:rgba(var(--tint),.06);border:1px solid var(--line);border-radius:10px;padding:12px}
+  .cx-edit-head{font-size:13px;margin-bottom:8px;color:var(--mut)}
+  .cx-edit-head b{color:var(--txt)}
   /* ---- coin search ---- */
   .cx-search-wrap{position:relative}
   .cx-search-wrap input[type=text]{width:100%}
@@ -903,6 +907,14 @@
           </div>
           <div id="cx-add-picked" class="muted" style="font-size:12px;margin-top:-4px"></div>
         </div>
+        <div id="cx-edit" class="hidden cx-edit-box" style="margin-bottom:12px">
+          <div class="cx-edit-head">Editing <b id="cx-edit-coin">—</b></div>
+          <div class="filters">
+            <label class="f-half">Amount <input type="number" step="any" min="0" id="cx-edit-amt" placeholder="0.0"></label>
+            <button class="btn" onclick="cxEditSave()">Save</button>
+            <button class="btn ghost" onclick="cxEditClose()">Cancel</button>
+          </div>
+        </div>
         <div class="table-wrap cx-wallet-wrap">
           <table><thead><tr><th class="no-sort">Coin</th><th class="no-sort">Amount</th>
             <th class="no-sort">Price</th><th class="no-sort">Value</th><th class="no-sort">24h</th><th class="no-sort"></th></tr></thead>
@@ -1130,7 +1142,7 @@ function cxRenderWallet(){
       <td>${cxFmt(c.price)}</td>
       <td><b>${cxFmt(val)}</b></td>
       <td>${ch==null?'<span class="muted">—</span>':`<span class="${ch>=0?'cx-pos':'cx-neg'}">${ch>=0?'+':''}${cxFmt(ch)}</span>`}</td>
-      <td><button class="btn ghost sm" onclick="cxDel(${h.id})">✕</button></td>
+      <td><div class="cx-row-actions"><button class="btn ghost sm" title="Edit holding" onclick="cxEditOpen(${h.id})">✎</button><button class="btn ghost sm" title="Delete holding" onclick="cxDel(${h.id})">✕</button></div></td>
     </tr>`;
   }).join('');
 }
@@ -1550,6 +1562,36 @@ async function cxDel(id){
   await api('/crypto/holdings/'+id, {method:'DELETE'});
   CX.holdings = CX.holdings.filter(h=>h.id!==id);
   cxRenderWallet(); cxRenderSummary();
+}
+
+// ---- edit holding ----
+let cxEditId = null;
+function cxEditOpen(id){
+  const h = CX.holdings.find(x=>x.id===id);
+  if(!h) return;
+  cxEditId = id;
+  $('#cx-edit-coin').textContent = (h.name||h.coin_id) + (h.symbol?` (${h.symbol})`:'');
+  $('#cx-edit-amt').value = h.amount;
+  $('#cx-edit').classList.remove('hidden');
+  // keep the add form out of the way
+  $('#cx-add').classList.add('hidden');
+  $('#cx-edit-amt').focus();
+  $('#cx-edit-amt').select();
+}
+function cxEditClose(){
+  cxEditId = null;
+  $('#cx-edit').classList.add('hidden');
+}
+async function cxEditSave(){
+  if(cxEditId==null) return;
+  const amt = parseFloat($('#cx-edit-amt').value);
+  if(!isFinite(amt) || amt < 0){ toast('Enter a valid amount'); return; }
+  await api('/crypto/holdings/'+cxEditId, {method:'PATCH',
+    headers:{'Content-Type':'application/json'}, body:JSON.stringify({amount:amt})});
+  CX.holdings = await api('/crypto/holdings');
+  cxEditClose();
+  cxRenderWallet(); cxRenderSummary();
+  toast('Holding updated');
 }
 
 $('#cx-days').addEventListener('change', ()=>cxLoadChart($('#cx-coin').value, $('#cx-days').value));
