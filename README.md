@@ -60,6 +60,10 @@ Add your own via the **Rules → Categories** tab. Custom categories can be dele
 
 ## Features
 
+> 📖 **New here?** See **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** for a
+> plain-English walkthrough of every screen, the data conventions, and how
+> categorization/imports work. The rest of this README is the technical reference.
+
 - **Dashboard:** **financial grade card** (see below), income / expenses / net KPIs,
   spending-by-category bars, income-vs-expense monthly chart, per-account breakdown.
   Date-range + account filters, quick presets. Fully responsive (mobile-friendly).
