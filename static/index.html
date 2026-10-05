@@ -515,7 +515,7 @@
   <!-- TIER 1: big decision numbers -->
   <div class="grid home-hero">
     <div class="card hero-card" id="hero-spend">
-      <div class="lbl">Left to spend this month</div>
+      <div class="lbl">Budget remaining this month</div>
       <div class="val" id="h-spend">$0</div>
       <div class="muted" style="font-size:12px" id="h-spend-sub">—</div>
     </div>
@@ -1745,23 +1745,27 @@ async function loadHome(){
   const expense = (D.totals && D.totals.expense) || 0;
   const net = income - expense;
 
-  // ---- HERO 1: left to spend this month ----
-  // budgeted total (if any) minus spent; else income-to-date minus spent
-  const budTot = (B.totals && B.totals.budget) || 0;
-  const budSpent = (B.totals && B.totals.spent) || 0;
-  let left, leftSub;
-  if(budTot > 0){
-    left = budTot - budSpent;
-    leftSub = 'of ' + fmt(budTot) + ' budgeted across ' + (B.rows || []).filter(r=>r.budget>0).length + ' categories';
-  } else {
-    left = income - expense;
-    leftSub = 'income so far this month minus spending';
-  }
-  const hs = $('#h-spend');
-  hs.textContent = (left<0?'-':'') + fmt(left);
-  hs.className = 'val ' + (left<0?'neg':'pos');
-  $('#h-spend-sub').textContent = leftSub;
-  $('#hero-spend').className = 'card hero-card ' + (left<0?'bad':'good');
+    // ---- HERO 1: budget remaining this month ----
+    // Remaining headroom against monthly budget targets. The subtitle always
+    // states what was actually spent so the number can't be read as free cash.
+    const budTot = (B.totals && B.totals.budget) || 0;
+    const budSpent = (B.totals && B.totals.spent) || 0;        // budgeted cats
+    const spentAll = (B.totals && B.totals.spent_all) || budSpent; // ALL expense cats
+    const spentUnbud = Math.max(0, spentAll - budSpent);
+    let left, leftSub;
+    if(budTot > 0){
+      left = budTot - budSpent;
+      leftSub = fmt(budSpent) + ' spent of ' + fmt(budTot) + ' budgeted';
+      if(spentUnbud > 0.01) leftSub += ' · ' + fmt(spentUnbud) + ' spent outside budgets';
+    } else {
+      left = income - expense;
+      leftSub = 'income so far this month minus spending';
+    }
+    const hs = $('#h-spend');
+    hs.textContent = (left<0?'-':'') + fmt(left);
+    hs.className = 'val ' + (left<0?'neg':'pos');
+    $('#h-spend-sub').textContent = leftSub;
+    $('#hero-spend').className = 'card hero-card ' + (left<0?'bad':'good');
 
   // ---- HERO 2: this month net ----
   const hn = $('#h-net');

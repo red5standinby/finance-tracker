@@ -561,11 +561,16 @@ def get_budgets(month: str | None = None, accounts: str | None = None):
     rows.sort(key=lambda r: (r["budget"] <= 0, -(r["pct"] or 0), -r["spent"]))
 
     total_budget = round(sum(r["budget"] for r in rows), 2)
+    # Spend in *budgeted* categories only (drives the budget bars).
     total_spent = round(sum(r["spent"] for r in rows if r["budget"] > 0), 2)
+    # ALL expense spend this month (budgeted or not) — the honest "usage" figure.
+    total_spent_all = round(sum(r["spent"] for r in rows), 2)
     return {
         "month": month,
         "rows": rows,
-        "totals": {"budget": total_budget, "spent": total_spent},
+        "totals": {"budget": total_budget, "spent": total_spent,
+                   "spent_all": total_spent_all,
+                   "spent_unbudgeted": round(total_spent_all - total_spent, 2)},
     }
 
 
