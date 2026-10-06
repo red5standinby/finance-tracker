@@ -1156,6 +1156,7 @@ async function loadCrypto(){
     cxRenderSummary();
     $('#cx-updated').textContent = 'updated ' + new Date().toLocaleTimeString();
     await cxLoadChart($('#cx-coin').value, days);
+    cxNews(CX.newsCat);  // load headlines on first paint too
   }catch(e){ toast('Crypto load failed: ' + e.message); }
 }
 
