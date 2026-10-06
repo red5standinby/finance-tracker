@@ -810,6 +810,7 @@ _BILL_GROUPS = [
     ("mobile", "Mobile"),
     ("daycare", "Daycare"),
     ("kids_activities", "Kids activities"),
+    ("college_savings", "College Savings"),
     ("health", "Health"),
     ("card", "Card payments"),
     ("other", "Other"),
