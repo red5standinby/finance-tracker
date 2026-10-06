@@ -230,6 +230,13 @@
   .bill-act.icon-only .bi{display:inline;font-weight:700}
   .bill-act.icon-only .bl{display:none}
   .bill-act.icon-only{min-width:34px;padding:6px 8px;justify-content:center}
+  /* color coding: paid=green, edit=yellow, remove=red */
+  .bill-act.paid-act{border-color:rgba(34,197,94,.5);color:var(--good)}
+  .bill-act.paid-act:hover{background:rgba(34,197,94,.15);border-color:var(--good)}
+  .bill-act.edit-act{border-color:rgba(234,179,8,.5);color:#eab308}
+  .bill-act.edit-act:hover{background:rgba(234,179,8,.15);border-color:#eab308}
+  .bill-act.del-act{border-color:rgba(239,68,68,.5);color:var(--bad)}
+  .bill-act.del-act:hover{background:rgba(239,68,68,.15);border-color:var(--bad)}
   .duebar{height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:6px;position:relative}
   .duebar>span{display:block;height:100%;border-radius:4px}
   .duebar .duemark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--mut);opacity:.6}
@@ -2152,10 +2159,10 @@ function billRowHtml(r){
     <div style="text-align:right;white-space:nowrap">${right}
       <div class="bill-actions" style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end">
         ${r.status==='paid'
-          ? `<button class="btn ghost sm bill-act" title="Undo paid" onclick="markPaid(${r.id},false)"><span class="bi">↺</span><span class="bl">Undo paid</span></button>`
-          : `<button class="btn sm bill-act" title="Mark paid" onclick="markPaid(${r.id},true)"><span class="bi">$</span><span class="bl">Mark paid</span></button>`}
-        <button class="btn ghost sm bill-act" title="Edit bill" onclick="editBill(${r.id})"><span class="bi">✎</span><span class="bl">Edit</span></button>
-        <button class="btn ghost sm bill-act" title="Remove bill" onclick="delBill(${r.id})"><span class="bi">✕</span><span class="bl">Remove</span></button>
+          ? `<button class="btn ghost sm bill-act paid-act" title="Undo paid" onclick="markPaid(${r.id},false)"><span class="bi">↺</span><span class="bl">Undo paid</span></button>`
+          : `<button class="btn sm bill-act paid-act" title="Mark paid" onclick="markPaid(${r.id},true)"><span class="bi">$</span><span class="bl">Mark paid</span></button>`}
+        <button class="btn ghost sm bill-act edit-act" title="Edit bill" onclick="editBill(${r.id})"><span class="bi">✎</span><span class="bl">Edit</span></button>
+        <button class="btn ghost sm bill-act del-act" title="Remove bill" onclick="delBill(${r.id})"><span class="bi">✕</span><span class="bl">Remove</span></button>
       </div>
     </div></div>`;
 }
