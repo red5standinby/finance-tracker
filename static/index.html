@@ -225,6 +225,11 @@
   .hb-badge.ok{background:rgba(34,197,94,.15);color:var(--good)}
   .hb-badge.warn{background:rgba(234,179,8,.18);color:#eab308}
   .hb-badge.over{background:rgba(239,68,68,.18);color:var(--bad)}
+  /* bill action buttons: icon+label on desktop; icon-only on mobile */
+  .bill-act .bi{display:none}
+  .bill-act.icon-only .bi{display:inline;font-weight:700}
+  .bill-act.icon-only .bl{display:none}
+  .bill-act.icon-only{min-width:34px;padding:6px 8px;justify-content:center}
   .duebar{height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:6px;position:relative}
   .duebar>span{display:block;height:100%;border-radius:4px}
   .duebar .duemark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--mut);opacity:.6}
@@ -456,6 +461,10 @@
     .tb-row .cb-label{flex:1 1 100%!important;padding-bottom:0}
     .tb-row .tb-actions{flex:1 1 100%}
     .tb-row .tb-actions .btn{flex:1 1 0}
+    /* bill rows: icon-only actions on mobile */
+    .bill-act{min-width:34px;padding:6px 8px;justify-content:center}
+    .bill-act .bi{display:inline;font-weight:700}
+    .bill-act .bl{display:none}
     .cb-label{flex:1 1 100%!important;padding-bottom:0}
     .bulkbar{gap:10px;padding:12px}
     .bulkbar label{flex:1 1 100%;justify-content:space-between}
@@ -2060,12 +2069,12 @@ function billRowHtml(r){
       ${barHtml}
     </div>
     <div style="text-align:right;white-space:nowrap">${right}
-      <div style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end">
+      <div class="bill-actions" style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end">
         ${r.status==='paid'
-          ? `<button class="btn ghost sm" onclick="markPaid(${r.id},false)">Undo paid</button>`
-          : `<button class="btn sm" onclick="markPaid(${r.id},true)">Mark paid</button>`}
-        <button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
-        <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button>
+          ? `<button class="btn ghost sm bill-act" title="Undo paid" onclick="markPaid(${r.id},false)"><span class="bi">↺</span><span class="bl">Undo paid</span></button>`
+          : `<button class="btn sm bill-act" title="Mark paid" onclick="markPaid(${r.id},true)"><span class="bi">$</span><span class="bl">Mark paid</span></button>`}
+        <button class="btn ghost sm bill-act" title="Edit bill" onclick="editBill(${r.id})"><span class="bi">✎</span><span class="bl">Edit</span></button>
+        <button class="btn ghost sm bill-act" title="Remove bill" onclick="delBill(${r.id})"><span class="bi">✕</span><span class="bl">Remove</span></button>
       </div>
     </div></div>`;
 }
