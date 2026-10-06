@@ -637,6 +637,38 @@
         <button class="btn sm" onclick="openBillForm()">+ Create a bill</button>
       </div>
     </div>
+    <div class="bills-toolbar" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:0 0 12px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <span class="muted">Category</span>
+        <select id="b-filter-cat" onchange="billsFilterChanged()"
+                style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px">
+          <option value="all">All</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <span class="muted">Status</span>
+        <select id="b-filter-status" onchange="billsFilterChanged()"
+                style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px">
+          <option value="all">All</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="paid">Paid</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+        <span class="muted">Sort</span>
+        <select id="b-sort" onchange="billsFilterChanged()"
+                style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px">
+          <option value="due">Due date</option>
+          <option value="amt_desc">Amount: high → low</option>
+          <option value="amt_asc">Amount: low → high</option>
+        </select>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer">
+        <input type="checkbox" id="b-hide-completed" onchange="billsFilterChanged()">
+        <span>Hide completed</span>
+      </label>
+    </div>
     <div id="b-search-results"></div>
     <div id="b-list"><div class="empty">No bills tracked yet — create one above.</div></div>
   </div>
@@ -1888,12 +1920,72 @@ async function loadBills(){
   $('#b-count-left').className = 'card' + ((c.left||0) ? '' : ' pos');
 
   const box = $('#b-list');
-  const groups = B.groups || [];
+  let groups = B.groups || [];
   if(!groups.length){ box.innerHTML = '<div class="empty">No bills tracked yet — create one above.</div>'; return; }
+
+  // ---- populate category filter (from the full set, once) ----
+  const catSel = $('#b-filter-cat');
+  if(catSel){
+    const cur = catSel.value || 'all';
+    const opts = ['<option value="all">All</option>']
+      .concat(groups.map(g=>`<option value="${g.key}">${esc(g.name)}</option>`));
+    catSel.innerHTML = opts.join('');
+    catSel.value = [...catSel.options].some(o=>o.value===cur) ? cur : 'all';
+  }
+
+  // ---- read filter/sort state ----
+  const catF   = catSel ? catSel.value : 'all';
+  const stF    = $('#b-filter-status') ? $('#b-filter-status').value : 'all';
+  const sortF  = $('#b-sort') ? $('#b-sort').value : 'due';
+  const hideDone = $('#b-hide-completed') ? $('#b-hide-completed').checked : false;
+
+  const isPaid = r => r.status === 'paid';
+  const isOver = r => r.status === 'overdue' || r.status === 'missed';
+  const amtOf  = r => (isPaid(r) ? (r.paid_amount || 0) : (r.expected_amount || 0));
+
+  // ---- filter rows within each group ----
+  groups = groups
+    .filter(g => catF === 'all' || g.key === catF)
+    .map(g => ({ ...g, bills: g.bills.filter(r => {
+      if(hideDone && isPaid(r)) return false;
+      if(stF === 'paid' && !isPaid(r)) return false;
+      if(stF === 'unpaid' && isPaid(r)) return false;
+      if(stF === 'overdue' && !isOver(r)) return false;
+      return true;
+    })}))
+    .filter(g => g.bills.length);
+
+  if(!groups.length){ box.innerHTML = '<div class="empty">No bills match these filters.</div>'; return; }
+
+  const cmp = {
+    due:      (a,b)=>(a.due_day||0)-(b.due_day||0),
+    amt_desc: (a,b)=>amtOf(b)-amtOf(a),
+    amt_asc:  (a,b)=>amtOf(a)-amtOf(b),
+  }[sortF] || ((a,b)=>(a.due_day||0)-(b.due_day||0));
+
+  // Amount sorts are a FLAT list (grouping fights a global amount order);
+  // due-date sort keeps the category groups.
+  const flatSort = (sortF === 'amt_desc' || sortF === 'amt_asc');
+  if(flatSort){
+    const all = groups.flatMap(g => g.bills).sort(cmp);
+    groups = [{ key: '__all__', name: 'All bills', bills: all, flat: true }];
+    _billOpenGroups['__all__'] = true;
+  } else {
+    groups = groups.map(g => ({ ...g, bills: g.bills.slice().sort(cmp) }));
+  }
+
+  // re-derive per-group badges from the (filtered) rows
+  groups.forEach(g => {
+    const b = g.bills;
+    g.counts = { paid: b.filter(isPaid).length, due: b.filter(r=>r.status==='due'||r.status==='upcoming').length,
+      overdue: b.filter(isOver).length, total: b.length,
+      expected: Math.round(b.reduce((s,r)=>s+(r.expected_amount||0),0)*100)/100 };
+  });
 
   // open any group that has something needing attention, by default
   box.innerHTML = groups.map(g=>{
     const gc = g.counts || {};
+    if(g.flat){ return `<div class="bgroup open" data-key="${g.key}"><div class="bgroup-body">${g.bills.map(r=>billRowHtml(r)).join('')}</div></div>`; }
     const isOpen = _billOpenGroups[g.key] !== undefined
       ? _billOpenGroups[g.key]
       : (gc.overdue > 0 || gc.due > 0);   // default: open if anything due/overdue
@@ -1914,6 +2006,9 @@ async function loadBills(){
     </div>`;
   }).join('');
 }
+
+// re-render the bills list when a filter/sort/hide control changes (client-side, no refetch)
+function billsFilterChanged(){ loadBills(); }
 
 function toggleBillGroup(key){
   const next = !(_billOpenGroups[key] || false);
