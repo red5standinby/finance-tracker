@@ -206,6 +206,21 @@
   .home-title{font-size:20px;margin:0}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
   .home-hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  /* Snapshot cards (Home) — one panel per tab with a jump button */
+  .snap-grid{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px;align-items:start}
+  .snap-grid .snap-wide{grid-column:1 / -1}
+  .snap .panel-head h2{font-size:14px;margin:0;display:flex;align-items:center;gap:6px}
+  .snap .snap-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
+  .snap .snap-sub{color:var(--mut);font-size:12px;margin-top:2px}
+  .snap .snap-strip{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
+  .snap .snap-pill{background:rgba(var(--tint),.08);border-radius:8px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;gap:1px;min-width:78px}
+  .snap .snap-pill b{font-size:15px;font-variant-numeric:tabular-nums}
+  .snap .snap-pill span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  .snap .snap-txn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid rgba(36,48,68,.5);font-size:13px}
+  .snap .snap-txn:last-child{border-bottom:none}
+  .snap .snap-txn .d{color:var(--mut);font-size:11.5px;min-width:52px}
+  .snap .snap-txn .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .snap .snap-txn .a{font-variant-numeric:tabular-nums;white-space:nowrap}
   .hero-card{border-left:3px solid var(--accent)}
   .hero-card.bad{border-left-color:var(--bad)}
   .hero-card.good{border-left-color:var(--good)}
@@ -621,33 +636,54 @@
     </div>
   </div>
 
-  <div class="grid inline-pair">
-    <!-- Upcoming bills -->
-    <div class="panel">
-      <div class="panel-head"><h2>Recurring bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· this month's checklist</span></h2></div>
-      <div id="h-bills"><div class="empty">Nothing scheduled</div></div>
+  <!-- TIER 2: snapshot cards — one per tab, each with a jump button -->
+  <div class="grid snap-grid">
+
+    <!-- BILLS snapshot -->
+    <div class="panel snap">
+      <div class="panel-head">
+        <h2>▤ Bills</h2>
+        <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
+      </div>
+      <div id="h-snap-bills"><div class="empty">Loading…</div></div>
     </div>
 
-    <!-- Budget health -->
-    <div class="panel">
-      <div class="panel-head"><h2>Budget health <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0" id="h-bud-month">· —</span></h2>
-        <button class="btn ghost sm" onclick="showTab('dash')">Open budgets ↗</button></div>
-      <div id="h-budgets"><div class="empty">No budgets set</div></div>
-    </div>
-  </div>
-
-  <div class="grid inline-pair">
-    <!-- Where money went this month -->
-    <div class="panel">
-      <div class="panel-head"><h2>Top spending this month</h2></div>
-      <div id="h-topcat"><div class="empty">No spending yet</div></div>
+    <!-- TRENDS snapshot -->
+    <div class="panel snap">
+      <div class="panel-head">
+        <h2>↗ Trends</h2>
+        <button class="btn ghost sm" onclick="showTab('trends')">Open ↗</button>
+      </div>
+      <div id="h-snap-trends"><div class="empty">Loading…</div></div>
     </div>
 
-    <!-- Credit vs cash + savings rate -->
-    <div class="panel">
-      <div class="panel-head"><h2>Credit &amp; savings</h2></div>
-      <div id="h-credit"></div>
+    <!-- SAVINGS snapshot -->
+    <div class="panel snap">
+      <div class="panel-head">
+        <h2>◈ Savings</h2>
+        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
+      </div>
+      <div id="h-snap-savings"><div class="empty">Loading…</div></div>
     </div>
+
+    <!-- CRYPTO snapshot -->
+    <div class="panel snap">
+      <div class="panel-head">
+        <h2>₿ Crypto</h2>
+        <button class="btn ghost sm" onclick="showTab('crypto')">Open ↗</button>
+      </div>
+      <div id="h-snap-crypto"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- RECENT TRANSACTIONS snapshot (full width) -->
+    <div class="panel snap snap-wide">
+      <div class="panel-head">
+        <h2>≡ Recent transactions</h2>
+        <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
+      </div>
+      <div id="h-snap-txns"><div class="empty">Loading…</div></div>
+    </div>
+
   </div>
 </section>
 
@@ -2367,17 +2403,123 @@ async function loadHome(){
     }
   } catch(e){}
 
-  // ---- Upcoming bills (heuristic: recurring-ish merchants seen before, not yet posted this month) ----
-  renderHomeBills(D);
+  // ---- Snapshot cards (one per tab) ----
+  renderSnapBills();
+  renderSnapTrends();
+  renderSnapSavings();
+  renderSnapCrypto();
+  renderSnapTxns();
+}
 
-  // ---- Budget health ----
-  renderHomeBudgets(B);
+// ---------- Home snapshot renderers ----------
+async function renderSnapBills(){
+  const box = $('#h-snap-bills');
+  if(!box) return;
+  let B = {};
+  try { B = await api('/bills'); } catch(e){ B = {}; }
+  const rows = B.rows || [], c = B.counts || {};
+  if(!rows.length){ box.innerHTML = '<div class="empty">No bills tracked yet.</div>'; return; }
+  const strip = `<div class="snap-strip">` +
+    `<div class="snap-pill"><b class="pos">${c.paid||0}</b><span>paid</span></div>` +
+    `<div class="snap-pill"><b style="color:#eab308">${c.due||0}</b><span>due</span></div>` +
+    `<div class="snap-pill"><b class="neg">${c.overdue||0}</b><span>overdue</span></div>` +
+    `<div class="snap-pill"><b>${fmt(c.expected||0)}</b><span>monthly</span></div>` +
+    `</div>`;
+  const next = rows.filter(r=>r.status!=='paid').sort((a,b)=>(a.due_day||99)-(b.due_day||99)).slice(0,3);
+  const list = next.map(r=>{
+    const col = r.status==='overdue'||r.status==='missed' ? 'over' : 'warn';
+    return `<div class="hb-row"><span class="hb-name">${esc(r.name)}</span>` +
+      `<span class="hb-badge ${col}">${esc(r.status)}${r.due_day?' · d'+r.due_day:''}</span></div>`;
+  }).join('') || '<div class="snap-sub">All bills paid this month 🎉</div>';
+  box.innerHTML = strip + list;
+}
 
-  // ---- Top spending this month ----
-  renderHomeTopCats(D);
+async function renderSnapTrends(){
+  const box = $('#h-snap-trends');
+  if(!box) return;
+  let d = {};
+  try { d = await api('/trends?months=12'); } catch(e){ d = {}; }
+  const a = d.avg_3mo || {};
+  if(!d.months){ box.innerHTML = '<div class="empty">No trend data.</div>'; return; }
+  const inc = a.income||0, exp = a.expense||0, net = a.net||0;
+  // top 4 expense categories over the window (trends returns 'categories' aggregates)
+  const top = (d.categories||[]).slice().sort((x,y)=>(y.total||0)-(x.total||0)).slice(0,4);
+  const max = top.length ? top[0].total : 1;
+  const bars = top.map(c=>`<div class="hb-grid"><div style="min-width:0;flex:1">
+      <div class="hb-name">${esc(c.name)}</div>
+      <div class="hb-bar"><span style="width:${Math.max(4,Math.round(c.total/max*100))}%;background:${c.color||'var(--accent)'}"></span></div>
+      </div><div style="text-align:right;white-space:nowrap"><div class="hb-amt">${fmt(c.total)}</div></div></div>`).join('');
+  box.innerHTML = `<div class="snap-strip">
+      <div class="snap-pill"><b class="pos">${fmt(inc)}</b><span>avg in /mo</span></div>
+      <div class="snap-pill"><b class="neg">${fmt(exp)}</b><span>avg out /mo</span></div>
+      <div class="snap-pill"><b class="${net>=0?'pos':'neg'}">${net<0?'-':''}${fmt(net)}</b><span>avg net</span></div>
+      <div class="snap-pill"><b>${d.months.length}</b><span>months</span></div>
+    </div>` + (bars || '<div class="snap-sub">No spending in window.</div>');
+}
 
-  // ---- Credit & savings ----
-  renderHomeCredit(D);
+async function renderSnapSavings(){
+  const box = $('#h-snap-savings');
+  if(!box) return;
+  let d = {};
+  try { d = await api('/savings'); } catch(e){ d = {}; }
+  const t = d.totals || {};
+  const accts = d.accounts || [];
+  if(!accts.length){ box.innerHTML = '<div class="empty">No savings accounts.</div>'; return; }
+  const strip = `<div class="snap-strip">` +
+    (t.balance!=null ? `<div class="snap-pill"><b class="pos">${fmt(t.balance)}</b><span>balance</span></div>` : '') +
+    `<div class="snap-pill"><b>${t.count||0}</b><span>accounts</span></div>` +
+    `<div class="snap-pill"><b class="pos">${fmt(t.deposits||0)}</b><span>deposits</span></div>` +
+    `<div class="snap-pill"><b class="pos">${fmt(t.interest||0)}</b><span>interest</span></div>` +
+    `</div>`;
+  const list = accts.slice(0,3).map(a=>`<div class="hb-row"><span class="hb-name">${esc(a.name)}</span>` +
+    `<span class="hb-amt">${a.balance!=null?fmt(a.balance):'—'}</span></div>`).join('');
+  box.innerHTML = strip + list;
+}
+
+async function renderSnapCrypto(){
+  const box = $('#h-snap-crypto');
+  if(!box) return;
+  let mk = {}, hold = [];
+  try { mk = await api('/crypto/markets?per_page=5'); } catch(e){ mk = {}; }
+  try { hold = await api('/crypto/holdings'); } catch(e){ hold = []; }
+  const coins = mk.coins || [];
+  const byId = Object.fromEntries(coins.map(c=>[c.id,c]));
+  if(!coins.length && !hold.length){ box.innerHTML = '<div class="empty">Crypto unavailable.</div>'; return; }
+  let val = 0, chg = 0, haveVal = false;
+  hold.forEach(h=>{ const c = byId[h.coin_id]; if(c && c.price!=null){ const v = (h.amount||0)*c.price; val += v; chg += v*((c.chg_24h||0)/100); haveVal = true; } });
+  let strip = '';
+  if(haveVal){
+    strip = `<div class="snap-strip">
+      <div class="snap-pill"><b>${fmt(val)}</b><span>portfolio</span></div>
+      <div class="snap-pill"><b class="${chg>=0?'pos':'neg'}">${chg>=0?'+':''}${fmt(chg)}</b><span>24h</span></div>
+      <div class="snap-pill"><b>${hold.length}</b><span>holdings</span></div></div>`;
+  }
+  const rows = coins.slice(0,4).map(c=>{
+    const ch = c.chg_24h;
+    const col = ch==null ? '' : (ch>=0?'pos':'neg');
+    return `<div class="snap-txn"><span class="n">${esc(c.name)}</span>` +
+      `<span class="a">${c.price!=null?fmt(c.price):'—'}</span>` +
+      `<span class="a ${col}" style="min-width:56px;text-align:right">${ch==null?'—':(ch>=0?'+':'')+ch.toFixed(1)+'%'}</span></div>`;
+  }).join('');
+  box.innerHTML = (strip || '<div class="snap-sub">No holdings — top coins:</div>') + rows;
+}
+
+async function renderSnapTxns(){
+  const box = $('#h-snap-txns');
+  if(!box) return;
+  let d = {};
+  try { d = await api('/transactions?limit=6&sort=date&order=desc'); } catch(e){ d = {}; }
+  const items = d.items || [];
+  if(!items.length){ box.innerHTML = '<div class="empty">No transactions.</div>'; return; }
+  box.innerHTML = items.map(t=>{
+    const col = t.amount>=0 ? 'pos' : 'neg';
+    const cat = catByKey(t.ckey);
+    return `<div class="snap-txn">` +
+      `<span class="d">${esc(t.date)}</span>` +
+      `<span class="n" title="${esc(t.description)}">${esc(t.cleaned||t.description)}</span>` +
+      `<span class="a" style="color:${cat.color||'var(--mut)'};font-size:11.5px">${esc(cat.name)}</span>` +
+      `<span class="a ${col}" style="min-width:78px;text-align:right">${(t.amount<0?'-':'+')+fmt(t.amount)}</span></div>`;
+  }).join('');
 }
 
 async function renderHomeBills(D){
