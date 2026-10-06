@@ -170,7 +170,14 @@
     font-size:12px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
   .cx-search-clear:hover{background:var(--bad);color:#fff}
   .cx-no-coins{padding:14px 12px;font-size:13px;color:var(--mut);text-align:center}
-  #cx-chart-title{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0}
+  #cx-chart-title{display:flex;align-items:center;gap:10px;text-transform:none;letter-spacing:0;flex-wrap:wrap}
+  .cx-head-name{font-weight:700}
+  .cx-head-price{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+  .cx-head-chg{font-size:13px;font-weight:700;padding:2px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+  .cx-head-chg.up{color:var(--good);background:rgba(46,160,67,.14)}
+  .cx-head-chg.down{color:var(--bad);background:rgba(248,81,73,.14)}
+  .cx-head-period{font-size:11px;color:var(--mut);margin-left:-6px}
+  .cx-head-range{font-size:12px;color:var(--mut);padding:2px 8px;border:1px solid var(--line);border-radius:999px;margin-left:auto}
   .cx-title-star{background:none;border:0;cursor:pointer;padding:0;font-size:17px;line-height:1;
     color:var(--mut);transition:color .15s,transform .1s}
   .cx-title-star:hover{transform:scale(1.15);color:var(--good)}
@@ -1264,10 +1271,22 @@ function cxPickChart(id){
 
 function cxRenderChartTitle(name, label, id){
   const on = CX.favorites.includes(id);
+  const c = CX.markets.concat(CX.favCoins||[]).find(x=>x.id===id);
+  const price = c && c.price != null ? cxFmt(c.price) : '';
+  const chg = c ? c.chg_24h : null;
+  let delta = '';
+  if(chg != null){
+    const up = chg >= 0;
+    const arrow = up ? '▲' : '▼';
+    delta = `<span class="cx-head-chg ${up?'up':'down'}">${arrow} ${up?'+':''}${(+chg).toFixed(2)}%</span>`;
+  }
   $('#cx-chart-title').innerHTML =
     `<button class="cx-title-star ${on?'on':''}" onclick="cxToggleChartFav()" `+
     `title="${on?'Remove from':'Add to'} favorites">${on?'★':'☆'}</button>`+
-    `<span>${name} — ${label}</span>`;
+    `<span class="cx-head-name">${name}</span>`+
+    (price ? `<span class="cx-head-price">${price}</span>` : '')+
+    (delta ? `${delta}<span class="cx-head-period">24h</span>` : '')+
+    `<span class="cx-head-range">${label}</span>`;
 }
 
 async function cxToggleChartFav(){
