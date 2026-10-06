@@ -211,6 +211,15 @@ anything due or overdue open by default.
 - **Status** is computed live from transactions: **paid** (shows the actual amount,
   the date, and a `± vs usual` flag if it differed), **due**, **upcoming**,
   **overdue** (past due-day + 3 days), or **missed** (a past month that never posted).
+- **Mark paid / Undo paid:** each bill has a button to hand-mark it paid for the
+  current month (e.g. paid in cash or from another account, or before it clears).
+  This is a per-month override; the bill shows a `· manual` tag, and a matching
+  transaction still shows its real amount/date on other months. Undo removes it.
+- **Left to pay · this month** summary card = the sum of the expected amounts of all
+  unpaid bills. It drops as each bill is marked paid (manually or automatically).
+- **Animations:** the accordion expands/collapses smoothly (height + rotating caret,
+  staggered row fade-in); buttons/cards have hover feedback. Honors
+  `prefers-reduced-motion`.
 - **Due-date progress bar** on each unpaid bill shows how far into the month we are
   toward its due-day, with a tick at the due date — so the list reads "what's due
   first" at a glance.
@@ -221,8 +230,9 @@ anything due or overdue open by default.
   dedicated suggestions panel — the Create/search flows cover adding bills.
 
 API: `GET /api/bills?month=YYYY-MM`, `GET /api/bills/grouped`,
-`GET /api/bill-categories`, `GET /api/bills/candidates`, `POST /api/bills`,
-`PATCH /api/bills/{id}`, `DELETE /api/bills/{id}`.
+`GET /api/bill-categories`, `GET /api/bills/candidates`,
+`POST /api/bills/{id}/paid`, `POST /api/bills`, `PATCH /api/bills/{id}`,
+`DELETE /api/bills/{id}`.
 
 ---
 
