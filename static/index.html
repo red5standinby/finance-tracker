@@ -243,6 +243,24 @@
   /* Bills accordion */
   .bgroup{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--panel2);
     transition:border-color .2s ease, box-shadow .2s ease;animation:fadeUp .28s ease both}
+  /* ---- bills summary: left-to-pay hero (with completion donut) + combined status ---- */
+  .b-left-card{border-left:3px solid var(--accent);display:flex;flex-direction:column;justify-content:center}
+  .b-left-inner{display:flex;align-items:center;gap:16px;margin-top:6px}
+  .b-completion-pie{flex:0 0 104px;width:104px;height:104px}
+  .b-completion-pie svg{width:100%;height:100%;display:block}
+  .b-left-figs{min-width:0}
+  .b-left-card .val{font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .b-left-figs .muted{line-height:1.35}
+  .b-status-card{display:flex;flex-direction:column;justify-content:center}
+  .b-status-row{display:flex;align-items:stretch;gap:6px;margin-top:8px}
+  .b-status-item{flex:1;text-align:center;padding:2px 4px}
+  .b-status-val{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+  .b-status-val.pos{color:var(--good)}
+  .b-status-val.warn{color:#eab308}
+  .b-status-val.over{color:var(--bad)}
+  .b-status-lbl{font-size:11.5px;color:var(--mut);margin-top:2px;line-height:1.2}
+  .b-status-sep{width:1px;background:var(--line);margin:2px 0}
+  .b-status-total{text-align:center;font-size:12px;color:var(--mut);margin-top:10px}
   .bgroup:hover{border-color:rgba(var(--tint),.45)}
   .bgroup-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;
     transition:background .18s ease}
@@ -472,6 +490,9 @@
     .bill-act{min-width:34px;padding:6px 8px;justify-content:center}
     .bill-act .bi{display:inline;font-weight:700}
     .bill-act .bl{display:none}
+    .bills-summary{grid-template-columns:1fr!important}
+    .b-completion-pie{flex:0 0 92px;width:92px;height:92px}
+    .b-left-card .val{font-size:26px}
     .cb-label{flex:1 1 100%!important;padding-bottom:0}
     .bulkbar{gap:10px;padding:12px}
     .bulkbar label{flex:1 1 100%;justify-content:space-between}
@@ -637,11 +658,39 @@
     <div class="home-when" id="bills-when"></div>
   </div>
 
-  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px">
-    <div class="card" id="b-count-paid"><div class="lbl">Paid</div><div class="val pos" id="b-paid">0</div></div>
-    <div class="card" id="b-count-due"><div class="lbl">Due / upcoming</div><div class="val" id="b-due">0</div></div>
-    <div class="card" id="b-count-over"><div class="lbl">Overdue</div><div class="val" id="b-over">0</div></div>
-    <div class="card" id="b-count-left"><div class="lbl">Left to pay · this month</div><div class="val" id="b-left">$0</div></div>
+  <div class="grid bills-summary" style="grid-template-columns:minmax(240px,1.1fr) 1fr;gap:14px;margin-bottom:14px">
+    <!-- Left to pay this month: hero card + completion donut -->
+    <div class="card b-left-card" id="b-count-left">
+      <div class="lbl">Left to pay · this month</div>
+      <div class="b-left-inner">
+        <div id="b-completion-pie" class="b-completion-pie"></div>
+        <div class="b-left-figs">
+          <div class="val" id="b-left">$0</div>
+          <div class="muted" id="b-left-sub" style="font-size:12px">—</div>
+        </div>
+      </div>
+    </div>
+    <!-- Combined status: paid / due&upcoming / overdue -->
+    <div class="card b-status-card">
+      <div class="lbl">This month's bills</div>
+      <div class="b-status-row">
+        <div class="b-status-item">
+          <div class="b-status-val pos" id="b-paid">0</div>
+          <div class="b-status-lbl">Paid</div>
+        </div>
+        <div class="b-status-sep"></div>
+        <div class="b-status-item">
+          <div class="b-status-val warn" id="b-due">0</div>
+          <div class="b-status-lbl">Due / upcoming</div>
+        </div>
+        <div class="b-status-sep"></div>
+        <div class="b-status-item">
+          <div class="b-status-val over" id="b-over">0</div>
+          <div class="b-status-lbl">Overdue</div>
+        </div>
+      </div>
+      <div class="b-status-total" id="b-total-sub">—</div>
+    </div>
   </div>
 
   <div class="panel">
@@ -1921,6 +1970,36 @@ function renderGrade(g){
 // ============ BILLS TAB ============
 let _billOpenGroups = {};   // key -> true when expanded
 
+// completion donut for the "Left to pay" hero card (green = paid share)
+function renderBillCompletionRing(pct, paidN, total){
+  const box = $('#b-completion-pie');
+  if(!box) return;
+  if(!total){ box.innerHTML = '<div class="empty" style="font-size:11px">—</div>'; return; }
+  const R=48, r=34, cx=52, cy=52;
+  const a0=-Math.PI/2;
+  const frac=Math.max(0,Math.min(1, paidN/total));
+  const a1=a0+frac*Math.PI*2;
+  const large=(a1-a0)>Math.PI?1:0;
+  const x0=cx+R*Math.cos(a0), y0=cy+R*Math.sin(a0);
+  const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
+  const xi1=cx+r*Math.cos(a1), yi1=cy+r*Math.sin(a1);
+  const xi0=cx+r*Math.cos(a0), yi0=cy+r*Math.sin(a0);
+  let ring='';
+  if(frac>0 && frac<1){
+    ring = `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="var(--good)"></path>`;
+  } else if(frac>=1){
+    ring = `<circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="var(--good)" stroke-width="${R-r}"></circle>`;
+  }
+  const col = frac>=1 ? 'var(--good)' : (frac>0 ? 'var(--accent)' : 'var(--mut)');
+  const svg = `<svg viewBox="0 0 104 104">
+    <circle cx="${cx}" cy="${cy}" r="${(R+r)/2}" fill="none" stroke="var(--panel2)" stroke-width="${R-r}"></circle>
+    ${ring}
+    <text x="${cx}" y="${cy+2}" fill="${col}" font-size="22" font-weight="800" text-anchor="middle">${pct}%</text>
+    <text x="${cx}" y="${cy+18}" fill="var(--mut)" font-size="10" text-anchor="middle">paid</text>
+  </svg>`;
+  box.innerHTML = svg;
+}
+
 async function loadBills(){
   const now = new Date();
   const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -1932,8 +2011,12 @@ async function loadBills(){
   $('#b-due').textContent   = c.due || 0;
   $('#b-over').textContent  = c.overdue || 0;
   $('#b-left').textContent  = fmt(c.left || 0);
-  $('#b-count-over').className = 'card' + ((c.overdue||0) ? ' bad' : '');
-  $('#b-count-left').className = 'card' + ((c.left||0) ? '' : ' pos');
+  const total = c.total || 0;
+  const paidN = c.paid || 0;
+  const paidPct = total ? Math.round(paidN / total * 100) : 0;
+  $('#b-total-sub').textContent = total ? `${paidN} of ${total} bills paid · ${paidPct}% complete` : 'No bills tracked';
+  $('#b-left-sub').textContent = c.left ? `${total - paidN} bill${(total-paidN)===1?'':'s'} still to pay` : (total ? 'All bills paid 🎉' : 'Nothing scheduled');
+  renderBillCompletionRing(paidPct, paidN, total);
 
   const box = $('#b-list');
   let groups = B.groups || [];
