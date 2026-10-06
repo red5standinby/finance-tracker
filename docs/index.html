@@ -216,12 +216,14 @@
   .span-trends{grid-column:span 4}
   .span-savings{grid-column:span 2}
   .span-crypto{grid-column:span 4}
+  .span-txns-wide{grid-column:span 6}
   .snap{display:flex;flex-direction:column}
   .snap>.empty,.snap>div[id^="h-snap"]{flex:1}
   .snap .panel-head{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(36,48,68,.6)}
   .snap .panel-head h2{font-size:13px;margin:0;display:flex;align-items:center;gap:6px;
     text-transform:uppercase;letter-spacing:.7px;font-weight:700;color:var(--mut)}
   .snap .panel-head h2 .ic-lg{font-size:15px;color:var(--accent)}
+  .snap .panel-head h2 .mut-sub{text-transform:none;letter-spacing:0;font-weight:400;color:var(--mut);font-size:12px}
   .snap .snap-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
   .snap .snap-sub{color:var(--mut);font-size:12px;margin-top:2px}
   .snap .snap-strip{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
@@ -245,11 +247,11 @@
   .span-crypto .snap-txn{flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:none}
   @media(max-width:980px){
     .snap-grid{grid-template-columns:repeat(2,1fr)}
-    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto{grid-column:span 2;grid-row:auto}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide{grid-column:span 2;grid-row:auto}
   }
   @media(max-width:620px){
     .snap-grid{grid-template-columns:1fr}
-    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto{grid-column:span 1}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide{grid-column:span 1}
   }
   .hero-card{border-left:3px solid var(--accent)}
   .hero-card.bad{border-left-color:var(--bad)}
@@ -753,52 +755,52 @@ window.DEMO = true;
     </div>
   </div>
 
-  <!-- TIER 2: snapshot cards — one per tab, each with a jump button -->
+  <!-- TIER 2: rich cards — the original home checklist/health/spending/credit, bold layout -->
   <div class="grid snap-grid">
 
-    <!-- RECENT TRANSACTIONS — tall left rail (fintech: dominant activity column) -->
-    <div class="panel snap span-txns">
+    <!-- Recurring bills — the checklist (spotlight) -->
+    <div class="panel snap span-bills">
+      <div class="panel-head">
+        <h2><span class="ic-lg">▤</span> Recurring bills <span class="mut-sub">· this month's checklist</span></h2>
+        <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
+      </div>
+      <div id="h-bills"><div class="empty">Nothing scheduled</div></div>
+    </div>
+
+    <!-- Budget health -->
+    <div class="panel snap span-savings">
+      <div class="panel-head">
+        <h2><span class="ic-lg">◐</span> Budget health <span class="mut-sub" id="h-bud-month">· —</span></h2>
+        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
+      </div>
+      <div id="h-budgets"><div class="empty">No budgets set</div></div>
+    </div>
+
+    <!-- Top spending this month -->
+    <div class="panel snap span-trends">
+      <div class="panel-head">
+        <h2><span class="ic-lg">↗</span> Top spending this month</h2>
+        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
+      </div>
+      <div id="h-topcat"><div class="empty">No spending yet</div></div>
+    </div>
+
+    <!-- Credit & savings -->
+    <div class="panel snap span-savings">
+      <div class="panel-head">
+        <h2><span class="ic-lg">◈</span> Credit &amp; savings</h2>
+        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
+      </div>
+      <div id="h-credit"><div class="empty">No data</div></div>
+    </div>
+
+    <!-- Recent activity (rail, full width bottom) -->
+    <div class="panel snap span-txns-wide">
       <div class="panel-head">
         <h2><span class="ic-lg">≡</span> Recent activity</h2>
         <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
       </div>
       <div id="h-snap-txns"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- BILLS snapshot — spotlight (big) -->
-    <div class="panel snap span-bills">
-      <div class="panel-head">
-        <h2><span class="ic-lg">▤</span> Bills</h2>
-        <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
-      </div>
-      <div id="h-snap-bills"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- TRENDS snapshot -->
-    <div class="panel snap span-trends">
-      <div class="panel-head">
-        <h2><span class="ic-lg">↗</span> Trends</h2>
-        <button class="btn ghost sm" onclick="showTab('trends')">Open ↗</button>
-      </div>
-      <div id="h-snap-trends"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- SAVINGS snapshot -->
-    <div class="panel snap span-savings">
-      <div class="panel-head">
-        <h2><span class="ic-lg">◈</span> Savings</h2>
-        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
-      </div>
-      <div id="h-snap-savings"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- CRYPTO snapshot -->
-    <div class="panel snap span-crypto">
-      <div class="panel-head">
-        <h2><span class="ic-lg">₿</span> Crypto</h2>
-        <button class="btn ghost sm" onclick="showTab('crypto')">Open ↗</button>
-      </div>
-      <div id="h-snap-crypto"><div class="empty">Loading…</div></div>
     </div>
 
   </div>
@@ -2520,12 +2522,12 @@ async function loadHome(){
     }
   } catch(e){}
 
-  // ---- Snapshot cards (one per tab) ----
-  renderSnapBills();
-  renderSnapTrends();
-  renderSnapSavings();
-  renderSnapCrypto();
-  renderSnapTxns();
+  // ---- Rich home cards (original home content, bold layout) ----
+  renderHomeBills(D);      // recurring bills checklist
+  renderHomeBudgets(B);    // budget health bars
+  renderHomeTopCats(D);    // top spending this month
+  renderHomeCredit(D);     // credit & savings
+  renderSnapTxns();        // recent activity rail
 }
 
 // ---------- Home snapshot renderers ----------
@@ -2661,8 +2663,7 @@ async function renderHomeBills(D){
     return `<div class="hb-row"><span class="hb-name">${esc(r.name)}</span>` +
       `<span class="hb-badge ${stColor}">${stLabel}</span></div>`;
   }).join('');
-  box.innerHTML = head + shown +
-    `<div style="margin-top:8px"><button class="btn ghost sm" onclick="showTab('bills')">Open Bills ↗</button></div>`;
+  box.innerHTML = head + shown;
 }
 function ymRange(which){
   const now = new Date();
