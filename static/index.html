@@ -1086,7 +1086,7 @@ function jpost(path, body){
 }
 
 // =================== CRYPTO ===================
-let CX = { markets: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto',
+let CX = { markets: [], favCoins: [], favorites: [], holdings: [], chartCoin: 'bitcoin', newsCat: 'crypto',
            chartType: 'area', log: false, vol: false, prices: [], candles: [], filter: '' };
 
 function cxFmt(n, d=2){
@@ -1128,9 +1128,21 @@ async function loadCrypto(){
     CX.markets = mk.coins || [];
     CX.favorites = favs || [];
     CX.holdings = hold || [];
-    if(!$('#cx-coin').options.length){
-      $('#cx-coin').innerHTML = CX.markets.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    // Favorites may fall outside the Top 10 — fetch their live data too so they
+    // actually render in the Favorites panel and can be charted.
+    const known = new Set(CX.markets.map(c=>c.id));
+    const missing = (CX.favorites || []).filter(id=>!known.has(id));
+    CX.favCoins = [];
+    if(missing.length){
+      try {
+        const fm = await api('/crypto/markets?ids=' + encodeURIComponent(missing.join(',')));
+        CX.favCoins = fm.coins || [];
+      } catch(e){ CX.favCoins = []; }
     }
+    // chart dropdown: Top 10 + any favorited coins not already listed
+    const opts = CX.markets.concat(CX.favCoins);
+    $('#cx-coin').innerHTML = opts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+    if(!opts.some(c=>c.id === $('#cx-coin').value)) $('#cx-coin').value = 'bitcoin';
     cxRenderTop();
     cxRenderQuick();
     cxRenderWallet();
@@ -1141,7 +1153,7 @@ async function loadCrypto(){
 }
 
 function cxRenderSummary(){
-  const byId = Object.fromEntries(CX.markets.map(c=>[c.id,c]));
+  const byId = Object.fromEntries(CX.markets.concat(CX.favCoins||[]).map(c=>[c.id,c]));
   let total = 0, chg24 = 0, haveHold = false;
   for(const h of CX.holdings){
     const c = byId[h.coin_id];
@@ -1159,8 +1171,9 @@ function cxRenderSummary(){
 
 function cxRenderQuick(){
   const el = $('#cx-quick');
-  const favs = CX.markets.filter(c=>CX.favorites.includes(c.id));
-  if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins in the Top 10 to pin them here.</div>'; return; }
+  const all = CX.markets.concat(CX.favCoins || []);
+  const favs = CX.favorites.map(id => all.find(c=>c.id===id)).filter(Boolean);
+  if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins to pin them here.</div>'; return; }
   const active = $('#cx-coin').value;
   el.innerHTML = favs.map(c=>`
     <button class="cx-pill ${c.id===active?'active':''}" onclick="cxPickChart('${c.id}')" title="Chart ${c.name}">
@@ -1195,7 +1208,7 @@ function cxRenderTop(){
 }
 
 function cxRenderWallet(){
-  const byId = Object.fromEntries(CX.markets.map(c=>[c.id,c]));
+  const byId = Object.fromEntries(CX.markets.concat(CX.favCoins||[]).map(c=>[c.id,c]));
   const body = $('#cx-wallet');
   if(!CX.holdings.length){ body.innerHTML = '<tr><td colspan="6" class="muted" style="font-size:13px">No holdings yet — add one to track market value.</td></tr>'; return; }
   body.innerHTML = CX.holdings.map(h=>{
@@ -1217,11 +1230,24 @@ async function cxToggleFav(id){
   if(CX.favorites.includes(id)){
     await api('/crypto/favorites/'+id, {method:'DELETE'});
     CX.favorites = CX.favorites.filter(x=>x!==id);
+    cxRenderTop(); cxRenderQuick();
   }else{
     await jpost('/crypto/favorites', {coin_id:id});
     CX.favorites.push(id);
+    // If the coin isn't in the Top 10, pull its live data so it shows in the
+    // Favorites panel (and add it to the chart dropdown).
+    const known = CX.markets.some(c=>c.id===id) || (CX.favCoins||[]).some(c=>c.id===id);
+    if(!known){
+      try {
+        const fm = await api('/crypto/markets?ids=' + encodeURIComponent(id));
+        const c = (fm.coins||[])[0];
+        if(c){ CX.favCoins = (CX.favCoins||[]).concat([c]);
+          if(![...$('#cx-coin').options].some(o=>o.value===id))
+            $('#cx-coin').add(new Option(c.name, c.id)); }
+      } catch(e){}
+    }
+    cxRenderTop(); cxRenderQuick();
   }
-  cxRenderTop(); cxRenderQuick();
   // Keep the chart-title star in sync if it's the coin on screen.
   if(CX.chartCoin === id){
     const name = ($('#cx-coin').selectedOptions[0]||{}).text || id;

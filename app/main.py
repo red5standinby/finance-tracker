@@ -1349,15 +1349,24 @@ def crypto_search(q: str = ""):
 
 
 @app.get("/api/crypto/markets")
-def crypto_markets(per_page: int = 10, vs: str = "usd"):
-    """Top coins by market cap (default top 10)."""
+def crypto_markets(per_page: int = 10, vs: str = "usd", ids: str = ""):
+    """Top coins by market cap (default top 10), or specific coins via ?ids=a,b,c."""
+    ids = (ids or "").strip()
     def fetch():
-        return _cg("/coins/markets", {
-            "vs_currency": vs, "order": "market_cap_desc",
-            "per_page": per_page, "page": 1, "sparkline": "true",
+        params = {
+            "vs_currency": vs, "sparkline": "true",
             "price_change_percentage": "1h,24h,7d",
-        })
-    data = _cached(f"markets:{per_page}:{vs}", 60, fetch)
+        }
+        if ids:
+            params["ids"] = ids
+            params["order"] = "market_cap_desc"
+        else:
+            params["order"] = "market_cap_desc"
+            params["per_page"] = per_page
+            params["page"] = 1
+        return _cg("/coins/markets", params)
+    cache_key = f"markets:{ids or per_page}:{vs}"
+    data = _cached(cache_key, 60, fetch)
     out = []
     for c in data:
         out.append({
