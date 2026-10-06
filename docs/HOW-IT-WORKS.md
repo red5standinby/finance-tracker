@@ -194,16 +194,23 @@ these into "Budget remaining" and a health badge.
 ## 9b. Bills
 
 The **Bills** tab tracks recurring payments (utilities, insurance, loan, daycare,
-subscriptions, and card payments) and whether each is paid this month.
+subscriptions) and whether each is paid this month.
 
 - **Detection** is rule-based: a merchant that recurs across **≥3 distinct months**
 at a **stable amount** (low variance) becomes a *suggestion*. You confirm the real
-ones; suggestions you ignore never appear on the dashboard.
-- Each bill stores a name, the merchant it matches, an **expected amount**, and a
-  **typical due-day** (inferred from history, editable).
+ones; suggestions you ignore never appear on the dashboard. Card-kind merchants
+aren't suggested (add them by hand if you want them tracked).
+- **Manual add:** the **search bar** on the Bills tab finds any transaction by
+merchant; one click turns it into a bill (pulling its amount and typical day).
+- Each bill stores a name, the merchant it matches (**substring** — so fragmented
+variants like `NETFLIX 1` / `NETFLIX COM …` all count), an **expected amount**, and
+  a **typical due-day** (inferred from history, editable).
 - **Status** is computed live from transactions: **paid** (shows the actual amount,
   the date, and a `± vs usual` flag if it differed), **due**, **upcoming**,
   **overdue** (past due-day + 3 days), or **missed** (a past month that never posted).
+- **Due-date progress bar** on each unpaid bill shows how far into the month we are
+  toward its due-day, with a tick at the due date — so the list reads "what's due
+  first" at a glance.
 - Nothing to tick by hand — the moment a matching payment posts from any import, the
   bill flips to **paid**.
 
