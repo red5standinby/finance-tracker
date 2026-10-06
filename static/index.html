@@ -212,6 +212,21 @@
   .duebar{height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:6px;position:relative}
   .duebar>span{display:block;height:100%;border-radius:4px}
   .duebar .duemark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--mut);opacity:.6}
+  /* Bills accordion */
+  .bgroup{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--panel2)}
+  .bgroup-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none}
+  .bgroup-head:hover{background:rgba(var(--tint),.06)}
+  .bgroup-caret{font-size:13px;color:var(--mut);transition:transform .15s}
+  .bgroup-caret.open{transform:rotate(90deg)}
+  .bgroup-body{padding:2px 13px 8px 26px}
+  /* Modals */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal.open{display:flex}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .fld{display:block;font-size:12px;color:var(--mut);margin-bottom:11px}
+  .fld input,.fld select{display:block;width:100%;margin-top:4px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:14px;box-sizing:border-box}
+  .fld-row{display:flex;gap:10px}
+  .fld-row .fld{flex:1}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     padding:18px;margin-top:16px}
   .panel h2{font-size:15px;margin:0 0 14px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
@@ -579,24 +594,17 @@
     <div class="card"><div class="lbl">Expected / month</div><div class="val" id="b-total">$0</div></div>
   </div>
 
-  <div class="grid inline-pair">
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Suggested bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· confirm the real ones</span></h2>
-        <button class="btn ghost sm" onclick="loadBillCandidates()">Scan again</button>
-      </div>
-      <div id="b-candidates"><div class="empty">No suggestions</div></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Your bills</h2>
+  <div class="panel">
+    <div class="panel-head">
+      <h2>Your bills</h2>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="search" id="b-search" placeholder="Search a transaction to add…" oninput="billSearch(this.value)"
-               style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px;min-width:220px">
+               style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px;min-width:200px">
+        <button class="btn sm" onclick="openBillForm()">+ Create a bill</button>
       </div>
-      <div id="b-search-results"></div>
-      <div id="b-list"><div class="empty">No bills tracked yet</div></div>
     </div>
+    <div id="b-search-results"></div>
+    <div id="b-list"><div class="empty">No bills tracked yet — create one above.</div></div>
   </div>
 </section>
 
@@ -976,6 +984,7 @@
 </main>
 </div><!-- /layout -->
 <div class="toast" id="toast"></div>
+<div class="modal" id="bill-modal" onclick="closeBillForm()"></div>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -1770,73 +1779,99 @@ function renderGrade(g){
 
 // ---------- dashboard ----------
 // ============ BILLS TAB ============
+let _billOpenGroups = {};   // key -> true when expanded
+
 async function loadBills(){
   const now = new Date();
   const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   $('#bills-when').textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
   let B = {};
-  try { B = await api('/bills?month=' + ym); } catch(e){ B = {}; }
+  try { B = await api('/bills/grouped?month=' + ym); } catch(e){ B = {}; }
   const c = B.counts || {};
   $('#b-paid').textContent  = c.paid || 0;
   $('#b-due').textContent   = c.due || 0;
   $('#b-over').textContent  = c.overdue || 0;
-  const expTot = (B.rows||[]).reduce((s,r)=>s + (r.expected_amount||0), 0);
+  const expTot = (B.groups||[]).reduce((s,g)=>s + (g.counts.expected||0), 0);
   $('#b-total').textContent = fmt(expTot);
   $('#b-count-over').className = 'card' + ((c.overdue||0) ? ' bad' : '');
 
   const box = $('#b-list');
-  const rows = B.rows || [];
+  const groups = B.groups || [];
+  if(!groups.length){ box.innerHTML = '<div class="empty">No bills tracked yet — create one above.</div>'; return; }
+
+  // open any group that has something needing attention, by default
+  box.innerHTML = groups.map(g=>{
+    const gc = g.counts || {};
+    const isOpen = _billOpenGroups[g.key] !== undefined
+      ? _billOpenGroups[g.key]
+      : (gc.overdue > 0 || gc.due > 0);   // default: open if anything due/overdue
+    if(_billOpenGroups[g.key] === undefined) _billOpenGroups[g.key] = isOpen;  // seed so toggle flips from here
+    const badge = gc.overdue ? `<span class="hb-badge over">${gc.overdue} overdue</span>`
+                : gc.due     ? `<span class="hb-badge warn">${gc.due} due</span>`
+                : `<span class="hb-badge ok">paid</span>`;
+    const rowsHtml = g.bills.map(r=>billRowHtml(r)).join('');
+    return `<div class="bgroup">
+      <div class="bgroup-head" onclick="toggleBillGroup('${g.key}')">
+        <div class="bgroup-caret ${isOpen?'open':''}">▸</div>
+        <div style="flex:1;min-width:0">
+          <div class="hb-name">${esc(g.name)} <span class="muted" style="font-weight:400;font-size:12px">· ${gc.total} bill${gc.total===1?'':'s'} · ${fmt(gc.expected)}/mo</span></div>
+        </div>
+        <div>${badge}</div>
+      </div>
+      <div class="bgroup-body" style="display:${isOpen?'block':'none'}">${rowsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleBillGroup(key){
+  _billOpenGroups[key] = !(_billOpenGroups[key] || false);
+  loadBills();
+}
+
+function billRowHtml(r){
   const now2 = new Date();
   const todayDom = now2.getDate();
   const daysInMonth = new Date(now2.getFullYear(), now2.getMonth()+1, 0).getDate();
-  if(!rows.length){ box.innerHTML = '<div class="empty">No bills tracked yet — confirm a suggestion below or add one.</div>'; }
-  else {
-    box.innerHTML = rows.map(r=>{
-      const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
-      const stLabel = r.status==='missed' ? 'missed' : r.status;
-      // Due-date progress bar: fill = month progress for unpaid bills
-      // (how close we are to the due day), full+green once paid.
-      const dd = r.due_day || 0;
-      let barHtml = '';
-      if(r.status === 'paid'){
-        barHtml = `<div class="duebar"><span style="width:100%;background:var(--good)"></span></div>`;
-      } else {
-        const target = dd > 0 ? Math.min(100, Math.round(dd/daysInMonth*100)) : null;
-        const fill = dd > 0 ? Math.min(100, Math.round(todayDom/dd*100)) : 0;
-        const col = r.status==='overdue' ? 'var(--bad)' : (fill>=80 ? '#eab308' : 'var(--accent)');
-        if(target != null){
-          barHtml = `<div class="duebar"><span style="width:${fill}%;background:${col}"></span>` +
-            `<span class="duemark" style="left:${target}%" title="due day ${dd}"></span></div>`;
-        } else {
-          barHtml = `<div class="duebar"><span style="width:0%"></span></div>`;
-        }
-      }
-      let right = '';
-      if(r.status==='paid'){
-        right = `<div class="hb-amt">${fmt(r.paid_amount||0)}</div><div class="hb-sub">paid ${r.paid_date ? r.paid_date.slice(5) : ''}`;
-        if(r.variance != null && Math.abs(r.variance) >= 1) right += ` · ${r.variance>0?'+':''}${fmt(r.variance)} vs usual`;
-        right += `</div>`;
-      } else {
-        let when = '';
-        if(dd > 0){
-          const inDays = dd - todayDom;
-          when = inDays > 0 ? `· due in ${inDays}d` : (inDays === 0 ? '· due today' : `· ${-inDays}d past due`);
-        }
-        right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due ~day ${dd||'?'} ${when}</div>`;
-      }
-      return `<div class="hb-grid" style="align-items:center">
-        <div style="min-width:0;flex:1">
-          <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
-          <div class="hb-badge ${stColor}" style="margin-top:3px">${stLabel}</div>
-          ${barHtml}
-        </div>
-        <div style="text-align:right;white-space:nowrap">${right}
-          <div style="margin-top:4px"><button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
-          <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button></div>
-        </div></div>`;
-    }).join('');
+  const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
+  const stLabel = r.status==='missed' ? 'missed' : r.status;
+  const dd = r.due_day || 0;
+  let barHtml = '';
+  if(r.status === 'paid'){
+    barHtml = `<div class="duebar"><span style="width:100%;background:var(--good)"></span></div>`;
+  } else {
+    const target = dd > 0 ? Math.min(100, Math.round(dd/daysInMonth*100)) : null;
+    const fill = dd > 0 ? Math.min(100, Math.round(todayDom/dd*100)) : 0;
+    const col = r.status==='overdue' ? 'var(--bad)' : (fill>=80 ? '#eab308' : 'var(--accent)');
+    if(target != null){
+      barHtml = `<div class="duebar"><span style="width:${fill}%;background:${col}"></span>` +
+        `<span class="duemark" style="left:${target}%" title="due day ${dd}"></span></div>`;
+    } else {
+      barHtml = `<div class="duebar"><span style="width:0%"></span></div>`;
+    }
   }
-  loadBillCandidates();
+  let right = '';
+  if(r.status==='paid'){
+    right = `<div class="hb-amt">${fmt(r.paid_amount||0)}</div><div class="hb-sub">paid ${r.paid_date ? r.paid_date.slice(5) : ''}`;
+    if(r.variance != null && Math.abs(r.variance) >= 1) right += ` · ${r.variance>0?'+':''}${fmt(r.variance)} vs usual`;
+    right += `</div>`;
+  } else {
+    let when = '';
+    if(dd > 0){
+      const inDays = dd - todayDom;
+      when = inDays > 0 ? `· due in ${inDays}d` : (inDays === 0 ? '· due today' : `· ${-inDays}d past due`);
+    }
+    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due ~day ${dd||'?'} ${when}</div>`;
+  }
+  return `<div class="hb-grid" style="align-items:center">
+    <div style="min-width:0;flex:1">
+      <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
+      <div class="hb-badge ${stColor}" style="margin-top:3px">${stLabel}</div>
+      ${barHtml}
+    </div>
+    <div style="text-align:right;white-space:nowrap">${right}
+      <div style="margin-top:4px"><button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
+      <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button></div>
+    </div></div>`;
 }
 
 // ---- transaction search bar: find a txn and add the merchant as a bill ----
@@ -1856,7 +1891,7 @@ function billSearch(q){
       const key = (t.cleaned || t.description || '').toLowerCase();
       const nm = (t.cleaned||t.description||'').replace(/\b\w/g, c=>c.toUpperCase());
       const payload = JSON.stringify({name:nm, match_cleaned:key,
-        expected_amount:Math.abs(t.amount), due_day:dd, kind:'bill'}).replace(/'/g,"&#39;");
+        expected_amount:Math.abs(t.amount), due_day:dd, kind:'bill', category_key:'other'}).replace(/'/g,"&#39;");
       return `<div class="hb-grid" style="align-items:center">
         <div style="min-width:0">
           <div class="hb-name">${esc(t.cleaned || t.description)}</div>
@@ -1868,27 +1903,68 @@ function billSearch(q){
   }, 200);
 }
 
-async function loadBillCandidates(){
-  const box = $('#b-candidates');
-  let d = {};
-  try { d = await api('/bills/candidates'); } catch(e){ d = {}; }
-  const cands = (d.candidates || []).slice(0,12);
-  if(!cands.length){ box.innerHTML = '<div class="empty">All caught up — no new suggestions.</div>'; return; }
-  box.innerHTML = cands.map(c=>`
-    <div class="hb-grid" style="align-items:center">
-      <div style="min-width:0">
-        <div class="hb-name">${esc(c.name)}${c.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
-        <div class="hb-sub">~${fmt(c.expected_amount)} · ~day ${c.due_day} · seen ${c.months} months</div>
-      </div>
-      <div style="white-space:nowrap"><button class="btn sm" onclick='addBill(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Add bill</button></div>
-    </div>`).join('');
+let _billCats = null;
+async function billCategoryOptions(selected){
+  if(!_billCats){
+    try { const d = await api('/bill-categories'); _billCats = d.categories || []; }
+    catch(e){ _billCats = []; }
+  }
+  return _billCats.map(c=>
+    `<option value="${c.key}"${selected===c.key?' selected':''}>${esc(c.name)}</option>`).join('');
+}
+
+// Full add/edit form modal — "Create a bill" and Edit both use this.
+async function openBillForm(bill){
+  const isEdit = bill && bill.id;
+  const opts = await billCategoryOptions(bill ? (bill.category_key||'') : 'housing');
+  const d = document.getElementById('bill-modal');
+  d.innerHTML =
+    '<div class="modal-card" onclick="event.stopPropagation()">'+
+      '<h3 style="margin:0 0 14px">'+(isEdit?'Edit bill':'Create a bill')+'</h3>'+
+      '<label class="fld">Name<input id="bf-name" value="'+esc(bill?(bill.name||''):'')+'" placeholder="e.g. Netflix"></label>'+
+      '<label class="fld">Match merchant (text in the transaction)<input id="bf-match" value="'+esc(bill?(bill.match_cleaned||''):'')+'" placeholder="e.g. netflix"></label>'+
+      '<div class="fld-row">'+
+        '<label class="fld">Expected amount<input id="bf-amt" type="number" step="0.01" value="'+(bill?(bill.expected_amount||''):'')+'" placeholder="20.20"></label>'+
+        '<label class="fld">Due day (1-31)<input id="bf-day" type="number" min="1" max="31" value="'+(bill&&bill.due_day?bill.due_day:'')+'" placeholder="13"></label>'+
+      '</div>'+
+      '<label class="fld">Category<select id="bf-cat">'+opts+'</select></label>'+
+      '<label class="fld">Type<select id="bf-kind">'+
+        '<option value="bill"'+(bill&&bill.kind==='card'?'':' selected')+'>Bill</option>'+
+        '<option value="card"'+(bill&&bill.kind==='card'?' selected':'')+'>Credit-card payment</option>'+
+      '</select></label>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'+
+        '<button class="btn ghost" onclick="closeBillForm()">Cancel</button>'+
+        '<button class="btn" onclick="submitBillForm('+(isEdit?bill.id:'null')+')">'+(isEdit?'Save':'Create bill')+'</button>'+
+      '</div>'+
+    '</div>';
+  d.classList.add('open');
+  setTimeout(()=>{const el=document.getElementById('bf-name');if(el)el.focus();},30);
+}
+
+function closeBillForm(){ document.getElementById('bill-modal').classList.remove('open'); }
+
+async function submitBillForm(id){
+  const name = (document.getElementById('bf-name').value||'').trim();
+  const match = (document.getElementById('bf-match').value||'').trim().toLowerCase();
+  const amt = parseFloat(document.getElementById('bf-amt').value)||0;
+  const day = parseInt(document.getElementById('bf-day').value)||0;
+  const cat = document.getElementById('bf-cat').value;
+  const kind = document.getElementById('bf-kind').value;
+  if(!name && !match){ alert('Give the bill a name or a match merchant.'); return; }
+  const body = { name:(name||match), match_cleaned:(match||name.toLowerCase()),
+    expected_amount:amt, due_day:day, category_key:cat, kind:kind };
+  try {
+    if(id){ await api('/bills/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }
+    else { await jpost('/bills', body); }
+    closeBillForm(); loadBills();
+  } catch(e){ alert('Could not save: ' + e.message); }
 }
 
 async function addBill(c){
   try {
     await jpost('/bills', {
       name:c.name, match_cleaned:c.match_cleaned, expected_amount:c.expected_amount,
-      due_day:c.due_day, kind:c.kind });
+      due_day:c.due_day, kind:c.kind, category_key:c.category_key || 'other' });
     loadBills();
   } catch(e){ alert('Could not add bill: ' + e.message); }
 }
@@ -1899,17 +1975,10 @@ async function delBill(id){
 }
 
 async function editBill(id){
-  const name = prompt('Bill name:');
-  if(name === null) return;
-  const exp = prompt('Expected amount (e.g. 224.39):');
-  if(exp === null) return;
-  const day = prompt('Typical due day of month (1-31):');
-  if(day === null) return;
-  try {
-    await api('/bills/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ name:name, expected_amount:parseFloat(exp)||0, due_day:parseInt(day)||0 })});
-    loadBills();
-  } catch(e){ alert(e.message); }
+  let bill = null;
+  try { const d = await api('/bills'); bill = (d.rows||[]).find(r=>r.id===id); } catch(e){}
+  if(!bill){ alert('Bill not found'); return; }
+  openBillForm(bill);
 }
 
 async function loadHome(){

@@ -726,6 +726,62 @@ def bill_candidates():
     return {"candidates": cands}
 
 
+# Common bill categories, in display order. key -> label.
+_BILL_GROUPS = [
+    ("housing", "Housing"),
+    ("loan_payment", "Loans"),
+    ("utilities", "Utilities"),
+    ("insurance", "Insurance"),
+    ("subscriptions", "Subscriptions"),
+    ("mobile", "Mobile"),
+    ("daycare", "Daycare"),
+    ("kids_activities", "Kids activities"),
+    ("health", "Health"),
+    ("card", "Card payments"),
+    ("other", "Other"),
+]
+
+
+@app.get("/api/bill-categories")
+def bill_categories():
+    """The category vocabulary available for grouping bills (for the add modal)."""
+    return {"categories": [{"key": k, "name": n} for k, n in _BILL_GROUPS]}
+
+
+@app.get("/api/bills/grouped")
+def bills_grouped(month: str | None = None, include_inactive: bool = False):
+    """Bills grouped by category, each group with its own paid/due counts.
+
+    Groups appear in _BILL_GROUPS order; any unknown/empty keys fall under
+    'other'. Within a group, bills are ordered by status then due_day.
+    """
+    base = get_bills(month=month, include_inactive=include_inactive)
+    rows = base["rows"]
+    labels = dict(_BILL_GROUPS)
+    order = {k: i for i, (k, _) in enumerate(_BILL_GROUPS)}
+    buckets: dict[str, list] = {}
+    for r in rows:
+        key = (r.get("category_key") or "").strip() or "other"
+        if key not in labels:
+            key = "other"
+        buckets.setdefault(key, []).append(r)
+    groups = []
+    for key, items in sorted(buckets.items(), key=lambda kv: order.get(kv[0], 99)):
+        groups.append({
+            "key": key,
+            "name": labels.get(key, key.title()),
+            "bills": items,
+            "counts": {
+                "paid": sum(1 for r in items if r["status"] == "paid"),
+                "due": sum(1 for r in items if r["status"] in ("due", "upcoming")),
+                "overdue": sum(1 for r in items if r["status"] in ("overdue", "missed")),
+                "total": len(items),
+                "expected": round(sum(r.get("expected_amount") or 0 for r in items), 2),
+            },
+        })
+    return {"month": base["month"], "groups": groups, "counts": base["counts"]}
+
+
 @app.post("/api/bills")
 def add_bill(body: BillIn):
     key = (body.match_cleaned or body.name or "").strip().lower()
@@ -736,7 +792,8 @@ def add_bill(body: BillIn):
             VALUES(?,?,?,?,?,?,1)
             ON CONFLICT(match_cleaned) DO UPDATE SET
               name=excluded.name, expected_amount=excluded.expected_amount,
-              due_day=excluded.due_day, kind=excluded.kind, active=1""",
+              due_day=excluded.due_day, kind=excluded.kind,
+              category_key=excluded.category_key, active=1""",
             (body.name or key.title(), key, body.expected_amount or 0,
              body.due_day or 0, body.kind or "bill", body.category_key or ""))
     return {"ok": True, "match_cleaned": key}
