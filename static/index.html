@@ -725,6 +725,7 @@
         <select id="b-sort" onchange="billsFilterChanged()"
                 style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px">
           <option value="due">Due date</option>
+          <option value="due_desc">Due date: high → low</option>
           <option value="amt_desc">Amount: high → low</option>
           <option value="amt_asc">Amount: low → high</option>
         </select>
@@ -2058,13 +2059,14 @@ async function loadBills(){
 
   const cmp = {
     due:      (a,b)=>(a.due_day||0)-(b.due_day||0),
+    due_desc: (a,b)=>(b.due_day||0)-(a.due_day||0),
     amt_desc: (a,b)=>amtOf(b)-amtOf(a),
     amt_asc:  (a,b)=>amtOf(a)-amtOf(b),
   }[sortF] || ((a,b)=>(a.due_day||0)-(b.due_day||0));
 
   // Amount sorts are a FLAT list (grouping fights a global amount order);
   // due-date sort keeps the category groups.
-  const flatSort = (sortF === 'amt_desc' || sortF === 'amt_asc');
+  const flatSort = (sortF === 'amt_desc' || sortF === 'amt_asc' || sortF === 'due_desc');
   if(flatSort){
     const all = groups.flatMap(g => g.bills).sort(cmp);
     groups = [{ key: '__all__', name: 'All bills', bills: all, flat: true }];
