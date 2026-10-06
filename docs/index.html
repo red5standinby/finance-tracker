@@ -3287,10 +3287,21 @@ async function upload(file){
   $('#imp-result').innerHTML = '<span class="muted">Uploading…</span>';
   try{
     const r = await api('/import',{method:'POST',body:fd});
+    const dupeTxt = r.skipped_duplicates ? ` · ${r.skipped_duplicates} duplicates skipped` : '';
+    let warnHtml = '';
+    if(r.warning){
+      const flagged = (r.skipped_detail||[]).filter(x=>x.same_batch_identity);
+      const rows = flagged.slice(0,6).map(x=>`<li><b>${esc(x.date||'')}</b> ${esc((x.description||'').slice(0,40))} · $${Math.abs(x.amount||0).toFixed(2)} <span class="muted">(${esc(x.reason||'')})</span></li>`).join('');
+      warnHtml = `<div class="card" style="border-color:#eab308;margin-top:8px">
+        <b style="color:#eab308">⚠ Check skipped rows</b>
+        <div class="muted" style="font-size:12px;margin:4px 0">${esc(r.warning)}</div>
+        ${rows?`<ul style="margin:6px 0 0;padding-left:18px;font-size:12px">${rows}</ul>`:''}
+      </div>`;
+    }
     $('#imp-result').innerHTML = `<div class="card" style="border-color:var(--good)">
       <b class="pos">✓ Imported</b> ${r.inserted} transactions from <b>${r.bank}</b>
-      into <b>${r.account}</b>${r.skipped_duplicates?` · ${r.skipped_duplicates} duplicates skipped`:''}</div>`;
-    toast(`Imported ${r.inserted} transactions`);
+      into <b>${r.account}</b>${dupeTxt}</div>${warnHtml}`;
+    toast(r.warning ? `Imported ${r.inserted} — ⚠ check skipped rows` : `Imported ${r.inserted} transactions`);
     loadImports(); loadAcctList(); loadMeta();
   }catch(e){
     $('#imp-result').innerHTML = `<div class="card" style="border-color:var(--bad)">

@@ -184,13 +184,22 @@ def init_db(seed_categories: Iterable[dict]):
             con.execute("INSERT OR REPLACE INTO meta(key,val) VALUES('transfer_hidden_default','1')")
 
 
-def make_fitid(account: str, d: date, amount: float, desc: str) -> str:
+def make_fitid(account: str, d: date, amount: float, desc: str, occ: int = 0) -> str:
     """Stable dedup id for a transaction.
 
-    Keyed on account + date + amount + a *normalized raw* description. We
-    deliberately normalize whitespace and case so that cosmetic export
-    differences ("PIN BIG Y #121  MILF" vs "PIN BIG Y #121 MILF", trailing
-    backslashes, collapsed spaces) do NOT produce different fitids.
+    Keyed on account + date + amount + a *normalized raw* description, plus an
+    *occurrence index* (`occ`). We deliberately normalize whitespace and case so
+    that cosmetic export differences ("PIN BIG Y #121  MILF" vs "PIN BIG Y #121
+    MILF", trailing backslashes, collapsed spaces) do NOT produce different
+    fitids.
+
+    `occ` disambiguates genuinely-identical rows: two real same-day transactions
+    with the same amount and description (e.g. two $250 FID BKG SVC LLC MONEYLINE
+    on 09/24) would otherwise hash identically and the 2nd would be silently
+    dropped as a 'duplicate'. `occ` is the 0-based position of the row among
+    byte-identical (date+amount+normdesc) rows *within one import batch*, so a
+    re-import reproduces the same ids (still idempotent) while distinct rows all
+    survive.
 
     NOTE: callers must pass the RAW bank description here, not the merchant-
     'cleaned' value. The cleaned text is produced by the categorizer and can
@@ -203,5 +212,5 @@ def make_fitid(account: str, d: date, amount: float, desc: str) -> str:
     # escaped quote). These are not part of the merchant and must not change
     # the dedup identity.
     norm = norm.rstrip("\\\"'` ")
-    h = hashlib.sha1(f"{account}|{d.isoformat()}|{amount:.2f}|{norm}".encode()).hexdigest()
+    h = hashlib.sha1(f"{account}|{d.isoformat()}|{amount:.2f}|{norm}|{occ}".encode()).hexdigest()
     return h[:20]

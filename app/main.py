@@ -131,13 +131,19 @@ async def import_csv(file: UploadFile = File(...), account: str = Form(...),
 
     batch = uuid.uuid4().hex[:12]
     inserted = skipped = 0
+    skipped_rows = []   # {date, amount, description, reason}
+    seen = {}   # identity -> occurrence index within THIS batch (disambiguates identical rows)
     with db() as con:
         acct_id = ensure_account(con, account, bank or detected, kind, exclude)
         lm = learned_map(con)
         cats = cat_by_key(con)
         for t in txns:
             cleaned = cat.clean_merchant(t.description)
-            fid = make_fitid(account, t.date, t.amount, t.description)
+            _key = (t.date.isoformat(), round(float(t.amount), 2), " ".join((t.description or "").strip().lower().split()).rstrip("\\\"'` "))
+            occ = seen.get(_key, 0)
+            seen[_key] = occ + 1
+            occ_dupe = occ > 0   # a same-identity row earlier in this very batch
+            fid = make_fitid(account, t.date, t.amount, t.description, occ)
             ckey, src = cat.categorize(t.description, cleaned, lm, t.raw_type, t.amount)
             if ckey not in cats:
                 ckey, src = "uncategorized", "uncategorized"
@@ -152,13 +158,31 @@ async def import_csv(file: UploadFile = File(...), account: str = Form(...),
                      t.raw_type, cid, src, t.memo, fid, batch),
                 )
                 inserted += 1
-            except Exception:
+            except Exception as exc:
                 skipped += 1
+                reason = "duplicate" if "UNIQUE" in str(exc).upper() else f"error: {exc}"
+                skipped_rows.append({"date": t.date.isoformat(), "amount": round(float(t.amount), 2),
+                                     "description": t.description, "reason": reason,
+                                     "same_batch_identity": bool(occ_dupe)})
         con.execute("INSERT INTO imports(id,filename,account,bank,inserted,skipped) VALUES(?,?,?,?,?,?)",
                     (batch, file.filename, account, bank or detected, inserted, skipped))
 
+    # Count identity groups that appear >1x in the source (the "looks like a dupe"
+    # case). If any of those got skipped, it's worth flagging loudly.
+    multi_identity = {k: v for k, v in seen.items() if v > 1}
+    flagged = [r for r in skipped_rows if r.get("same_batch_identity")]
+    warning = None
+    if flagged:
+        warning = (f"{len(flagged)} row(s) were skipped even though identical rows exist in "
+                   f"this same file — check whether they are genuine repeats vs. true duplicates.")
+    elif multi_identity:
+        warning = (f"{len(multi_identity)} identity group(s) repeat within this file "
+                   f"(same date+amount+description); all were inserted.")
     return {"ok": True, "batch": batch, "bank": detected, "account": account,
-            "inserted": inserted, "skipped_duplicates": skipped, "parsed": len(txns)}
+            "inserted": inserted, "skipped_duplicates": skipped, "parsed": len(txns),
+            "skipped_detail": skipped_rows,
+            "repeated_identities": len(multi_identity),
+            "warning": warning}
 
 
 class StatementAccount(BaseModel):
@@ -190,6 +214,8 @@ def import_statement(body: StatementImport):
             continue
         batch = uuid.uuid4().hex[:12]
         inserted = skipped = 0
+        skipped_rows = []
+        seen = {}
         with db() as con:
             acct_id = ensure_account(con, acct.name, body.bank, acct.kind, acct.exclude)
             lm = learned_map(con)
@@ -200,12 +226,19 @@ def import_statement(body: StatementImport):
                     d_obj = date.fromisoformat(d)
                 except (ValueError, TypeError):
                     skipped += 1
+                    skipped_rows.append({"date": str(d), "amount": t.get("amount"),
+                                         "description": t.get("description", ""),
+                                         "reason": "bad date", "same_batch_identity": False})
                     continue
                 desc = t.get("description", "")
                 amt = float(t.get("amount", 0))
                 raw_type = t.get("raw_type", "")
                 cleaned = cat.clean_merchant(desc)
-                fid = make_fitid(acct.name, d_obj, amt, desc)
+                _key = (d_obj.isoformat(), round(amt, 2), " ".join((desc or "").strip().lower().split()).rstrip("\\\"'` "))
+                occ = seen.get(_key, 0)
+                seen[_key] = occ + 1
+                occ_dupe = occ > 0
+                fid = make_fitid(acct.name, d_obj, amt, desc, occ)
                 ckey, src = cat.categorize(desc, cleaned, lm, raw_type, amt)
                 if ckey not in cats:
                     ckey, src = "uncategorized", "uncategorized"
@@ -219,12 +252,21 @@ def import_statement(body: StatementImport):
                         (acct_id, d_obj.isoformat(), desc, cleaned, amt,
                          raw_type, cid, src, "", fid, batch))
                     inserted += 1
-                except Exception:
+                except Exception as exc:
                     skipped += 1
+                    reason = "duplicate" if "UNIQUE" in str(exc).upper() else f"error: {exc}"
+                    skipped_rows.append({"date": d_obj.isoformat(), "amount": round(amt, 2),
+                                         "description": desc, "reason": reason,
+                                         "same_batch_identity": bool(occ_dupe)})
             con.execute("INSERT INTO imports(id,filename,account,bank,inserted,skipped) VALUES(?,?,?,?,?,?)",
                         (batch, f"{body.filename}#{acct.name}", acct.name, body.bank, inserted, skipped))
+        multi = sum(1 for v in seen.values() if v > 1)
+        flagged = [r for r in skipped_rows if r.get("same_batch_identity")]
         results.append({"account": acct.name, "inserted": inserted,
-                        "skipped_duplicates": skipped, "parsed": len(acct.txns)})
+                        "skipped_duplicates": skipped, "parsed": len(acct.txns),
+                        "skipped_detail": skipped_rows, "repeated_identities": multi,
+                        "warning": (f"{len(flagged)} skipped row(s) have identical rows in this file" if flagged
+                                    else (f"{multi} identity group(s) repeat within this file" if multi else None))})
     total_in = sum(r["inserted"] for r in results)
     return {"ok": True, "total_inserted": total_in,
             "total_skipped": sum(r["skipped_duplicates"] for r in results), "results": results}
