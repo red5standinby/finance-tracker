@@ -209,6 +209,9 @@
   .hb-badge.ok{background:rgba(34,197,94,.15);color:var(--good)}
   .hb-badge.warn{background:rgba(234,179,8,.18);color:#eab308}
   .hb-badge.over{background:rgba(239,68,68,.18);color:var(--bad)}
+  .duebar{height:6px;border-radius:4px;background:var(--panel2);overflow:hidden;margin-top:6px;position:relative}
+  .duebar>span{display:block;height:100%;border-radius:4px}
+  .duebar .duemark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--mut);opacity:.6}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
     padding:18px;margin-top:16px}
   .panel h2{font-size:15px;margin:0 0 14px;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
@@ -586,7 +589,12 @@
     </div>
 
     <div class="panel">
-      <div class="panel-head"><h2>Your bills</h2></div>
+      <div class="panel-head">
+        <h2>Your bills</h2>
+        <input type="search" id="b-search" placeholder="Search a transaction to add…" oninput="billSearch(this.value)"
+               style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px;min-width:220px">
+      </div>
+      <div id="b-search-results"></div>
       <div id="b-list"><div class="empty">No bills tracked yet</div></div>
     </div>
   </div>
@@ -1778,23 +1786,49 @@ async function loadBills(){
 
   const box = $('#b-list');
   const rows = B.rows || [];
+  const now2 = new Date();
+  const todayDom = now2.getDate();
+  const daysInMonth = new Date(now2.getFullYear(), now2.getMonth()+1, 0).getDate();
   if(!rows.length){ box.innerHTML = '<div class="empty">No bills tracked yet — confirm a suggestion below or add one.</div>'; }
   else {
     box.innerHTML = rows.map(r=>{
       const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
       const stLabel = r.status==='missed' ? 'missed' : r.status;
+      // Due-date progress bar: fill = month progress for unpaid bills
+      // (how close we are to the due day), full+green once paid.
+      const dd = r.due_day || 0;
+      let barHtml = '';
+      if(r.status === 'paid'){
+        barHtml = `<div class="duebar"><span style="width:100%;background:var(--good)"></span></div>`;
+      } else {
+        const target = dd > 0 ? Math.min(100, Math.round(dd/daysInMonth*100)) : null;
+        const fill = dd > 0 ? Math.min(100, Math.round(todayDom/dd*100)) : 0;
+        const col = r.status==='overdue' ? 'var(--bad)' : (fill>=80 ? '#eab308' : 'var(--accent)');
+        if(target != null){
+          barHtml = `<div class="duebar"><span style="width:${fill}%;background:${col}"></span>` +
+            `<span class="duemark" style="left:${target}%" title="due day ${dd}"></span></div>`;
+        } else {
+          barHtml = `<div class="duebar"><span style="width:0%"></span></div>`;
+        }
+      }
       let right = '';
       if(r.status==='paid'){
         right = `<div class="hb-amt">${fmt(r.paid_amount||0)}</div><div class="hb-sub">paid ${r.paid_date ? r.paid_date.slice(5) : ''}`;
         if(r.variance != null && Math.abs(r.variance) >= 1) right += ` · ${r.variance>0?'+':''}${fmt(r.variance)} vs usual`;
         right += `</div>`;
       } else {
-        right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">expected · due ~${r.due_day||'?'}</div>`;
+        let when = '';
+        if(dd > 0){
+          const inDays = dd - todayDom;
+          when = inDays > 0 ? `· due in ${inDays}d` : (inDays === 0 ? '· due today' : `· ${-inDays}d past due`);
+        }
+        right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due ~day ${dd||'?'} ${when}</div>`;
       }
       return `<div class="hb-grid" style="align-items:center">
-        <div style="min-width:0">
+        <div style="min-width:0;flex:1">
           <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
           <div class="hb-badge ${stColor}" style="margin-top:3px">${stLabel}</div>
+          ${barHtml}
         </div>
         <div style="text-align:right;white-space:nowrap">${right}
           <div style="margin-top:4px"><button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
@@ -1803,6 +1837,35 @@ async function loadBills(){
     }).join('');
   }
   loadBillCandidates();
+}
+
+// ---- transaction search bar: find a txn and add the merchant as a bill ----
+let _billSearchTimer = null;
+function billSearch(q){
+  clearTimeout(_billSearchTimer);
+  const box = $('#b-search-results');
+  q = (q || '').trim();
+  if(q.length < 2){ box.innerHTML = ''; return; }
+  _billSearchTimer = setTimeout(async ()=>{
+    let d = {};
+    try { d = await api('/transactions?q=' + encodeURIComponent(q) + '&limit=8&include_hidden=true'); } catch(e){ d = {}; }
+    const items = d.items || [];
+    if(!items.length){ box.innerHTML = '<div class="empty" style="padding:6px 2px">No matching transactions</div>'; return; }
+    box.innerHTML = items.map(t=>{
+      const dd = parseInt(t.date.slice(8,10)) || 0;
+      const key = (t.cleaned || t.description || '').toLowerCase();
+      const nm = (t.cleaned||t.description||'').replace(/\b\w/g, c=>c.toUpperCase());
+      const payload = JSON.stringify({name:nm, match_cleaned:key,
+        expected_amount:Math.abs(t.amount), due_day:dd, kind:'bill'}).replace(/'/g,"&#39;");
+      return `<div class="hb-grid" style="align-items:center">
+        <div style="min-width:0">
+          <div class="hb-name">${esc(t.cleaned || t.description)}</div>
+          <div class="hb-sub">${t.date} · ${esc(t.account||'')} · ${fmt(t.amount)}</div>
+        </div>
+        <div style="white-space:nowrap"><button class="btn sm" onclick='addBill(${payload});document.querySelector("#b-search").value="";document.querySelector("#b-search-results").innerHTML=""'>Add as bill</button></div>
+      </div>`;
+    }).join('');
+  }, 200);
 }
 
 async function loadBillCandidates(){

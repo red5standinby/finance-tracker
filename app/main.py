@@ -644,13 +644,16 @@ def _detect_bill_candidates(con):
 def _bill_status(con, bill, month):
     """Compute this month's paid/due/overdue state for one bill.
 
-    Looks for a matching txn (same cleaned merchant, outflow) in the month.
+    Matches a txn whose cleaned merchant *contains* the bill's match key
+    (case-insensitive) — merchants are often fragmented across variants
+    (NETFLIX 1 / NETFLIX COM ...), so substring matching is intentional.
     Returns paid (with date+amount) or a due-state derived from due_day.
     """
+    key = (bill["match_cleaned"] or "").lower()
     row = con.execute("""
         SELECT t.date, t.amount FROM transactions t
-        WHERE lower(t.cleaned) = ? AND substr(t.date,1,7) = ? AND t.amount < 0
-        ORDER BY t.date DESC LIMIT 1""", (bill["match_cleaned"], month)).fetchone()
+        WHERE lower(t.cleaned) LIKE ? AND substr(t.date,1,7) = ? AND t.amount < 0
+        ORDER BY t.date DESC LIMIT 1""", (f"%{key}%", month)).fetchone()
     today = date.today()
     status, paid_date, paid_amount = "due", None, None
     if row:
@@ -718,7 +721,8 @@ def bill_candidates():
     """Propose recurring bills from history, excluding ones already tracked."""
     with db() as con:
         tracked = {r["match_cleaned"] for r in con.execute("SELECT match_cleaned FROM bills").fetchall()}
-        cands = [c for c in _detect_bill_candidates(con) if c["match_cleaned"] not in tracked]
+        cands = [c for c in _detect_bill_candidates(con)
+                 if c["match_cleaned"] not in tracked and c["kind"] != "card"]
     return {"candidates": cands}
 
 
