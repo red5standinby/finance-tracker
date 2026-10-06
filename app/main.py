@@ -1610,4 +1610,15 @@ def index():
     return FileResponse(os.path.join(STATIC, "index.html"))
 
 
+@app.get("/favicon.svg")
+def favicon_svg():
+    return FileResponse(os.path.join(STATIC, "favicon.svg"), media_type="image/svg+xml")
+
+
+@app.get("/favicon.ico")
+def favicon_ico():
+    # Browsers auto-request /favicon.ico; serve the SVG so the tab has an icon.
+    return FileResponse(os.path.join(STATIC, "favicon.svg"), media_type="image/svg+xml")
+
+
 app.mount("/static", StaticFiles(directory=STATIC), name="static")

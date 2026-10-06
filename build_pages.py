@@ -125,6 +125,11 @@ def build():
         print(f"docs/index.html written ({len(html)} bytes); WARNING: demo.json missing")
     # Pages needs a .nojekyll so files starting with _ aren't stripped
     open(os.path.join(OUTDIR, ".nojekyll"), "w").close()
+    # copy static assets referenced by the page (favicon)
+    for asset in ("favicon.svg", "favicon.ico"):
+        src_asset = os.path.join(HERE, "static", asset)
+        if os.path.exists(src_asset):
+            shutil.copy2(src_asset, os.path.join(OUTDIR, asset))
 
 
 if __name__ == "__main__":

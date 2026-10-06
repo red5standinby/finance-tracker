@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Luna Family Finance Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="alternate icon" href="favicon.svg">
 <style>
   :root{
     --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044;
@@ -206,25 +208,59 @@
   .home-title{font-size:20px;margin:0}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
   .home-hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-  /* Snapshot cards (Home) — one panel per tab with a jump button */
-  .snap-grid{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));margin-top:16px;align-items:start}
-  .snap-grid .snap-wide{grid-column:1 / -1}
-  .snap .panel-head h2{font-size:14px;margin:0;display:flex;align-items:center;gap:6px}
+  /* Snapshot cards (Home) — fintech-style asymmetric grid */
+  .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:start}
+  /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
+  .span-txns{grid-column:span 2;grid-row:span 2}
+  .span-bills{grid-column:span 4}
+  .span-trends{grid-column:span 4}
+  .span-savings{grid-column:span 2}
+  .span-crypto{grid-column:span 4}
+  .snap{display:flex;flex-direction:column}
+  .snap>.empty,.snap>div[id^="h-snap"]{flex:1}
+  .snap .panel-head{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(36,48,68,.6)}
+  .snap .panel-head h2{font-size:13px;margin:0;display:flex;align-items:center;gap:6px;
+    text-transform:uppercase;letter-spacing:.7px;font-weight:700;color:var(--mut)}
+  .snap .panel-head h2 .ic-lg{font-size:15px;color:var(--accent)}
   .snap .snap-big{font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px}
   .snap .snap-sub{color:var(--mut);font-size:12px;margin-top:2px}
   .snap .snap-strip{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 10px}
   .snap .snap-pill{background:rgba(var(--tint),.08);border-radius:8px;padding:6px 10px;font-size:12px;display:flex;flex-direction:column;gap:1px;min-width:78px}
   .snap .snap-pill b{font-size:15px;font-variant-numeric:tabular-nums}
   .snap .snap-pill span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-  .snap .snap-txn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 2px;border-bottom:1px solid rgba(36,48,68,.5);font-size:13px}
+  /* spotlight (Bills) — the headline card */
+  .span-bills{background:linear-gradient(135deg,rgba(var(--tint),.07),transparent 60%)}
+  .span-bills .snap-strip{gap:10px}
+  .span-bills .snap-pill{min-width:96px;padding:10px 12px}
+  .span-bills .snap-pill b{font-size:22px;line-height:1.1}
+  .span-bills .hb-row{padding:11px 2px}
+  /* activity rail — denser, scrolls internally if long */
+  .span-txns .snap-txn{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 2px;border-bottom:1px solid rgba(36,48,68,.5);font-size:13px}
+  .span-txns .snap-txn:last-child{border-bottom:none}
   .snap .snap-txn:last-child{border-bottom:none}
   .snap .snap-txn .d{color:var(--mut);font-size:11.5px;min-width:52px}
   .snap .snap-txn .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .snap .snap-txn .a{font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* crypto — horizontal scroll of compact coin tiles */
+  .span-crypto .snap-txn{flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:none}
+  @media(max-width:980px){
+    .snap-grid{grid-template-columns:repeat(2,1fr)}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto{grid-column:span 2;grid-row:auto}
+  }
+  @media(max-width:620px){
+    .snap-grid{grid-template-columns:1fr}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto{grid-column:span 1}
+  }
   .hero-card{border-left:3px solid var(--accent)}
   .hero-card.bad{border-left-color:var(--bad)}
   .hero-card.good{border-left-color:var(--good)}
   .hero-card .val{font-size:34px}
+  /* spotlight hero card — the money headline */
+  .hero-spotlight{grid-column:span 2;position:relative;overflow:hidden;
+    background:linear-gradient(135deg,rgba(var(--tint),.10),transparent 70%)}
+  .hero-spotlight .val{font-size:46px;letter-spacing:-1px}
+  .hero-spotlight .lbl{color:var(--txt);opacity:.9}
+  @media(max-width:760px){.hero-spotlight{grid-column:span 1}}
   .hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
   .hb-row:last-child{border-bottom:none}
   .hb-sep{background:rgba(var(--tint),.08);border-radius:8px;padding:8px 10px;margin:2px -2px}\n  .hb-name{font-weight:600;font-size:14px}
@@ -619,7 +655,7 @@
 
   <!-- TIER 1: big decision numbers -->
   <div class="grid home-hero">
-    <div class="card hero-card" id="hero-spend">
+    <div class="card hero-card hero-spotlight" id="hero-spend">
       <div class="lbl">Budget remaining this month</div>
       <div class="val" id="h-spend">$0</div>
       <div class="muted" style="font-size:12px" id="h-spend-sub">—</div>
@@ -639,49 +675,49 @@
   <!-- TIER 2: snapshot cards — one per tab, each with a jump button -->
   <div class="grid snap-grid">
 
-    <!-- BILLS snapshot -->
-    <div class="panel snap">
+    <!-- RECENT TRANSACTIONS — tall left rail (fintech: dominant activity column) -->
+    <div class="panel snap span-txns">
       <div class="panel-head">
-        <h2>▤ Bills</h2>
+        <h2><span class="ic-lg">≡</span> Recent activity</h2>
+        <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
+      </div>
+      <div id="h-snap-txns"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- BILLS snapshot — spotlight (big) -->
+    <div class="panel snap span-bills">
+      <div class="panel-head">
+        <h2><span class="ic-lg">▤</span> Bills</h2>
         <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
       </div>
       <div id="h-snap-bills"><div class="empty">Loading…</div></div>
     </div>
 
     <!-- TRENDS snapshot -->
-    <div class="panel snap">
+    <div class="panel snap span-trends">
       <div class="panel-head">
-        <h2>↗ Trends</h2>
+        <h2><span class="ic-lg">↗</span> Trends</h2>
         <button class="btn ghost sm" onclick="showTab('trends')">Open ↗</button>
       </div>
       <div id="h-snap-trends"><div class="empty">Loading…</div></div>
     </div>
 
     <!-- SAVINGS snapshot -->
-    <div class="panel snap">
+    <div class="panel snap span-savings">
       <div class="panel-head">
-        <h2>◈ Savings</h2>
+        <h2><span class="ic-lg">◈</span> Savings</h2>
         <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
       </div>
       <div id="h-snap-savings"><div class="empty">Loading…</div></div>
     </div>
 
     <!-- CRYPTO snapshot -->
-    <div class="panel snap">
+    <div class="panel snap span-crypto">
       <div class="panel-head">
-        <h2>₿ Crypto</h2>
+        <h2><span class="ic-lg">₿</span> Crypto</h2>
         <button class="btn ghost sm" onclick="showTab('crypto')">Open ↗</button>
       </div>
       <div id="h-snap-crypto"><div class="empty">Loading…</div></div>
-    </div>
-
-    <!-- RECENT TRANSACTIONS snapshot (full width) -->
-    <div class="panel snap snap-wide">
-      <div class="panel-head">
-        <h2>≡ Recent transactions</h2>
-        <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
-      </div>
-      <div id="h-snap-txns"><div class="empty">Loading…</div></div>
     </div>
 
   </div>
@@ -2508,17 +2544,18 @@ async function renderSnapTxns(){
   const box = $('#h-snap-txns');
   if(!box) return;
   let d = {};
-  try { d = await api('/transactions?limit=6&sort=date&order=desc'); } catch(e){ d = {}; }
+  try { d = await api('/transactions?limit=9&sort=date&order=desc'); } catch(e){ d = {}; }
   const items = d.items || [];
   if(!items.length){ box.innerHTML = '<div class="empty">No transactions.</div>'; return; }
   box.innerHTML = items.map(t=>{
     const col = t.amount>=0 ? 'pos' : 'neg';
     const cat = catByKey(t.ckey);
+    const short = String(t.date||'').slice(5);
     return `<div class="snap-txn">` +
-      `<span class="d">${esc(t.date)}</span>` +
+      `<span class="d">${esc(short)}</span>` +
       `<span class="n" title="${esc(t.description)}">${esc(t.cleaned||t.description)}</span>` +
-      `<span class="a" style="color:${cat.color||'var(--mut)'};font-size:11.5px">${esc(cat.name)}</span>` +
-      `<span class="a ${col}" style="min-width:78px;text-align:right">${(t.amount<0?'-':'+')+fmt(t.amount)}</span></div>`;
+      `<span class="a" style="color:${cat.color||'var(--mut)'};font-size:11px">${esc(cat.name)}</span>` +
+      `<span class="a ${col}" style="min-width:74px;text-align:right">${(t.amount<0?'-':'+')+fmt(t.amount)}</span></div>`;
   }).join('');
 }
 
