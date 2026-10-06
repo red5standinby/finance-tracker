@@ -656,6 +656,15 @@ def _bill_status(con, bill, month):
         ORDER BY t.date DESC LIMIT 1""", (f"%{key}%", month)).fetchone()
     today = date.today()
     status, paid_date, paid_amount = "due", None, None
+    manual = None
+    try:
+        manual = bill["manual_paid_month"]
+    except (KeyError, IndexError):
+        manual = None
+    if manual == month:
+        # user hand-marked this month paid (cash / other account / early)
+        return {"status": "paid", "paid_date": None, "paid_amount": bill["expected_amount"],
+                "variance": None, "manual": True}
     if row:
         status, paid_date, paid_amount = "paid", row["date"], round(-row["amount"], 2)
     else:
@@ -677,7 +686,27 @@ def _bill_status(con, bill, month):
         "paid_date": paid_date,
         "paid_amount": paid_amount,
         "variance": round(paid_amount - bill["expected_amount"], 2) if paid_amount is not None else None,
+        "manual": False,
     }
+
+
+class MarkPaidIn(BaseModel):
+    month: str | None = None      # 'YYYY-MM'; defaults to current month
+    paid: bool = True             # True = mark paid, False = undo
+
+
+@app.post("/api/bills/{bill_id}/paid")
+def mark_bill_paid(bill_id: int, body: MarkPaidIn):
+    """Manually mark a bill paid for a month (or undo). Overrides auto-detection
+    for that month only; a matching transaction still shows its real amount/date
+    on other months."""
+    month = body.month or date.today().strftime("%Y-%m")
+    with db() as con:
+        if not con.execute("SELECT 1 FROM bills WHERE id=?", (bill_id,)).fetchone():
+            raise HTTPException(404, "not found")
+        con.execute("UPDATE bills SET manual_paid_month=? WHERE id=?",
+                    (month if body.paid else None, bill_id))
+    return {"ok": True, "manual_paid_month": month if body.paid else None}
 
 
 class BillIn(BaseModel):
@@ -709,6 +738,9 @@ def get_bills(month: str | None = None, include_inactive: bool = False):
         "due": sum(1 for r in out if r["status"] in ("due", "upcoming")),
         "overdue": sum(1 for r in out if r["status"] in ("overdue", "missed")),
         "total": len(out),
+        "expected": round(sum(r.get("expected_amount") or 0 for r in out), 2),
+        "paid_amount": round(sum((r.get("paid_amount") or 0) for r in out if r["status"] == "paid"), 2),
+        "left": round(sum((r.get("expected_amount") or 0) for r in out if r["status"] != "paid"), 2),
     }
     # surface overdue first, then due, then paid
     order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "paid": 4}

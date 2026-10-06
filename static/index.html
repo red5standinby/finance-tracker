@@ -213,12 +213,30 @@
   .duebar>span{display:block;height:100%;border-radius:4px}
   .duebar .duemark{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--mut);opacity:.6}
   /* Bills accordion */
-  .bgroup{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--panel2)}
-  .bgroup-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none}
-  .bgroup-head:hover{background:rgba(var(--tint),.06)}
-  .bgroup-caret{font-size:13px;color:var(--mut);transition:transform .15s}
-  .bgroup-caret.open{transform:rotate(90deg)}
-  .bgroup-body{padding:2px 13px 8px 26px}
+  .bgroup{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden;background:var(--panel2);
+    transition:border-color .2s ease, box-shadow .2s ease;animation:fadeUp .28s ease both}
+  .bgroup:hover{border-color:rgba(var(--tint),.45)}
+  .bgroup-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;
+    transition:background .18s ease}
+  .bgroup-head:hover{background:rgba(var(--tint),.07)}
+  .bgroup-head:active{background:rgba(var(--tint),.12)}
+  .bgroup-caret{font-size:13px;color:var(--mut);transition:transform .28s cubic-bezier(.4,0,.2,1);display:inline-block}
+  .bgroup.open .bgroup-caret{transform:rotate(90deg);color:var(--accent)}
+  .bgroup-body{max-height:0;overflow:hidden;padding:0 13px;transition:max-height .32s ease, padding .32s ease}
+  .bgroup.open .bgroup-body{max-height:1600px;padding:2px 13px 8px 26px}
+  .bgroup-body .hb-grid{animation:fadeUp .3s ease both}
+  .bgroup-body .hb-grid:nth-child(2){animation-delay:.03s}
+  .bgroup-body .hb-grid:nth-child(3){animation-delay:.06s}
+  .bgroup-body .hb-grid:nth-child(4){animation-delay:.09s}
+  .bgroup-body .hb-grid:nth-child(5){animation-delay:.12s}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .btn{transition:transform .12s ease, background .18s ease, border-color .18s ease}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(0) scale(.97)}
+  .card{transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease}
+  @media (prefers-reduced-motion:reduce){
+    .bgroup,.bgroup-body,.bgroup-caret,.bgroup-body .hb-grid,.btn,.card{animation:none;transition:none}
+  }
   /* Modals */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
   .modal.open{display:flex}
@@ -591,7 +609,7 @@
     <div class="card" id="b-count-paid"><div class="lbl">Paid</div><div class="val pos" id="b-paid">0</div></div>
     <div class="card" id="b-count-due"><div class="lbl">Due / upcoming</div><div class="val" id="b-due">0</div></div>
     <div class="card" id="b-count-over"><div class="lbl">Overdue</div><div class="val" id="b-over">0</div></div>
-    <div class="card"><div class="lbl">Expected / month</div><div class="val" id="b-total">$0</div></div>
+    <div class="card" id="b-count-left"><div class="lbl">Left to pay · this month</div><div class="val" id="b-left">$0</div></div>
   </div>
 
   <div class="panel">
@@ -1791,9 +1809,9 @@ async function loadBills(){
   $('#b-paid').textContent  = c.paid || 0;
   $('#b-due').textContent   = c.due || 0;
   $('#b-over').textContent  = c.overdue || 0;
-  const expTot = (B.groups||[]).reduce((s,g)=>s + (g.counts.expected||0), 0);
-  $('#b-total').textContent = fmt(expTot);
+  $('#b-left').textContent  = fmt(c.left || 0);
   $('#b-count-over').className = 'card' + ((c.overdue||0) ? ' bad' : '');
+  $('#b-count-left').className = 'card' + ((c.left||0) ? '' : ' pos');
 
   const box = $('#b-list');
   const groups = B.groups || [];
@@ -1810,22 +1828,26 @@ async function loadBills(){
                 : gc.due     ? `<span class="hb-badge warn">${gc.due} due</span>`
                 : `<span class="hb-badge ok">paid</span>`;
     const rowsHtml = g.bills.map(r=>billRowHtml(r)).join('');
-    return `<div class="bgroup">
+    return `<div class="bgroup${isOpen?' open':''}" data-key="${g.key}">
       <div class="bgroup-head" onclick="toggleBillGroup('${g.key}')">
-        <div class="bgroup-caret ${isOpen?'open':''}">▸</div>
+        <div class="bgroup-caret">▸</div>
         <div style="flex:1;min-width:0">
           <div class="hb-name">${esc(g.name)} <span class="muted" style="font-weight:400;font-size:12px">· ${gc.total} bill${gc.total===1?'':'s'} · ${fmt(gc.expected)}/mo</span></div>
         </div>
         <div>${badge}</div>
       </div>
-      <div class="bgroup-body" style="display:${isOpen?'block':'none'}">${rowsHtml}</div>
+      <div class="bgroup-body">${rowsHtml}</div>
     </div>`;
   }).join('');
 }
 
 function toggleBillGroup(key){
-  _billOpenGroups[key] = !(_billOpenGroups[key] || false);
-  loadBills();
+  const next = !(_billOpenGroups[key] || false);
+  _billOpenGroups[key] = next;
+  // animate in place (no full re-render) so the height transition is visible
+  const g = document.querySelector('#b-list .bgroup[data-key="' + key + '"]');
+  if(g) g.classList.toggle('open', next);
+  else loadBills();
 }
 
 function billRowHtml(r){
@@ -1864,14 +1886,26 @@ function billRowHtml(r){
   }
   return `<div class="hb-grid" style="align-items:center">
     <div style="min-width:0;flex:1">
-      <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
+      <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}${r.manual?' <span class="muted" style="font-size:11px">· manual</span>':''}</div>
       <div class="hb-badge ${stColor}" style="margin-top:3px">${stLabel}</div>
       ${barHtml}
     </div>
     <div style="text-align:right;white-space:nowrap">${right}
-      <div style="margin-top:4px"><button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
-      <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button></div>
+      <div style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end">
+        ${r.status==='paid'
+          ? `<button class="btn ghost sm" onclick="markPaid(${r.id},false)">Undo paid</button>`
+          : `<button class="btn sm" onclick="markPaid(${r.id},true)">Mark paid</button>`}
+        <button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
+        <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button>
+      </div>
     </div></div>`;
+}
+
+async function markPaid(id, paid){
+  try {
+    await jpost('/bills/' + id + '/paid', { paid: paid });
+    loadBills();
+  } catch(e){ alert('Could not update: ' + e.message); }
 }
 
 // ---- transaction search bar: find a txn and add the merchant as a bill ----
