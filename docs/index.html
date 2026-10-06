@@ -2243,7 +2243,7 @@ function billRowHtml(r){
       <div class="bill-actions" style="margin-top:4px;display:flex;gap:6px;justify-content:flex-end">
         ${r.status==='paid'
           ? `<button class="btn ghost sm bill-act paid-act" title="Undo paid" onclick="markPaid(${r.id},false)"><span class="bi">↺</span><span class="bl">Undo paid</span></button>`
-          : `<button class="btn sm bill-act paid-act" title="Mark paid" onclick="markPaid(${r.id},true)"><span class="bi">$</span><span class="bl">Mark paid</span></button>`}
+          : `<button class="btn ghost sm bill-act paid-act" title="Mark paid" onclick="markPaid(${r.id},true)"><span class="bi">$</span><span class="bl">Mark paid</span></button>`}
         <button class="btn ghost sm bill-act edit-act" title="Edit bill" onclick="editBill(${r.id})"><span class="bi">✎</span><span class="bl">Edit</span></button>
         <button class="btn ghost sm bill-act del-act" title="Remove bill" onclick="delBill(${r.id})"><span class="bi">✕</span><span class="bl">Remove</span></button>
       </div>
