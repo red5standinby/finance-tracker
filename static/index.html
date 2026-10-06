@@ -1753,7 +1753,7 @@ function showTab(name){
   if(name==='bills') loadBills();
   if(name==='import'){ loadImports(); loadAcctList(); }
 }
-document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{ showTab(b.dataset.tab); if(window.innerWidth<=820){ const s=$('#sidebar'); if(s && !s.classList.contains('collapsed')){ s.classList.add('collapsed'); try{ localStorage.setItem('lffd-sidebar','1'); }catch(e){} } } });
 $('#nav-import').onclick = ()=>showTab('import');
 
 // ---------- theme palette ----------
@@ -1794,6 +1794,13 @@ $('#nav-import').onclick = ()=>showTab('import');
   if(sbToggle) sbToggle.onclick=()=>setCollapsed(!sb.classList.contains('collapsed'));
   const burger=$('#sb-burger');
   if(burger) burger.onclick=()=>setCollapsed(!sb.classList.contains('collapsed'));
+  // collapse when clicking outside the sidebar (only when it's open)
+  document.addEventListener('click',(e)=>{
+    if(sb.classList.contains('collapsed')) return;
+    if(sb.contains(e.target)) return;
+    if(e.target.closest('#sb-burger')) return;
+    setCollapsed(true);
+  });
   let saved=null; try{ saved=localStorage.getItem('lffd-sidebar'); }catch(e){}
   if(saved===null) setCollapsed(window.innerWidth<=820); else setCollapsed(saved==='1');
 })();
