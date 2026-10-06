@@ -189,7 +189,7 @@ Unload with `launchctl unload …`.
 ## Roadmap (not built yet)
 
 - Budgets per category with alerts
-- Subscription/recurring detection
+- ~~Subscription/recurring detection~~ → **built**: see the **Bills** tab (§ Bills in docs/HOW-IT-WORKS.md)
 - Export back out (CSV / PDF reports)
 - Multi-currency (USD-only for now)
 

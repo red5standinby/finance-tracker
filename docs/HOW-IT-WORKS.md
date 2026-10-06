@@ -37,8 +37,8 @@ The "is everything okay?" screen. Big numbers up top, detail below.
   (`▲`/`▼`).
 - **Cash position** — net flow across your checking/savings accounts. (Shown as *net
   flow* because live bank balances aren't synced yet.)
-- **Recurring bills** — a checklist of the usual bills, marked *paid* or *due* for the
-  month.
+- **Recurring bills** — live summary from the **Bills** tab: “N paid · N due · N
+  overdue,” with a link to the full list.
 - **Budget health**, **Top spending this month**, and **Credit & savings** (savings
   rate, financial grade, and anything needing review).
 
@@ -63,6 +63,14 @@ enter an amount), **edit** (✎) the amount, or delete (✕) it. Shows total val
 ### ≡ Transactions — the ledger
 Every transaction, searchable and filterable (date, category, account, amount,
 "source"). You can **inline-retag** any row from its category dropdown — see §6.
+
+### ▤ Bills — recurring payments at a glance
+Every recurring bill in one list with its **status this month**: *paid* (with the
+amount, the date, and a variance flag if it differed from usual), *due*,
+*upcoming*, *overdue*, or *missed*. The app **detects** likely bills from your
+history and offers them as **suggestions** — you confirm the real ones (and can
+rename, set the expected amount, and set the typical due-day). Status updates
+automatically the moment a matching payment posts; nothing to tick off by hand.
 
 ### ⚙ Rules — the brain
 Manage **learned rules**, **categories** (add custom ones, rename, recolor, hide/unhide
@@ -181,7 +189,26 @@ existing one), then drag in a file.
 
 Set a monthly target per expense category (Dashboard → "set budget," or the budgets
 API). Bars turn **green (<80%), amber (80–99%), red (≥100%)**. The Home screen rolls
-these into "left to spend" and a health badge.
+these into "Budget remaining" and a health badge.
+
+## 9b. Bills
+
+The **Bills** tab tracks recurring payments (utilities, insurance, loan, daycare,
+subscriptions, and card payments) and whether each is paid this month.
+
+- **Detection** is rule-based: a merchant that recurs across **≥3 distinct months**
+at a **stable amount** (low variance) becomes a *suggestion*. You confirm the real
+ones; suggestions you ignore never appear on the dashboard.
+- Each bill stores a name, the merchant it matches, an **expected amount**, and a
+  **typical due-day** (inferred from history, editable).
+- **Status** is computed live from transactions: **paid** (shows the actual amount,
+  the date, and a `± vs usual` flag if it differed), **due**, **upcoming**,
+  **overdue** (past due-day + 3 days), or **missed** (a past month that never posted).
+- Nothing to tick by hand — the moment a matching payment posts from any import, the
+  bill flips to **paid**.
+
+API: `GET /api/bills?month=YYYY-MM`, `GET /api/bills/candidates`,
+`POST /api/bills`, `PATCH /api/bills/{id}`, `DELETE /api/bills/{id}`.
 
 ---
 
@@ -226,6 +253,8 @@ Python 3.14 venv in `.venv/`. **No LLM** anywhere in categorization.
 - **learned_rules** — `cleaned, category_key, hits, updated_at` (one per merchant)
 - **crypto_holdings / crypto_favorites** — portfolio tracker
 - **budgets** — `category_key, amount` (one monthly target per category)
+- **bills** — `name, match_cleaned, expected_amount, due_day, kind, active` (recurring
+  payments + paid/due tracking; `match_cleaned` UNIQUE)
 - **imports** — history: `id, filename, account, bank, inserted, skipped, created_at`
 
 ## Code map
