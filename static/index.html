@@ -576,17 +576,19 @@
     <div class="card"><div class="lbl">Expected / month</div><div class="val" id="b-total">$0</div></div>
   </div>
 
-  <div class="panel" style="margin-bottom:14px">
-    <div class="panel-head">
-      <h2>Suggested bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· detected from your history — confirm the ones that are real</span></h2>
-      <button class="btn ghost sm" onclick="loadBillCandidates()">Scan again</button>
+  <div class="grid inline-pair">
+    <div class="panel">
+      <div class="panel-head">
+        <h2>Suggested bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· confirm the real ones</span></h2>
+        <button class="btn ghost sm" onclick="loadBillCandidates()">Scan again</button>
+      </div>
+      <div id="b-candidates"><div class="empty">No suggestions</div></div>
     </div>
-    <div id="b-candidates"><div class="empty">No suggestions</div></div>
-  </div>
 
-  <div class="panel">
-    <div class="panel-head"><h2>Your bills</h2></div>
-    <div id="b-list"><div class="empty">No bills tracked yet</div></div>
+    <div class="panel">
+      <div class="panel-head"><h2>Your bills</h2></div>
+      <div id="b-list"><div class="empty">No bills tracked yet</div></div>
+    </div>
   </div>
 </section>
 
