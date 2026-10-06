@@ -79,6 +79,20 @@ CREATE TABLE IF NOT EXISTS budgets (
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS bills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,              -- display name (user-editable)
+    match_cleaned TEXT NOT NULL,     -- lowercase cleaned merchant to match (UNIQUE)
+    expected_amount REAL DEFAULT 0,  -- typical monthly amount (0 = unknown)
+    due_day INTEGER DEFAULT 0,       -- typical day-of-month it posts (0 = unknown)
+    kind TEXT DEFAULT 'bill',        -- bill | card (card payments)
+    account_id INTEGER DEFAULT NULL, -- usual source account (optional)
+    category_key TEXT DEFAULT '',    -- optional category link
+    active INTEGER DEFAULT 1,        -- 1 = shown on dashboard
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_cleaned ON bills(match_cleaned);
+
 CREATE TABLE IF NOT EXISTS imports (
     id TEXT PRIMARY KEY,
     filename TEXT,

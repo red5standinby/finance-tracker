@@ -494,6 +494,7 @@
   <aside class="sidebar" id="sidebar">
     <nav>
       <button data-tab="home"><span class="ic">⌂</span><span class="lb">Home</span></button>
+      <button data-tab="bills"><span class="ic">▤</span><span class="lb">Bills</span></button>
       <button data-tab="dash" class="active"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
@@ -558,6 +559,34 @@
       <div class="panel-head"><h2>Credit &amp; savings</h2></div>
       <div id="h-credit"></div>
     </div>
+  </div>
+</section>
+
+<!-- ============ BILLS ============ -->
+<section id="tab-bills" class="hidden">
+  <div class="home-head">
+    <h2 class="home-title">Bills</h2>
+    <div class="home-when" id="bills-when"></div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:14px">
+    <div class="card" id="b-count-paid"><div class="lbl">Paid</div><div class="val pos" id="b-paid">0</div></div>
+    <div class="card" id="b-count-due"><div class="lbl">Due / upcoming</div><div class="val" id="b-due">0</div></div>
+    <div class="card" id="b-count-over"><div class="lbl">Overdue</div><div class="val" id="b-over">0</div></div>
+    <div class="card"><div class="lbl">Expected / month</div><div class="val" id="b-total">$0</div></div>
+  </div>
+
+  <div class="panel" style="margin-bottom:14px">
+    <div class="panel-head">
+      <h2>Suggested bills <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· detected from your history — confirm the ones that are real</span></h2>
+      <button class="btn ghost sm" onclick="loadBillCandidates()">Scan again</button>
+    </div>
+    <div id="b-candidates"><div class="empty">No suggestions</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h2>Your bills</h2></div>
+    <div id="b-list"><div class="empty">No bills tracked yet</div></div>
   </div>
 </section>
 
@@ -1609,7 +1638,7 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import','crypto','home'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import','crypto','home','bills'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='home') loadHome();
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
@@ -1617,6 +1646,7 @@ function showTab(name){
   if(name==='crypto') loadCrypto();
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
+  if(name==='bills') loadBills();
   if(name==='import'){ loadImports(); loadAcctList(); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
@@ -1729,6 +1759,94 @@ function renderGrade(g){
 }
 
 // ---------- dashboard ----------
+// ============ BILLS TAB ============
+async function loadBills(){
+  const now = new Date();
+  const ym = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  $('#bills-when').textContent = now.toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  let B = {};
+  try { B = await api('/bills?month=' + ym); } catch(e){ B = {}; }
+  const c = B.counts || {};
+  $('#b-paid').textContent  = c.paid || 0;
+  $('#b-due').textContent   = c.due || 0;
+  $('#b-over').textContent  = c.overdue || 0;
+  const expTot = (B.rows||[]).reduce((s,r)=>s + (r.expected_amount||0), 0);
+  $('#b-total').textContent = fmt(expTot);
+  $('#b-count-over').className = 'card' + ((c.overdue||0) ? ' bad' : '');
+
+  const box = $('#b-list');
+  const rows = B.rows || [];
+  if(!rows.length){ box.innerHTML = '<div class="empty">No bills tracked yet — confirm a suggestion below or add one.</div>'; }
+  else {
+    box.innerHTML = rows.map(r=>{
+      const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
+      const stLabel = r.status==='missed' ? 'missed' : r.status;
+      let right = '';
+      if(r.status==='paid'){
+        right = `<div class="hb-amt">${fmt(r.paid_amount||0)}</div><div class="hb-sub">paid ${r.paid_date ? r.paid_date.slice(5) : ''}`;
+        if(r.variance != null && Math.abs(r.variance) >= 1) right += ` · ${r.variance>0?'+':''}${fmt(r.variance)} vs usual`;
+        right += `</div>`;
+      } else {
+        right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">expected · due ~${r.due_day||'?'}</div>`;
+      }
+      return `<div class="hb-grid" style="align-items:center">
+        <div style="min-width:0">
+          <div class="hb-name">${esc(r.name)}${r.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
+          <div class="hb-badge ${stColor}" style="margin-top:3px">${stLabel}</div>
+        </div>
+        <div style="text-align:right;white-space:nowrap">${right}
+          <div style="margin-top:4px"><button class="btn ghost sm" onclick="editBill(${r.id})">Edit</button>
+          <button class="btn ghost sm" onclick="delBill(${r.id})">Remove</button></div>
+        </div></div>`;
+    }).join('');
+  }
+  loadBillCandidates();
+}
+
+async function loadBillCandidates(){
+  const box = $('#b-candidates');
+  let d = {};
+  try { d = await api('/bills/candidates'); } catch(e){ d = {}; }
+  const cands = (d.candidates || []).slice(0,12);
+  if(!cands.length){ box.innerHTML = '<div class="empty">All caught up — no new suggestions.</div>'; return; }
+  box.innerHTML = cands.map(c=>`
+    <div class="hb-grid" style="align-items:center">
+      <div style="min-width:0">
+        <div class="hb-name">${esc(c.name)}${c.kind==='card'?' <span class="muted" style="font-size:11px">· card</span>':''}</div>
+        <div class="hb-sub">~${fmt(c.expected_amount)} · ~day ${c.due_day} · seen ${c.months} months</div>
+      </div>
+      <div style="white-space:nowrap"><button class="btn sm" onclick='addBill(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Add bill</button></div>
+    </div>`).join('');
+}
+
+async function addBill(c){
+  try {
+    await jpost('/bills', {
+      name:c.name, match_cleaned:c.match_cleaned, expected_amount:c.expected_amount,
+      due_day:c.due_day, kind:c.kind });
+    loadBills();
+  } catch(e){ alert('Could not add bill: ' + e.message); }
+}
+
+async function delBill(id){
+  if(!confirm('Remove this bill from tracking? (Transactions are untouched.)')) return;
+  try { await api('/bills/'+id, {method:'DELETE'}); loadBills(); } catch(e){ alert(e.message); }
+}
+
+async function editBill(id){
+  const name = prompt('Bill name:');
+  if(name === null) return;
+  const exp = prompt('Expected amount (e.g. 224.39):');
+  if(exp === null) return;
+  const day = prompt('Typical due day of month (1-31):');
+  if(day === null) return;
+  try {
+    await api('/bills/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ name:name, expected_amount:parseFloat(exp)||0, due_day:parseInt(day)||0 })});
+    loadBills();
+  } catch(e){ alert(e.message); }
+}
+
 async function loadHome(){
   // ---- context ----
   const now = new Date();
@@ -1823,43 +1941,28 @@ async function loadHome(){
 }
 
 async function renderHomeBills(D){
-  // Known recurring bills look for by merchant text (best-effort; upgrades later)
-  const KNOWN = [
-    [/DUCK POND/i,'Duck Pond (daycare?)'],
-    [/T-MOBILE/i,'T-Mobile'],
-    [/VERIZON/i,'Verizon'],
-    [/NETFLIX/i,'Netflix'],
-    [/CRUNCHYROLL/i,'Crunchyroll'],
-    [/PRIME VIDEO|AMZN.*PRIME/i,'Prime Video'],
-    [/ELEVENLABS/i,'ElevenLabs'],
-    [/LEDGER-LIVE|TOPPER/i,'Ledger Live'],
-    [/ON THE MARK/i,'On The Mark Mgmt'],
-    [/LEXINGTON GREEN/i,'Lexington Green'],
-    [/UNITED ILLUMINATING/i,'United Illuminating'],
-    [/SOUTHERN CONNECTICUT GAS/i,'SCG (gas)'],
-    [/OPTIMUM/i,'Optimum'],
-    [/TRAVELERS/i,'Travelers Ins'],
-    [/NATIONAL GENERAL/i,'National General'],
-    [/SERVICE FINANCE/i,'Service Finance'],
-    [/GEMINI CARDPYMT/i,'Gemini card payment'],
-    [/CHASE MASTERCARD|WEB PMT CHASE/i,'Chase card payment'],
-  ];
   const box = $('#h-bills');
-  // Which of these already posted this month (by description in current month txns)?
-  let monthDescs = [];
-  try {
-    const t = await api('/transactions?start=' + ymRange('start') + '&end=' + ymRange('end') + '&limit=500');
-    monthDescs = (t.items||[]).map(x=>x.description);
-  } catch(e){}
-  const rows = [];
-  for(const [re,label] of KNOWN){
-    const hit = monthDescs.find(d=>re.test(d));
-    rows.push({label, posted: !!hit});
+  let B = {};
+  try { B = await api('/bills'); } catch(e){ B = {}; }
+  const rows = B.rows || [];
+  const c = B.counts || {};
+  if(!rows.length){
+    box.innerHTML = '<div class="empty">No bills tracked yet — open the Bills tab to confirm suggestions.</div>';
+    return;
   }
-  if(!rows.length){ box.innerHTML = '<div class="empty">Nothing scheduled</div>'; return; }
-  box.innerHTML = rows.slice(0,8).map(r=>
-    `<div class="hb-row"><span class="hb-name">${esc(r.label)}</span>` +
-    `<span class="hb-badge ${r.posted?'ok':'warn'}">${r.posted?'paid':'due'}</span></div>`).join('');
+  const head = `<div style="margin-bottom:8px">` +
+    `<span class="hb-badge ok" style="margin-right:6px">${c.paid||0} paid</span>` +
+    ((c.due||0)?`<span class="hb-badge warn" style="margin-right:6px">${c.due} due</span>`:'') +
+    ((c.overdue||0)?`<span class="hb-badge over" style="margin-right:6px">${c.overdue} overdue</span>`:'') +
+    `</div>`;
+  const shown = rows.slice(0,6).map(r=>{
+    const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
+    const stLabel = r.status==='missed' ? 'missed' : r.status;
+    return `<div class="hb-row"><span class="hb-name">${esc(r.name)}</span>` +
+      `<span class="hb-badge ${stColor}">${stLabel}</span></div>`;
+  }).join('');
+  box.innerHTML = head + shown +
+    `<div style="margin-top:8px"><button class="btn ghost sm" onclick="showTab('bills')">Open Bills ↗</button></div>`;
 }
 function ymRange(which){
   const now = new Date();

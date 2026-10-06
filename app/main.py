@@ -592,6 +592,176 @@ def set_budget(body: BudgetIn):
             "amount": round(body.amount, 2) if body.amount and body.amount > 0 else 0}
 
 
+# ---------- bills (recurring payments + paid/due tracking) ----------
+
+_CARD_RE = re.compile(
+    r"(CARDPYMT|CARD ?PYMT|WEB PMT|PAYMENT THANK YOU|CHASE|GEMINI|MASTERCARD|VISA)", re.I)
+
+
+def _detect_bill_candidates(con):
+    """Scan outflow history and propose recurring bills.
+
+    A candidate recurs across >=3 distinct months at a stable amount (low
+    coefficient of variation). Rule-based, no LLM. Nothing is written here;
+    callers decide which candidates to turn into real bills.
+    """
+    import statistics
+    rows = con.execute("""
+        SELECT cleaned, date, amount FROM transactions
+        WHERE amount < 0 AND cleaned IS NOT NULL AND cleaned != ''
+        ORDER BY cleaned, date""").fetchall()
+    groups: dict = {}
+    for r in rows:
+        groups.setdefault(r["cleaned"], []).append(r)
+    out = []
+    for cleaned, rs in groups.items():
+        months = {r["date"][:7] for r in rs}
+        if len(months) < 3:
+            continue
+        amts = [-r["amount"] for r in rs]
+        avg = statistics.mean(amts)
+        if avg <= 0:
+            continue
+        sd = statistics.pstdev(amts) if len(amts) > 1 else 0.0
+        cv = sd / avg if avg else 9.0
+        if cv > 0.35:            # amount too variable to be a fixed bill
+            continue
+        days = [int(r["date"][8:10]) for r in rs]
+        out.append({
+            "match_cleaned": cleaned,
+            "name": cleaned.title(),
+            "expected_amount": round(avg, 2),
+            "due_day": round(statistics.median(days)),
+            "kind": "card" if _CARD_RE.search(cleaned) else "bill",
+            "months": len(months),
+            "occurrences": len(rs),
+            "last_date": max(r["date"] for r in rs),
+        })
+    out.sort(key=lambda c: (-c["months"], -c["occurrences"]))
+    return out
+
+
+def _bill_status(con, bill, month):
+    """Compute this month's paid/due/overdue state for one bill.
+
+    Looks for a matching txn (same cleaned merchant, outflow) in the month.
+    Returns paid (with date+amount) or a due-state derived from due_day.
+    """
+    row = con.execute("""
+        SELECT t.date, t.amount FROM transactions t
+        WHERE lower(t.cleaned) = ? AND substr(t.date,1,7) = ? AND t.amount < 0
+        ORDER BY t.date DESC LIMIT 1""", (bill["match_cleaned"], month)).fetchone()
+    today = date.today()
+    status, paid_date, paid_amount = "due", None, None
+    if row:
+        status, paid_date, paid_amount = "paid", row["date"], round(-row["amount"], 2)
+    else:
+        day = bill["due_day"] or 1
+        try:
+            due = date(int(month[:4]), int(month[5:7]), day)
+        except ValueError:
+            due = date(int(month[:4]), int(month[5:7]), 28)
+        if today.strftime("%Y-%m") > month:
+            status = "missed"          # month is fully in the past, never posted
+        elif today >= due + timedelta(days=3):
+            status = "overdue"
+        elif today >= due - timedelta(days=5):
+            status = "due"             # inside expected window
+        else:
+            status = "upcoming"
+    return {
+        "status": status,
+        "paid_date": paid_date,
+        "paid_amount": paid_amount,
+        "variance": round(paid_amount - bill["expected_amount"], 2) if paid_amount is not None else None,
+    }
+
+
+class BillIn(BaseModel):
+    name: str | None = None
+    match_cleaned: str | None = None
+    expected_amount: float | None = None
+    due_day: int | None = None
+    kind: str | None = None
+    category_key: str | None = None
+    active: bool | None = None
+
+
+@app.get("/api/bills")
+def get_bills(month: str | None = None, include_inactive: bool = False):
+    """Confirmed bills with this month's paid/due status."""
+    with db() as con:
+        if not month:
+            mrow = con.execute("SELECT MAX(date) d FROM transactions").fetchone()
+            month = (mrow["d"] or date.today().isoformat())[:7]
+        where = "" if include_inactive else "WHERE active = 1"
+        bills = con.execute(f"SELECT * FROM bills {where} ORDER BY kind, due_day, name").fetchall()
+        out = []
+        for b in bills:
+            st = _bill_status(con, b, month)
+            d = dict(b); d.update(st)
+            out.append(d)
+    counts = {
+        "paid": sum(1 for r in out if r["status"] == "paid"),
+        "due": sum(1 for r in out if r["status"] in ("due", "upcoming")),
+        "overdue": sum(1 for r in out if r["status"] in ("overdue", "missed")),
+        "total": len(out),
+    }
+    # surface overdue first, then due, then paid
+    order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "paid": 4}
+    out.sort(key=lambda r: (order.get(r["status"], 9), r["due_day"] or 0))
+    return {"month": month, "rows": out, "counts": counts}
+
+
+@app.get("/api/bills/candidates")
+def bill_candidates():
+    """Propose recurring bills from history, excluding ones already tracked."""
+    with db() as con:
+        tracked = {r["match_cleaned"] for r in con.execute("SELECT match_cleaned FROM bills").fetchall()}
+        cands = [c for c in _detect_bill_candidates(con) if c["match_cleaned"] not in tracked]
+    return {"candidates": cands}
+
+
+@app.post("/api/bills")
+def add_bill(body: BillIn):
+    key = (body.match_cleaned or body.name or "").strip().lower()
+    if not key:
+        raise HTTPException(400, "name or match_cleaned required")
+    with db() as con:
+        con.execute("""INSERT INTO bills(name,match_cleaned,expected_amount,due_day,kind,category_key,active)
+            VALUES(?,?,?,?,?,?,1)
+            ON CONFLICT(match_cleaned) DO UPDATE SET
+              name=excluded.name, expected_amount=excluded.expected_amount,
+              due_day=excluded.due_day, kind=excluded.kind, active=1""",
+            (body.name or key.title(), key, body.expected_amount or 0,
+             body.due_day or 0, body.kind or "bill", body.category_key or ""))
+    return {"ok": True, "match_cleaned": key}
+
+
+@app.patch("/api/bills/{bill_id}")
+def patch_bill(bill_id: int, body: BillIn):
+    with db() as con:
+        if not con.execute("SELECT 1 FROM bills WHERE id=?", (bill_id,)).fetchone():
+            raise HTTPException(404, "not found")
+        sets, params = [], []
+        if body.name is not None:            sets.append("name=?");            params.append(body.name)
+        if body.expected_amount is not None: sets.append("expected_amount=?"); params.append(body.expected_amount)
+        if body.due_day is not None:         sets.append("due_day=?");         params.append(body.due_day)
+        if body.kind is not None:            sets.append("kind=?");            params.append(body.kind)
+        if body.category_key is not None:    sets.append("category_key=?");    params.append(body.category_key)
+        if body.active is not None:          sets.append("active=?");          params.append(1 if body.active else 0)
+        if sets:
+            con.execute(f"UPDATE bills SET {', '.join(sets)} WHERE id=?", (*params, bill_id))
+    return {"ok": True}
+
+
+@app.delete("/api/bills/{bill_id}")
+def delete_bill(bill_id: int):
+    with db() as con:
+        con.execute("DELETE FROM bills WHERE id=?", (bill_id,))
+    return {"ok": True}
+
+
 # ---------- transactions ----------
 
 @app.get("/api/transactions")
