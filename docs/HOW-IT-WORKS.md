@@ -193,18 +193,21 @@ these into "Budget remaining" and a health badge.
 
 ## 9b. Bills
 
-The **Bills** tab tracks recurring payments (utilities, insurance, loan, daycare,
-subscriptions) and whether each is paid this month.
+The **Bills** tab tracks recurring payments (utilities, insurance, loans, daycare,
+subscriptions) and whether each is paid this month — grouped **by category** and
+shown as an **accordion** (click a category to expand/collapse its bills).
 
-- **Detection** is rule-based: a merchant that recurs across **≥3 distinct months**
-at a **stable amount** (low variance) becomes a *suggestion*. You confirm the real
-ones; suggestions you ignore never appear on the dashboard. Card-kind merchants
-aren't suggested (add them by hand if you want them tracked).
-- **Manual add:** the **search bar** on the Bills tab finds any transaction by
-merchant; one click turns it into a bill (pulling its amount and typical day).
-- Each bill stores a name, the merchant it matches (**substring** — so fragmented
-variants like `NETFLIX 1` / `NETFLIX COM …` all count), an **expected amount**, and
-  a **typical due-day** (inferred from history, editable).
+**Groups** (in order): Housing, Loans, Utilities, Insurance, Subscriptions, Mobile,
+Daycare, Kids activities, Health, Card payments, Other. Each group header shows its
+bill count, total `$/mo`, and a badge: `N overdue` / `N due` / `paid`. Groups with
+anything due or overdue open by default.
+
+- **Create a bill:** the **+ Create a bill** button opens a form (name, match
+  merchant, expected amount, due day, category, and bill vs card-payment type).
+  **Edit** opens the same form. The **search bar** finds any transaction by merchant
+  and adds it as a bill in one click.
+- **Matching** uses **substring** — so fragmented variants like `NETFLIX 1` /
+  `NETFLIX COM …` all count toward the same bill.
 - **Status** is computed live from transactions: **paid** (shows the actual amount,
   the date, and a `± vs usual` flag if it differed), **due**, **upcoming**,
   **overdue** (past due-day + 3 days), or **missed** (a past month that never posted).
@@ -213,9 +216,13 @@ variants like `NETFLIX 1` / `NETFLIX COM …` all count), an **expected amount**
   first" at a glance.
 - Nothing to tick by hand — the moment a matching payment posts from any import, the
   bill flips to **paid**.
+- Detection still runs in the background (`/api/bills/candidates`: merchant recurring
+  across ≥3 distinct months at a stable amount; card-kind excluded) but there's no
+  dedicated suggestions panel — the Create/search flows cover adding bills.
 
-API: `GET /api/bills?month=YYYY-MM`, `GET /api/bills/candidates`,
-`POST /api/bills`, `PATCH /api/bills/{id}`, `DELETE /api/bills/{id}`.
+API: `GET /api/bills?month=YYYY-MM`, `GET /api/bills/grouped`,
+`GET /api/bill-categories`, `GET /api/bills/candidates`, `POST /api/bills`,
+`PATCH /api/bills/{id}`, `DELETE /api/bills/{id}`.
 
 ---
 
