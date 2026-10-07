@@ -510,7 +510,17 @@
   .pd-card-inputs label{display:flex;flex-direction:column;gap:4px;color:var(--mut);font-size:11.5px;min-width:0}
   .pd-card-inputs input{width:110px;height:34px;font-size:14px}
   .pd-card-total{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
-  .pd-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .pd-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;user-select:none;margin:-4px -4px 0;padding:4px;border-radius:8px}
+  .pd-card-head:hover{background:rgba(var(--tint),.05)}
+  .pd-caret{flex:0 0 auto;color:var(--mut);font-size:12px;transition:transform .18s ease;width:12px;text-align:center}
+  .pd-card:not(.collapsed) .pd-caret{transform:rotate(90deg)}
+  .pd-head-bal{display:flex;flex-direction:column;align-items:flex-end;gap:1px;flex:0 0 auto;text-align:right}
+  .pd-head-amt{font-weight:700;font-size:15px;font-variant-numeric:tabular-nums}
+  .pd-head-amt.neg{color:var(--bad)} .pd-head-amt.pos{color:var(--good)}
+  .pd-head-apr{font-size:11px;white-space:nowrap}
+  .pd-card-body{overflow:hidden}
+  .pd-card.collapsed .pd-card-body{display:none}
+  .pd-card.collapsed{padding-bottom:12px}
   .pd-card-name{font-weight:700;font-size:15px;line-height:1.25}
   .pd-card-bank{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
   .pd-card-amt{margin:12px 0 2px}
@@ -1144,9 +1154,12 @@
   <div class="panel" style="margin-bottom:16px">
     <div class="panel-head">
       <h2>Your cards <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· what you owe right now</span></h2>
-      <button class="btn sm" id="pd-save-all" onclick="saveAllPdCards()">Save all changes</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost sm" id="pd-toggle-all" onclick="toggleAllPdCards()">Expand all</button>
+        <button class="btn sm" id="pd-save-all" onclick="saveAllPdCards()">Save all changes</button>
+      </div>
     </div>
-    <div class="muted pd-cards-hint">Enter the current balance for each card, then press <b>Save</b> (or <b>Save all changes</b>). Blank cards are skipped.</div>
+    <div class="muted pd-cards-hint">Tap a card to expand it, enter the current balance, then press <b>Save</b> (or <b>Save all changes</b>). Blank cards are skipped.</div>
     <div class="grid cards" id="pd-cards"></div>
   </div>
 
@@ -3630,6 +3643,7 @@ async function bulkApply(){
 
 // ================= CREDIT CARD PAYDOWN =================
 let PD = { data:null, method:'avalanche' };
+let _pdCollapsed = {};   // card id -> true when its body is collapsed
 
 async function loadPaydown(){
   const box = $('#pd-cards');
@@ -3667,28 +3681,55 @@ function renderPdCards(){
   const box = $('#pd-cards');
   const cards = PD.data.cards;
   if(!cards.length){ box.innerHTML = '<div class="empty">No credit accounts found</div>'; return; }
+  // default: collapsed unless the user changed it or a card is unsaved
+  cards.forEach(c=>{ if(_pdCollapsed[c.id] === undefined) _pdCollapsed[c.id] = true; if(c._unsaved) _pdCollapsed[c.id] = false; });
+  const ta = $('#pd-toggle-all');
+  if(ta) ta.textContent = cards.some(c=>!_pdCollapsed[c.id]) ? 'Collapse all' : 'Expand all';
   box.innerHTML = cards.map(c=>{
     const bal = c.balance;
     const last = c.balance_date ? ' <span class="muted">· updated '+c.balance_date+'</span>' : '';
     const unsaved = !!c._unsaved;
-    return `<div class="card pd-card${unsaved?' unsaved':''}" data-id="${c.id}">
-      <div class="pd-card-head">
-        <div style="min-width:0">
+    const collapsed = !!_pdCollapsed[c.id];
+    return `<div class="card pd-card${unsaved?' unsaved':''}${collapsed?' collapsed':''}" data-id="${c.id}">
+      <div class="pd-card-head" onclick="togglePdCard(${c.id})" role="button" tabindex="0" title="${collapsed?'Expand':'Collapse'}">
+        <div class="pd-caret">▸</div>
+        <div style="min-width:0;flex:1">
           <div class="pd-card-bank">${esc(c.bank||'Card')}</div>
           <div class="pd-card-name">${esc(c.name)}${unsaved?'<span class="pd-unsaved-tag">unsaved</span>':''}</div>
         </div>
-        <button class="btn ghost sm pd-x" onclick="showTab('txns')" title="View transactions">↗</button>
+        <div class="pd-head-bal">
+          <span class="pd-head-amt ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'—':fmt(bal)}</span>
+          <span class="pd-head-apr muted">${c.apr!=null?c.apr.toFixed(2)+'%':'no APR'}</span>
+        </div>
+        <button class="btn ghost sm pd-x" onclick="event.stopPropagation();showTab('txns')" title="View transactions">↗</button>
       </div>
-      <div class="pd-card-amt"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'No balance yet':fmt(bal)}</span>${last}</div>
-      <div class="pd-card-sub">${c.payments_count} payments · ${fmt(c.payments_total)} paid${c.payments_last?' · last '+c.payments_last:''}</div>
-      <div class="pd-card-inputs">
-        <label>Current balance <input type="number" step="0.01" id="pd-bal-${c.id}" value="${bal==null?'':bal}" placeholder="what you owe" oninput="pdCardDirty(${c.id})"></label>
-        <label>Interest (APR %) <input type="number" step="0.01" id="pd-apr-${c.id}" value="${c.apr==null?'':c.apr}" placeholder="e.g. 24.99" oninput="pdCardDirty(${c.id})"></label>
-        <label>Minimum payment <input type="number" step="0.01" id="pd-min-${c.id}" value="${c.min_payment==null?'':c.min_payment}" placeholder="e.g. 35" oninput="pdCardDirty(${c.id})"></label>
-        <label class="pd-save">&nbsp;<button class="btn" style="height:34px" onclick="savePdCard(${c.id})">Save</button></label>
+      <div class="pd-card-body">
+        <div class="pd-card-amt"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'No balance yet':fmt(bal)}</span>${last}</div>
+        <div class="pd-card-sub">${c.payments_count} payments · ${fmt(c.payments_total)} paid${c.payments_last?' · last '+c.payments_last:''}</div>
+        <div class="pd-card-inputs">
+          <label>Current balance <input type="number" step="0.01" id="pd-bal-${c.id}" value="${bal==null?'':bal}" placeholder="what you owe" oninput="pdCardDirty(${c.id})"></label>
+          <label>Interest (APR %) <input type="number" step="0.01" id="pd-apr-${c.id}" value="${c.apr==null?'':c.apr}" placeholder="e.g. 24.99" oninput="pdCardDirty(${c.id})"></label>
+          <label>Minimum payment <input type="number" step="0.01" id="pd-min-${c.id}" value="${c.min_payment==null?'':c.min_payment}" placeholder="e.g. 35" oninput="pdCardDirty(${c.id})"></label>
+          <label class="pd-save">&nbsp;<button class="btn" style="height:34px" onclick="savePdCard(${c.id})">Save</button></label>
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+
+// ---- collapsible credit-card cards ----
+function togglePdCard(id){
+  _pdCollapsed[id] = !_pdCollapsed[id];
+  const el = document.querySelector('.pd-card[data-id="'+id+'"]');
+  if(el) el.classList.toggle('collapsed', !!_pdCollapsed[id]);
+}
+function toggleAllPdCards(){
+  const all = (PD.data && PD.data.cards || []).map(c=>c.id);
+  const anyOpen = all.some(id=>!_pdCollapsed[id]);
+  const collapse = anyOpen;   // if anything is open, collapse all
+  all.forEach(id=>{ _pdCollapsed[id] = collapse; });
+  renderPdCards();
+  const b = $('#pd-toggle-all'); if(b) b.textContent = collapse ? 'Expand all' : 'Collapse all';
 }
 
 // mark a card as edited-but-not-saved so the user sees it needs a Save
