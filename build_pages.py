@@ -81,7 +81,16 @@ window.DEMO = true;
     else if(path.startsWith('/categories')) body = d.categories;
     else if(path.startsWith('/accounts')) body = d.accounts;
     else if(path.startsWith('/budgets')) body = d.budgets;
-    else if(path.startsWith('/trends')) body = d.trends;
+    else if(path.startsWith('/trends')) body = (function(t, qs){
+      // demo mode: honor the category filter client-side so the prototype behaves
+      const keys = (qs.get('categories')||'').split(',').map(s=>s.trim()).filter(Boolean);
+      if(!keys.length || !t || !t.categories) return t;
+      const cats = t.categories.filter(c=>keys.indexOf(c.key)>=0);
+      const recent = (t.months||[]).slice(-3);
+      let exp = 0; recent.forEach(m=>cats.forEach(c=>{ exp += (c.series&&c.series[m])||0; }));
+      const inc = t.avg_3mo ? t.avg_3mo.income : 0;
+      return Object.assign({}, t, { categories: cats, avg_3mo: { income: inc, expense: Math.round(exp*100)/100, net: Math.round((inc-exp)*100)/100 } });
+    })(d.trends, qs);
     else if(path.startsWith('/savings/history')) body = d.savingsHistory || {months:[], current:null, current_month:null};
     else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};

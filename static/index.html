@@ -1350,6 +1350,9 @@
     <label class="f-half">Account
       <div class="multiselect" id="t-account-ms"></div>
     </label>
+    <label class="f-half">Category
+      <div class="multiselect" id="t-cat-ms"></div>
+    </label>
     <label class="f-half">Window
       <select id="t-months">
         <option value="6">Last 6 months</option>
@@ -2579,11 +2582,16 @@ async function loadMeta(){
   // (re)build multi-selects if not yet initialised
   if(!MS['f-account-ms']) msInit('f-account-ms', {allLabel:'All accounts', onChange:()=>loadTxns(0)});
   if(!MS['t-account-ms']) msInit('t-account-ms', {allLabel:'All accounts', onChange:()=>loadTrends()});
+  if(!MS['t-cat-ms']) msInit('t-cat-ms', {allLabel:'All categories', onChange:()=>loadTrends()});
   if(!MS['bud-account-ms']) msInit('bud-account-ms', {allLabel:'All accounts', onChange:()=>{ if(typeof loadBudgetTab==='function') loadBudgetTab(); }});
   const prevBud = msValues('bud-account-ms');
+  const prevTCat = msValues('t-cat-ms');
   msSetOptions('f-account-ms', names); msSet('f-account-ms', prevAcct);
   msSetOptions('t-account-ms', names); msSet('t-account-ms', prevTrend);
   msSetOptions('bud-account-ms', names); msSet('bud-account-ms', prevBud);
+  // category multiselect (expense categories only — trends are expense-focused)
+  const catNames = CATS.filter(c=>c.kind!=='transfer' && !c.hidden).map(c=>c.name);
+  msSetOptions('t-cat-ms', catNames); msSet('t-cat-ms', prevTCat);
 
   // restore category selection if still valid
   if([...$('#f-cat').options].some(o=>o.value===prevCat)) $('#f-cat').value = prevCat;
@@ -4078,6 +4086,7 @@ async function loadTrends(){
   if($('#t-start').value) q.set('start',$('#t-start').value);
   if($('#t-end').value) q.set('end',$('#t-end').value);
   if(msValues('t-account-ms').length) q.set('accounts', msValues('t-account-ms').map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean).join(','));
+  if($('#t-cat-ms') && msValues('t-cat-ms').length) q.set('categories', msValues('t-cat-ms').map(n=>(CATS.find(x=>x.name===n)||{}).key).filter(Boolean).join(','));
   q.set('months', $('#t-months').value);
   const d = await api('/trends?'+q);
   $('#t-avg-inc').textContent = fmt(d.avg_3mo.income);

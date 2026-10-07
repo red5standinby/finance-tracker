@@ -462,11 +462,14 @@ def dashboard(start: str | None = None, end: str | None = None,
 
 @app.get("/api/trends")
 def trends(start: str | None = None, end: str | None = None,
-           accounts: str | None = None, months: int = 12):
+           accounts: str | None = None, months: int = 12,
+           categories: str | None = None):
     """Per-category monthly series + 3-month averages, expense-focused.
 
     `months` limits how many of the most recent months are returned.
     Transfers and hidden categories are always excluded (not real spend).
+    `categories` (comma-separated keys) limits the expense breakdown to those
+    categories; income totals are unaffected.
     """
     where, params = ["c.kind != 'transfer'", "c.hidden = 0"], []
     ids = [int(x) for x in accounts.split(",") if x.strip().isdigit()] if accounts else []
@@ -475,6 +478,11 @@ def trends(start: str | None = None, end: str | None = None,
         where.append(f"t.account_id IN ({','.join('?' * len(ids))})"); params.extend(ids)
     else:
         where.insert(0, "ac.exclude = 0")
+    cat_keys = [x.strip() for x in categories.split(",") if x.strip()] if categories else []
+    if cat_keys:
+        # scope to expenses only, so income totals stay intact
+        where.append(f"(t.amount >= 0 OR c.key IN ({','.join('?' * len(cat_keys))}))")
+        params.extend(cat_keys)
     if start:
         where.append("t.date >= ?"); params.append(start)
     if end:
