@@ -1021,7 +1021,14 @@ window.DEMO = true;
     <div class="panel snap span-credit">
       <div class="panel-head">
         <h2><span class="ic-lg">◈</span> Credit &amp; savings</h2>
-        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
+        <div class="head-tools">
+          <div class="seg" id="h-credit-seg">
+            <button class="seg-btn active" data-w="m" onclick="homeGradeSet('m')">Month</button>
+            <button class="seg-btn" data-w="6" onclick="homeGradeSet('6')">6M</button>
+            <button class="seg-btn" data-w="all" onclick="homeGradeSet('all')">All</button>
+          </div>
+          <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
+        </div>
       </div>
       <div id="h-credit"><div class="empty">No data</div></div>
     </div>
@@ -3490,11 +3497,13 @@ function renderHomeTopCats(D){
   }).join('');
 }
 
+let _homeCredit = { D:null, PD:null, SV:null, CX:null };
+let _gradeWin = 'm';   // 'm' | '6' | 'all'
+
 function renderHomeCredit(D, PD, SV, CX){
   const box = $('#h-credit');
   if(!box) return;
-  const g = D.grade || {};
-  const rate = g.rate;
+  _homeCredit = { D:D||{}, PD:PD||{}, SV:SV||{}, CX:CX };
   PD = PD || {}; SV = SV || {};
   const pdT = PD.totals || {};
   const svT = SV.totals || {};
@@ -3528,7 +3537,6 @@ function renderHomeCredit(D, PD, SV, CX){
       <div class="hb-name">Total savings</div>
       <div class="hb-sub">${parts.join(' + ') || nSav + ' account' + (nSav===1?'':'s')}</div></div>
       <div class="hb-amt" style="color:var(--good);font-size:20px">${fmt(totalSav)}</div></div>`;
-    // breakdown sub-rows (keeps cash vs crypto legible)
     const subrow = (label, val, extra, onclick) => `<div class="hb-grid clickable" onclick="${onclick}" style="padding-top:2px;padding-bottom:2px"><div>
       <div class="hb-name" style="font-size:12.5px">${label}</div>
       <div class="hb-sub">${extra}</div></div>
@@ -3547,32 +3555,72 @@ function renderHomeCredit(D, PD, SV, CX){
       <div class="hb-amt" style="color:${netc>=0?'var(--good)':'var(--bad)'};font-size:18px">${netc<0?'-':''}${fmt(Math.abs(netc))}</div></div>`;
   }
 
+  // grade + savings rate rows live in their own container (window toggle)
+  html += '<div id="h-credit-grade"></div>';
+  box.innerHTML = html || '<div class="empty">No data</div>';
+  renderHomeGrade();
+}
+
+// Recompute just the savings-rate + grade rows for the chosen window.
+async function homeGradeSet(win){
+  if(win === _gradeWin) return;
+  _gradeWin = win;
+  document.querySelectorAll('#h-credit-seg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.w===win));
+  await renderHomeGrade();
+}
+
+async function renderHomeGrade(){
+  const box = $('#h-credit-grade');
+  if(!box) return;
+  const now = new Date();
+  let q;
+  if(_gradeWin === 'all'){
+    q = '';                       // no window => all-time totals + grade
+  } else if(_gradeWin === '6'){
+    const y = now.getFullYear(), m = now.getMonth();
+    const s = new Date(y, m-5, 1);
+    q = 'start='+s.getFullYear()+'-'+String(s.getMonth()+1).padStart(2,'0')+'-01&end='+
+        y+'-'+String(m+1).padStart(2,'0')+'-31';
+  } else {
+    const y = now.getFullYear(), m = now.getMonth();
+    q = 'start='+y+'-'+String(m+1).padStart(2,'0')+'-01&end='+y+'-'+String(m+1).padStart(2,'0')+'-31';
+  }
+  let D = _homeCredit.D || {};
+  if(_gradeWin !== 'm'){
+    try { D = await api('/dashboard' + (q ? '?'+q : '')); } catch(e){ D = {}; }
+  }
+  const g = D.grade || {};
+  const rate = (_gradeWin === 'all') ? ((g.all_time||{}).rate != null ? (g.all_time||{}).rate : g.rate) : g.rate;
+  const winLabel = _gradeWin==='all' ? 'all-time' : (_gradeWin==='6' ? 'last 6 months' : 'this month');
+  let html = '';
+
   // --- Savings rate ---
-  const rateAll = (g.all_time||{}).rate;
-  const showRate = (rate != null) ? rate : (rateAll != null ? rateAll : null);
-  if(showRate != null){
-    const col = showRate>=20?'var(--good)':(showRate>=0?'#eab308':'var(--bad)');
-    const isAll = (rate == null);
+  if(rate != null){
+    const col = rate>=20?'var(--good)':(rate>=0?'#eab308':'var(--bad)');
     html += `<div class="hb-grid"><div><div class="hb-name">Savings rate</div>
-      <div class="hb-sub">${isAll?'all-time':'this month'} · net ÷ income</div></div>
-      <div class="hb-amt" style="color:${col};font-size:18px">${showRate>=0?'+':''}${showRate.toFixed(1)}%</div></div>`;
+      <div class="hb-sub">${winLabel} · net ÷ income</div></div>
+      <div class="hb-amt" style="color:${col};font-size:18px">${rate>=0?'+':''}${rate.toFixed(1)}%</div></div>`;
+  } else {
+    html += `<div class="hb-grid"><div><div class="hb-name">Savings rate</div>
+      <div class="hb-sub">${winLabel} · no income yet</div></div>
+      <div class="hb-amt" style="color:var(--mut);font-size:18px">—</div></div>`;
   }
 
   // --- Financial grade ---
   if(g.grade){
     html += `<div class="hb-grid clickable" onclick="showTab('dash')"><div><div class="hb-name">Financial grade</div>
-      <div class="hb-sub">all-time: ${esc((g.all_time||{}).grade||'–')}</div></div>
+      <div class="hb-sub">${winLabel} · net ${g.net!=null?(g.net<0?'-':'')+fmt(Math.abs(g.net)):'–'}</div></div>
       <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:20px">${esc(g.grade)}</div></div>`;
   }
 
-  // --- Needs review ---
-  const unc = D.uncategorized;
-  if(unc && unc.count){
+  // --- Needs review (always current-month) ---
+  const unc = ( _homeCredit.D || {}).uncategorized;
+  if(_gradeWin==='m' && unc && unc.count){
     html += `<div class="hb-grid clickable" onclick="showTab('txns')"><div>
       <div class="hb-name">Needs review</div><div class="hb-sub">uncategorized</div></div>
       <div class="hb-amt"><span class="hb-badge warn">${unc.count} · ${fmt(unc.amount)}</span></div></div>`;
   }
-  box.innerHTML = html || '<div class="empty">No data</div>';
+  box.innerHTML = html;
 }
 
 async function loadDashboard(){
