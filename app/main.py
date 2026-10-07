@@ -1005,6 +1005,10 @@ def list_txns(start: str | None = None, end: str | None = None,
         total = con.execute(f"""SELECT COUNT(*) n FROM transactions t
             JOIN categories c ON c.id=t.category_id
             JOIN accounts ac ON ac.id=t.account_id {w}""", params).fetchone()["n"]
+        agg = con.execute(f"""SELECT COALESCE(SUM(t.amount),0) s
+            FROM transactions t
+            JOIN categories c ON c.id=t.category_id
+            JOIN accounts ac ON ac.id=t.account_id {w}""", params).fetchone()["s"]
         rows = con.execute(f"""
             SELECT t.id, t.date, t.description, t.cleaned, t.amount, t.raw_type,
                    t.category_source, t.memo, c.key ckey, c.name cname, c.color ccolor,
@@ -1014,7 +1018,7 @@ def list_txns(start: str | None = None, end: str | None = None,
             JOIN accounts ac ON ac.id=t.account_id
             {w} ORDER BY {col} {direction}, t.id DESC LIMIT ? OFFSET ?
         """, params + [limit, offset]).fetchall()
-    return {"total": total, "items": [dict(r) for r in rows]}
+    return {"total": total, "sum": round(agg, 2), "items": [dict(r) for r in rows]}
 
 
 @app.get("/api/transactions/{txn_id}/similar")

@@ -584,6 +584,14 @@
     height:36px;cursor:pointer;white-space:nowrap}
   .txn-statusbar{display:flex;align-items:center;justify-content:space-between;
     flex-wrap:wrap;gap:12px;margin:16px 0 12px}
+  .txn-sumwrap{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .txn-totals{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+  .txn-totals:empty{display:none}
+  .txn-tot-lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:var(--mut)}
+  .txn-tot-amt{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+  .txn-totals.cat .txn-tot-lbl{color:var(--accent)}
+  .txn-tot-amt.pos{color:var(--good)} .txn-tot-amt.neg{color:var(--bad)}
+  .txn-tot-sub{font-size:12px;color:var(--mut);font-weight:600}
   .pager{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .pager button{background:var(--panel2);border:1px solid var(--line);color:var(--txt);
     min-width:38px;height:38px;border-radius:8px;cursor:pointer;font-weight:600;font-size:14px;
@@ -1393,7 +1401,10 @@
       </div>
     </div>
     <div class="txn-statusbar">
-      <div class="muted" id="txn-count"></div>
+      <div class="txn-sumwrap">
+        <div class="muted" id="txn-count"></div>
+        <div class="txn-totals" id="txn-totals"></div>
+      </div>
       <div class="pager" id="pager-top"></div>
     </div>
     <div class="bulkbar" id="bulkbar">
@@ -4228,7 +4239,33 @@ async function loadTxns(page){
   const d = await api('/transactions?'+q);
   TXNTOTAL = d.total;
   PAGE_ITEMS = d.items;
-  $('#txn-count').textContent = `${d.total.toLocaleString()} transactions`;
+  $('#txn-count').textContent = `${d.total.toLocaleString()} transaction${d.total===1?'':'s'}`;
+  // Top-line total for the current filter (highlighted when scoped to a category)
+  const catSel = $('#f-cat').value;
+  const sum = d.sum || 0;
+  const catName = catSel ? catByKey(catSel).name : '';
+  const catKind = catSel ? ((CATS.find(c=>c.key===catSel)||{}).kind || 'expense') : '';
+  const totBox = $('#txn-totals');
+  if(totBox){
+    if(d.total === 0){ totBox.innerHTML = ''; }
+    else {
+      let lbl, amt, cls, sub = `across ${d.total.toLocaleString()} txn${d.total===1?'':'s'}`;
+      if(!catSel){
+        lbl = 'Net total'; cls = sum<0?'neg':'pos'; amt = (sum<0?'-':'+') + fmt(Math.abs(sum));
+      } else if(catKind === 'income'){
+        lbl = esc(catName) + ' total'; cls = 'pos'; amt = '+' + fmt(Math.abs(sum));
+      } else if(catKind === 'expense'){
+        lbl = esc(catName); cls = 'neg'; amt = fmt(Math.abs(sum)) + ' spent';
+      } else {
+        lbl = esc(catName) + ' total'; cls = sum<0?'neg':'pos'; amt = (sum<0?'-':'+') + fmt(Math.abs(sum));
+      }
+      totBox.innerHTML =
+        `<span class="txn-tot-lbl">${lbl}</span>` +
+        `<span class="txn-tot-amt ${cls}">${amt}</span>` +
+        `<span class="txn-tot-sub">${sub}</span>`;
+      totBox.classList.toggle('cat', !!catSel);
+    }
+  }
   $('#txn-body').innerHTML = d.items.length ? d.items.map(t=>{
     const c = catByKey(t.ckey);
     const src = t.category_source!=='rule' ? `<span class="src">${t.category_source}</span>` : '';

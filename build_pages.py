@@ -86,7 +86,7 @@ window.DEMO = true;
     else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
     else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
-    else if(path.startsWith('/transactions')) body = d.transactions;
+    else if(path.startsWith('/transactions')) body = (function(t){ t = t || {total:0, items:[]}; if(t.sum === undefined){ t = Object.assign({}, t, {sum: (t.items||[]).reduce((a,x)=>a+(x.amount||0),0)}); } return t; })(d.transactions);
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
     else if(path.startsWith('/crypto')) body = demoCrypto(path, qs, d);
