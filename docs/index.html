@@ -207,7 +207,8 @@
   .home-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
   .home-title{font-size:20px;margin:0}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
-  .home-hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .home-hero{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:760px){.home-hero{grid-template-columns:1fr}}
   /* Snapshot cards (Home) — fintech-style asymmetric grid */
   .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:stretch}
   /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
@@ -758,11 +759,6 @@ window.DEMO = true;
       <div class="lbl">Budget remaining this month</div>
       <div class="val" id="h-spend">$0</div>
       <div class="muted" style="font-size:12px" id="h-spend-sub">—</div>
-    </div>
-    <div class="card hero-card" id="hero-net">
-      <div class="lbl">This month net</div>
-      <div class="val" id="h-net">$0</div>
-      <div class="muted" style="font-size:12px" id="h-net-sub">—</div>
     </div>
     <div class="card hero-card" id="hero-acct">
       <div class="lbl">Cash on hand</div>
@@ -2519,26 +2515,9 @@ async function loadHome(){
     hs.textContent = (left<0?'-':'') + fmt(left);
     hs.className = 'val ' + (left<0?'neg':'pos');
     $('#h-spend-sub').textContent = leftSub;
-    $('#hero-spend').className = 'card hero-card ' + (left<0?'bad':'good');
+    $('#hero-spend').className = 'card hero-card hero-spotlight ' + (left<0?'bad':'good');
 
-  // ---- HERO 2: this month net ----
-  const hn = $('#h-net');
-  hn.textContent = (net<0?'-':'') + fmt(net);
-  hn.className = 'val ' + (net>=0?'pos':'neg');
-  $('#hero-net').className = 'card hero-card ' + (net>=0?'good':'bad');
-  // trend vs last month
-  let sub = 'in ' + fmt(income) + ' · out ' + fmt(expense);
-  try {
-    const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
-    const pym = prev.getFullYear() + '-' + String(prev.getMonth()+1).padStart(2,'0');
-    const PD = await api('/dashboard?start=' + pym + '-01&end=' + pym + '-31');
-    const pnet = (PD.totals.income||0) - (PD.totals.expense||0);
-    const delta = net - pnet;
-    sub += ' · ' + (delta>=0?'▲ ':'▼ ') + fmt(Math.abs(delta)) + ' vs last month';
-  } catch(e){}
-  $('#h-net-sub').textContent = sub;
-
-  // ---- HERO 3: cash position ----
+  // ---- HERO 2: cash position ----
   try {
     const ac = await api('/accounts');
     const cash = ac.filter(a=>!a.exclude && (a.kind==='checking'||a.kind==='savings'));
@@ -2549,14 +2528,7 @@ async function loadHome(){
       hc.textContent = fmt(total); hc.className = 'val pos';
       $('#h-acct-sub').textContent = withBal.map(a=>a.name).join(' · ');
     } else if(cash.length){
-      // No tracked balances yet — show lifetime net flow for the cash accounts, clearly labelled.
-      const dn = await api('/dashboard');
-      const cashNames = cash.map(a=>a.name);
-      const acctRows = (dn.accounts||[]).filter(a=>cashNames.includes(a.name));
-      const netflow = acctRows.reduce((s,a)=>s + (a.income - a.expense), 0);
-      hc.textContent = (netflow<0?'-':'') + fmt(netflow);
-      hc.className = 'val ' + (netflow>=0?'pos':'neg');
-      $('#hero-acct').querySelector('.lbl').textContent = 'Net flow (cash accts)';
+      hc.textContent = '—';
       $('#h-acct-sub').textContent = cash.map(a=>a.name).join(' · ') + ' — no balance sync yet';
     } else {
       hc.textContent = '—';
