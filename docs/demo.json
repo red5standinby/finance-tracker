@@ -450,99 +450,389 @@
   "month": "2026-09",
   "rows": [
    {
-    "key": "transport",
-    "name": "Transport",
-    "color": "#06b6d4",
-    "budget": 300,
-    "spent": 294.92,
-    "remaining": 5.08,
-    "pct": 98.3
+    "key": "bitcoin",
+    "name": "Bitcoin",
+    "color": "#ff00ff",
+    "budget": 650.0,
+    "spent": 750.0,
+    "remaining": -100.0,
+    "pct": 115.4
    },
    {
     "key": "groceries",
     "name": "Groceries",
     "color": "#84cc16",
-    "budget": 800,
-    "spent": 713.24,
-    "remaining": 86.76,
-    "pct": 89.2
+    "budget": 1200.0,
+    "spent": 1167.59,
+    "remaining": 32.41,
+    "pct": 97.3
    },
    {
     "key": "dining",
     "name": "Dining",
     "color": "#f97316",
-    "budget": 450,
-    "spent": 400.72,
-    "remaining": 49.28,
-    "pct": 89.0
-   },
-   {
-    "key": "shopping",
-    "name": "Shopping",
-    "color": "#3b82f6",
-    "budget": 400,
-    "spent": 345.78,
-    "remaining": 54.22,
-    "pct": 86.4
-   },
-   {
-    "key": "utilities",
-    "name": "Utilities",
-    "color": "#eab308",
-    "budget": 200,
-    "spent": 169.66,
-    "remaining": 30.34,
-    "pct": 84.8
+    "budget": 1000.0,
+    "spent": 459.68,
+    "remaining": 540.32,
+    "pct": 46.0
    },
    {
     "key": "housing",
     "name": "Rent/Housing",
     "color": "#8b5cf6",
-    "budget": 1650,
-    "spent": 1394.77,
-    "remaining": 255.23,
-    "pct": 84.5
+    "budget": 5000.0,
+    "spent": 583.45,
+    "remaining": 4416.55,
+    "pct": 11.7
    },
    {
-    "key": "entertainment",
-    "name": "Entertainment",
-    "color": "#a855f7",
-    "budget": 150,
-    "spent": 121.14,
-    "remaining": 28.86,
-    "pct": 80.8
+    "key": "shopping",
+    "name": "Shopping",
+    "color": "#3b82f6",
+    "budget": 0.0,
+    "spent": 1850.42,
+    "remaining": -1850.42,
+    "pct": null
    },
    {
-    "key": "subscriptions",
-    "name": "Subscriptions",
-    "color": "#64748b",
-    "budget": 100,
-    "spent": 78.58,
-    "remaining": 21.42,
-    "pct": 78.6
+    "key": "daycare",
+    "name": "Daycare",
+    "color": "#0000ff",
+    "budget": 0.0,
+    "spent": 1250.0,
+    "remaining": -1250.0,
+    "pct": null
+   },
+   {
+    "key": "kids_activities",
+    "name": "Kids activities",
+    "color": "#ffff00",
+    "budget": 0.0,
+    "spent": 1038.97,
+    "remaining": -1038.97,
+    "pct": null
+   },
+   {
+    "key": "kids_education",
+    "name": "Kids Education",
+    "color": "#ff00ff",
+    "budget": 0.0,
+    "spent": 500.0,
+    "remaining": -500.0,
+    "pct": null
+   },
+   {
+    "key": "utilities",
+    "name": "Utilities",
+    "color": "#06b6d4",
+    "budget": 0.0,
+    "spent": 444.67,
+    "remaining": -444.67,
+    "pct": null
    },
    {
     "key": "insurance",
     "name": "Insurance",
-    "color": "#14b8a6",
-    "budget": 0,
-    "spent": 151.13,
-    "remaining": -151.13,
+    "color": "#64748b",
+    "budget": 0.0,
+    "spent": 379.33,
+    "remaining": -379.33,
+    "pct": null
+   },
+   {
+    "key": "loan_payment",
+    "name": "Loan payment",
+    "color": "#0000ff",
+    "budget": 0.0,
+    "spent": 280.0,
+    "remaining": -280.0,
+    "pct": null
+   },
+   {
+    "key": "cash",
+    "name": "Cash/ATM",
+    "color": "#78716c",
+    "budget": 0.0,
+    "spent": 246.0,
+    "remaining": -246.0,
+    "pct": null
+   },
+   {
+    "key": "alcohol",
+    "name": "Alcohol",
+    "color": "#ff00ff",
+    "budget": 0.0,
+    "spent": 208.22,
+    "remaining": -208.22,
     "pct": null
    },
    {
     "key": "health",
     "name": "Health",
+    "color": "#14b8a6",
+    "budget": 0.0,
+    "spent": 197.68,
+    "remaining": -197.68,
+    "pct": null
+   },
+   {
+    "key": "fees",
+    "name": "Fees",
+    "color": "#ef4444",
+    "budget": 0.0,
+    "spent": 159.97,
+    "remaining": -159.97,
+    "pct": null
+   },
+   {
+    "key": "mobile",
+    "name": "Mobile",
+    "color": "#00ffff",
+    "budget": 0.0,
+    "spent": 132.0,
+    "remaining": -132.0,
+    "pct": null
+   },
+   {
+    "key": "entertainment",
+    "name": "Entertainment",
+    "color": "#a855f7",
+    "budget": 0.0,
+    "spent": 116.82,
+    "remaining": -116.82,
+    "pct": null
+   },
+   {
+    "key": "subscriptions",
+    "name": "Subscriptions",
     "color": "#ec4899",
-    "budget": 0,
-    "spent": 83.53,
-    "remaining": -83.53,
+    "budget": 0.0,
+    "spent": 97.21,
+    "remaining": -97.21,
+    "pct": null
+   },
+   {
+    "key": "gas",
+    "name": "Gas/Fuel",
+    "color": "#eab308",
+    "budget": 0.0,
+    "spent": 76.29,
+    "remaining": -76.29,
+    "pct": null
+   },
+   {
+    "key": "uber_eats",
+    "name": "Uber Eats",
+    "color": "#ffff00",
+    "budget": 0.0,
+    "spent": 55.43,
+    "remaining": -55.43,
+    "pct": null
+   },
+   {
+    "key": "pets",
+    "name": "Pets",
+    "color": "#0000ff",
+    "budget": 0.0,
+    "spent": 44.0,
+    "remaining": -44.0,
+    "pct": null
+   },
+   {
+    "key": "discretionary",
+    "name": "Discretionary",
+    "color": "#ffffff",
+    "budget": 0.0,
+    "spent": 31.01,
+    "remaining": -31.01,
+    "pct": null
+   },
+   {
+    "key": "misc",
+    "name": "Misc",
+    "color": "#00ff00",
+    "budget": 0.0,
+    "spent": 27.61,
+    "remaining": -27.61,
+    "pct": null
+   },
+   {
+    "key": "uncategorized",
+    "name": "Uncategorized",
+    "color": "#525252",
+    "budget": 0.0,
+    "spent": -64.68,
+    "remaining": 64.68,
     "pct": null
    }
   ],
+  "categories": [
+   {
+    "key": "alcohol",
+    "name": "Alcohol",
+    "color": "#ff00ff"
+   },
+   {
+    "key": "auto",
+    "name": "Auto",
+    "color": "#ff00ff"
+   },
+   {
+    "key": "bitcoin",
+    "name": "Bitcoin",
+    "color": "#ff00ff"
+   },
+   {
+    "key": "cash",
+    "name": "Cash/ATM",
+    "color": "#78716c"
+   },
+   {
+    "key": "college_savings",
+    "name": "College Savings",
+    "color": "#8b5cf6"
+   },
+   {
+    "key": "daycare",
+    "name": "Daycare",
+    "color": "#0000ff"
+   },
+   {
+    "key": "dining",
+    "name": "Dining",
+    "color": "#f97316"
+   },
+   {
+    "key": "discretionary",
+    "name": "Discretionary",
+    "color": "#ffffff"
+   },
+   {
+    "key": "entertainment",
+    "name": "Entertainment",
+    "color": "#a855f7"
+   },
+   {
+    "key": "fees",
+    "name": "Fees",
+    "color": "#ef4444"
+   },
+   {
+    "key": "gas",
+    "name": "Gas/Fuel",
+    "color": "#eab308"
+   },
+   {
+    "key": "groceries",
+    "name": "Groceries",
+    "color": "#84cc16"
+   },
+   {
+    "key": "health",
+    "name": "Health",
+    "color": "#14b8a6"
+   },
+   {
+    "key": "home_impovement",
+    "name": "Home Impovement",
+    "color": "#ff4dbe"
+   },
+   {
+    "key": "insurance",
+    "name": "Insurance",
+    "color": "#64748b"
+   },
+   {
+    "key": "kids_activities",
+    "name": "Kids activities",
+    "color": "#ffff00"
+   },
+   {
+    "key": "kids_education",
+    "name": "Kids Education",
+    "color": "#ff00ff"
+   },
+   {
+    "key": "loan_payment",
+    "name": "Loan payment",
+    "color": "#0000ff"
+   },
+   {
+    "key": "magic",
+    "name": "Magic",
+    "color": "#4ee4e2"
+   },
+   {
+    "key": "misc",
+    "name": "Misc",
+    "color": "#00ff00"
+   },
+   {
+    "key": "mobile",
+    "name": "Mobile",
+    "color": "#00ffff"
+   },
+   {
+    "key": "pets",
+    "name": "Pets",
+    "color": "#0000ff"
+   },
+   {
+    "key": "housing",
+    "name": "Rent/Housing",
+    "color": "#8b5cf6"
+   },
+   {
+    "key": "savings_deposit",
+    "name": "Savings Deposit",
+    "color": "#1dd743"
+   },
+   {
+    "key": "savings_interest",
+    "name": "Savings interest",
+    "color": "#00aaff"
+   },
+   {
+    "key": "shopping",
+    "name": "Shopping",
+    "color": "#3b82f6"
+   },
+   {
+    "key": "state_tax",
+    "name": "State Tax",
+    "color": "#4dd2ff"
+   },
+   {
+    "key": "subscriptions",
+    "name": "Subscriptions",
+    "color": "#ec4899"
+   },
+   {
+    "key": "uber_eats",
+    "name": "Uber Eats",
+    "color": "#ffff00"
+   },
+   {
+    "key": "uncategorized",
+    "name": "Uncategorized",
+    "color": "#525252"
+   },
+   {
+    "key": "utilities",
+    "name": "Utilities",
+    "color": "#06b6d4"
+   },
+   {
+    "key": "vacation",
+    "name": "Vacation",
+    "color": "#00ff00"
+   }
+  ],
   "totals": {
-   "budget": 4050,
-   "spent": 3518.81
+   "budget": 7850.0,
+   "spent": 2960.72,
+   "spent_all": 10031.67,
+   "spent_unbudgeted": 7070.95
   }
  },
  "trends": {

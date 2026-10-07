@@ -633,6 +633,50 @@
   .bg-nums{text-align:right;font-weight:600;color:var(--mut);font-variant-numeric:tabular-nums}
   .bg-nums .over{color:var(--bad)}
   .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
+
+  /* ---- dedicated Budget tab ---- */
+  .b-filter-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%}
+  .bg-monthnav{display:flex;align-items:center;gap:8px}
+  .bg-monthlbl{font-size:15px;font-weight:700;min-width:150px;text-align:center}
+  .bg-addwrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .bg-addwrap select,.bg-addinp{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;
+    color:var(--txt);font-size:13px;padding:7px 10px;font-family:inherit}
+  .bg-addinp{width:110px}
+  .budget-hero{padding:18px 20px}
+  .bud-hero-top{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
+  .bud-kpi .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:700}
+  .bud-kpi .v{font-size:22px;font-weight:800;margin-top:3px;font-variant-numeric:tabular-nums}
+  .bud-kpi .v.pos{color:var(--good)} .bud-kpi .v.neg{color:var(--bad)}
+  .bud-barwrap{margin-top:2px}
+  .bud-track{background:var(--panel2);border-radius:8px;height:16px;overflow:hidden}
+  .bud-track.sm{height:8px}
+  .bud-fill{height:100%;border-radius:8px;transition:width .4s}
+  .bud-fill.ok{background:var(--good)} .bud-fill.warn{background:#f59e0b}
+  .bud-fill.over{background:var(--bad)} .bud-fill.none{background:#64748b;opacity:.4}
+  .bud-barinfo{font-size:12.5px;color:var(--mut);font-weight:600;margin-top:7px}
+  .bud-seghead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .bud-list{display:flex;flex-direction:column;gap:16px}
+  .bud-row{padding-bottom:14px;border-bottom:1px solid rgba(36,48,68,.4)}
+  .bud-row:last-child{border-bottom:none;padding-bottom:0}
+  .bud-row-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+  .bud-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
+  .bud-name{font-weight:700;font-size:14px;flex:1}
+  .bud-badge{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;font-variant-numeric:tabular-nums}
+  .bud-badge.ok{background:rgba(34,197,94,.16);color:var(--good)}
+  .bud-badge.warn{background:rgba(245,158,11,.18);color:#f59e0b}
+  .bud-badge.over{background:rgba(239,68,68,.18);color:var(--bad)}
+  .bud-badge.none{background:rgba(100,116,139,.2);color:var(--mut)}
+  .bud-row-f{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+  .bud-spent{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+  .bud-inp{width:96px;background:var(--panel2);border:1px solid var(--bd);border-radius:7px;
+    color:var(--txt);font-size:14px;font-weight:600;padding:6px 9px;font-family:inherit;font-variant-numeric:tabular-nums}
+  .bud-inp:focus{outline:none;border-color:var(--accent)}
+  .bud-rem{font-size:12.5px;font-weight:600;margin-left:auto}
+  .bud-rem .neg{color:var(--bad)} .bud-rem .muted{color:var(--mut)}
+  @media(max-width:680px){
+    .bud-hero-top{grid-template-columns:repeat(2,1fr);gap:12px}
+    .bg-monthlbl{min-width:auto}
+  }
   .bg-row .bg-edit{background:none;border:1px dashed var(--bd);border-radius:6px;color:var(--mut);
     font-size:11px;padding:2px 8px;cursor:pointer}
   .bg-row .bg-edit:hover{color:var(--accent);border-color:var(--accent)}
@@ -814,6 +858,7 @@
     <nav>
       <button data-tab="home" class="active"><span class="ic">⌂</span><span class="lb">Home</span></button>
       <button data-tab="bills"><span class="ic">▤</span><span class="lb">Bills</span></button>
+      <button data-tab="budget"><span class="ic">◔</span><span class="lb">Budget</span></button>
       <button data-tab="dash"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
@@ -1056,6 +1101,40 @@
     <div id="b-search-results"></div>
     <div id="b-list"><div class="empty">No bills tracked yet — create one above.</div></div>
     <div id="b-cal" class="hidden"></div>
+  </div>
+</section>
+
+<!-- ============ BUDGET ============ -->
+<section id="tab-budget" class="hidden">
+  <div class="filters">
+    <div class="b-filter-row">
+      <div class="bg-monthnav">
+        <button class="btn ghost sm" onclick="budgetNav(-1)" title="Previous month">‹</button>
+        <span id="bud-month" class="bg-monthlbl">–</span>
+        <button class="btn ghost sm" onclick="budgetNav(1)" title="Next month">›</button>
+        <button class="btn ghost sm" onclick="budgetNav(0)">This month</button>
+      </div>
+      <div class="multiselect" id="bud-account-ms"></div>
+      <div class="bg-addwrap">
+        <select id="bud-add-cat"><option value="">Add a category…</option></select>
+        <input id="bud-add-amt" class="bg-addinp" type="number" min="0" step="10" placeholder="$ / month">
+        <button class="btn sm" onclick="budgetAddCategory()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card budget-hero" id="bud-hero"></div>
+
+  <div class="card">
+    <div class="bud-seghead">
+      <h2 style="margin:0">Categories</h2>
+      <div class="seg" id="bud-seg">
+        <button class="seg-btn active" data-s="all" onclick="budgetSort('all')">All</button>
+        <button class="seg-btn" data-s="over" onclick="budgetSort('over')">Over</button>
+        <button class="seg-btn" data-s="unset" onclick="budgetSort('unset')">Unbudgeted</button>
+      </div>
+    </div>
+    <div id="bud-list" class="bud-list"><div class="empty">No budgets set</div></div>
   </div>
 </section>
 
@@ -2250,7 +2329,7 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import','crypto','home','bills','paydown'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import','crypto','home','bills','paydown','budget'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='home') loadHome();
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
@@ -2260,6 +2339,7 @@ function showTab(name){
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
   if(name==='bills') loadBills();
+  if(name==='budget') loadBudgetTab();
   if(name==='import'){ loadImports(); loadAcctList(); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{ showTab(b.dataset.tab); if(window.innerWidth<=820){ const s=$('#sidebar'); if(s && !s.classList.contains('collapsed')){ s.classList.add('collapsed'); try{ localStorage.setItem('lffd-sidebar','1'); }catch(e){} } } });
@@ -2335,9 +2415,12 @@ async function loadMeta(){
   if(!MS['f-account-ms']) msInit('f-account-ms', {allLabel:'All accounts', onChange:()=>loadTxns(0)});
   if(!MS['d-account-ms']) msInit('d-account-ms', {allLabel:'All accounts', onChange:()=>loadDashboard()});
   if(!MS['t-account-ms']) msInit('t-account-ms', {allLabel:'All accounts', onChange:()=>loadTrends()});
+  if(!MS['bud-account-ms']) msInit('bud-account-ms', {allLabel:'All accounts', onChange:()=>{ if(typeof loadBudgetTab==='function') loadBudgetTab(); }});
+  const prevBud = msValues('bud-account-ms');
   msSetOptions('f-account-ms', names); msSet('f-account-ms', prevAcct);
   msSetOptions('d-account-ms', names); msSet('d-account-ms', prevDash);
   msSetOptions('t-account-ms', names); msSet('t-account-ms', prevTrend);
+  msSetOptions('bud-account-ms', names); msSet('bud-account-ms', prevBud);
 
   // restore category selection if still valid
   if([...$('#f-cat').options].some(o=>o.value===prevCat)) $('#f-cat').value = prevCat;
@@ -3677,6 +3760,144 @@ function editBudget(key){
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({category_key: key, amount: (String(inp).trim()==='' ? 0 : val)})})
     .then(r => r.ok ? loadBudgets(d.month, msValues('d-account-ms')) : alert('Could not save budget'))
+    .catch(() => alert('Could not save budget'));
+}
+
+// ---------- Budget tab (dedicated) ----------
+let _budT = null;            // last /budgets response
+let _budMonth = null;        // 'YYYY-MM' currently shown
+let _budSort = 'all';        // all | over | unset
+let _budAcctInit = false;
+
+function budThisMonth(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
+function budShift(ym, delta){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, m-1+delta, 1);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+}
+function budMonthLabel(ym){
+  const [y,m] = ym.split('-').map(Number);
+  return new Date(y, m-1, 1).toLocaleDateString('en-US',{month:'long', year:'numeric'});
+}
+
+async function loadBudgetTab(){
+  if(!_budMonth) _budMonth = budThisMonth();
+  const q = new URLSearchParams();
+  q.set('month', _budMonth);
+  let acctNames = [];
+  try { acctNames = (typeof msValues==='function') ? msValues('bud-account-ms') : []; } catch(e){}
+  if(acctNames && acctNames.length){
+    const ids = acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
+    if(ids.length) q.set('accounts', ids.join(','));
+  }
+  try { _budT = await api('/budgets?'+q); } catch(e){ _budT = null; }
+  renderBudgetTab();
+}
+
+function budgetNav(delta){
+  if(delta === 0) _budMonth = budThisMonth();
+  else _budMonth = budShift(_budMonth || budThisMonth(), delta);
+  loadBudgetTab();
+}
+function budgetSort(s){
+  _budSort = s;
+  document.querySelectorAll('#bud-seg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.s===s));
+  renderBudgetTab();
+}
+
+function renderBudgetTab(){
+  const d = _budT;
+  $('#bud-month').textContent = d ? budMonthLabel(d.month) : budMonthLabel(_budMonth);
+  if(!d){ $('#bud-hero').innerHTML = '<div class="empty">Could not load budgets</div>'; $('#bud-list').innerHTML=''; return; }
+
+  // populate add-category dropdown with unbudgeted categories
+  const sel = $('#bud-add-cat');
+  const haveBudget = new Set(d.rows.filter(r=>r.budget>0).map(r=>r.key));
+  const opts = (d.categories||[]).filter(c=>!haveBudget.has(c.key));
+  sel.innerHTML = '<option value="">Add a category…</option>' +
+    opts.map(c=>`<option value="${esc(c.key)}">${esc(c.name)}</option>`).join('');
+
+  const t = d.totals || {};
+  const bud = t.budget||0, spent = t.spent||0, spentAll = t.spent_all||0, unbud = t.spent_unbudgeted||0;
+  const left = bud - spent;
+  const pct = bud>0 ? Math.min(999, Math.round(spent/bud*100)) : 0;
+  const barCls = pct>=100?'over':(pct>=80?'warn':'ok');
+  const barW = Math.min(100, bud>0 ? spent/bud*100 : 0).toFixed(1);
+
+  // only meaningful when there's spending logged this month
+  const hasSpend = spentAll > 0.005;
+  $('#bud-hero').innerHTML = `
+    <div class="bud-hero-top">
+      <div class="bud-kpi"><div class="k">Budgeted</div><div class="v">${fmt(bud)}</div></div>
+      <div class="bud-kpi"><div class="k">Spent (budgeted)</div><div class="v ${spent>bud?'neg':''}">${fmt(spent)}</div></div>
+      <div class="bud-kpi"><div class="k">${left<0?'Over budget':'Left'}</div><div class="v ${left<0?'neg':'pos'}">${left<0?'-':''}${fmt(Math.abs(left))}</div></div>
+      <div class="bud-kpi"><div class="k">Spent (all)</div><div class="v">${fmt(spentAll)}</div></div>
+    </div>
+    <div class="bud-barwrap">
+      <div class="bud-track"><div class="bud-fill ${barCls}" style="width:${barW}%"></div></div>
+      <div class="bud-barinfo">${bud>0?pct+'% of budget used':'No budget set'}${unbud>0.005?' · '+fmt(unbud)+' outside budgets':''}</div>
+    </div>`;
+
+  // category list
+  let rows = d.rows.slice();
+  if(_budSort==='over') rows = rows.filter(r=>r.budget>0 && r.spent>r.budget);
+  else if(_budSort==='unset') rows = rows.filter(r=>!(r.budget>0));
+  // order: budgeted by pct desc, then unbudgeted by spend desc
+  rows.sort((a,b)=>{
+    const ab=a.budget>0, bb=b.budget>0;
+    if(ab!==bb) return ab?-1:1;
+    if(ab) return (b.pct||0)-(a.pct||0);
+    return b.spent-a.spent;
+  });
+
+  if(!rows.length){
+    $('#bud-list').innerHTML = '<div class="empty">'+(d.rows.length?'Nothing in this view':'No budgets yet — add a category above')+'</div>';
+    return;
+  }
+  $('#bud-list').innerHTML = rows.map(r=>{
+    const hasB = r.budget>0;
+    const pctc = hasB ? Math.min(999, Math.round(r.spent/r.budget*100)) : null;
+    const cls = hasB ? (pctc>=100?'over':(pctc>=80?'warn':'ok')) : 'none';
+    const w = hasB ? Math.min(100, r.spent/r.budget*100).toFixed(1) : (r.spent>0?'100':'0');
+    const remTxt = !hasB ? '<span class="muted">no budget</span>'
+      : (r.remaining<0 ? `<span class="neg">${fmt(-r.remaining)} over</span>` : `<span class="muted">${fmt(r.remaining)} left</span>`);
+    return `<div class="bud-row">
+      <div class="bud-row-h">
+        <span class="bud-dot" style="background:${esc(r.color||'#64748b')}"></span>
+        <span class="bud-name">${esc(r.name)}</span>
+        <span class="bud-badge ${cls}">${hasB?pctc+'%':'—'}</span>
+      </div>
+      <div class="bud-track sm"><div class="bud-fill ${cls}" style="width:${w}%"></div></div>
+      <div class="bud-row-f">
+        <span class="bud-spent">${fmt(r.spent)} <span class="muted">of</span> </span>
+        <input class="bud-inp" type="number" min="0" step="10" value="${hasB?r.budget:''}"
+          placeholder="0" title="Monthly budget" onchange="budgetRowSet('${esc(r.key)}', this.value)">
+        <span class="bud-rem">${remTxt}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function budgetRowSet(key, raw){
+  const val = parseFloat(String(raw).replace(/[$,]/g,''));
+  const amount = (String(raw).trim()==='' || isNaN(val) || val<0) ? 0 : val;
+  fetch('/api/budgets', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({category_key: key, amount})})
+    .then(r => r.ok ? loadBudgetTab() : alert('Could not save budget'))
+    .catch(() => alert('Could not save budget'));
+}
+
+function budgetAddCategory(){
+  const key = $('#bud-add-cat').value;
+  const amt = $('#bud-add-amt').value;
+  if(!key){ alert('Pick a category first'); return; }
+  const val = parseFloat(String(amt).replace(/[$,]/g,''));
+  if(isNaN(val) || val<=0){ alert('Enter a monthly amount'); return; }
+  fetch('/api/budgets', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({category_key: key, amount: val})})
+    .then(r => { if(r.ok){ $('#bud-add-amt').value=''; loadBudgetTab(); } else alert('Could not save budget'); })
     .catch(() => alert('Could not save budget'));
 }
 

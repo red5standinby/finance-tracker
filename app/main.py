@@ -174,7 +174,7 @@ async def import_csv(file: UploadFile = File(...), account: str = Form(...),
     warning = None
     if flagged:
         warning = (f"{len(flagged)} row(s) were skipped even though identical rows exist in "
-                   f"this same file — check whether they are genuine repeats vs. true duplicates.")
+                   f"this same file - check whether they are genuine repeats vs. true duplicates.")
     elif multi_identity:
         warning = (f"{len(multi_identity)} identity group(s) repeat within this file "
                    f"(same date+amount+description); all were inserted.")
@@ -598,18 +598,20 @@ def get_budgets(month: str | None = None, accounts: str | None = None):
             "key": k, "name": m.get("name", k), "color": m.get("color", "#64748b"),
             "budget": tgt, "spent": sp, "remaining": round(tgt - sp, 2),
             "pct": pct,
-        })
-    # budgeted first (by pct spent desc), then the rest by spend desc
+        })    # budgeted first (by pct spent desc), then the rest by spend desc
     rows.sort(key=lambda r: (r["budget"] <= 0, -(r["pct"] or 0), -r["spent"]))
 
     total_budget = round(sum(r["budget"] for r in rows), 2)
     # Spend in *budgeted* categories only (drives the budget bars).
     total_spent = round(sum(r["spent"] for r in rows if r["budget"] > 0), 2)
-    # ALL expense spend this month (budgeted or not) — the honest "usage" figure.
+    # ALL expense spend this month (budgeted or not) - the honest "usage" figure.
     total_spent_all = round(sum(r["spent"] for r in rows), 2)
     return {
         "month": month,
         "rows": rows,
+        "categories": sorted(
+            [{"key": m["key"], "name": m["name"], "color": m["color"]} for m in meta.values()],
+            key=lambda x: x["name"].lower()),
         "totals": {"budget": total_budget, "spent": total_spent,
                    "spent_all": total_spent_all,
                    "spent_unbudgeted": round(total_spent_all - total_spent, 2)},
@@ -687,7 +689,7 @@ def _bill_status(con, bill, month):
     """Compute this month's paid/due/overdue state for one bill.
 
     Matches txns whose cleaned merchant *contains* the bill's match key
-    (case-insensitive) — merchants are often fragmented across variants
+    (case-insensitive) - merchants are often fragmented across variants
     (NETFLIX 1 / NETFLIX COM ...), so substring matching is intentional.
 
     Installments: when payments_per_month > 1 (e.g. weekly daycare), the
@@ -752,7 +754,7 @@ def _bill_status(con, bill, month):
         paid_date = rows[0]["date"]
         paid_amount = round(sum(-r["amount"] for r in rows[:per_month]), 2)
     elif found > 0 and per_month > 1:
-        # some installments in — still accruing
+        # some installments in - still accruing
         status = "partial"
         paid_date = rows[0]["date"]
         paid_amount = paid_sum
