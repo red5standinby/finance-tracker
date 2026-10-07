@@ -702,11 +702,33 @@ def _bill_status(con, bill, month):
         per_month = 1
     if per_month < 1:
         per_month = 1
-    rows = con.execute("""
-        SELECT t.date, t.amount FROM transactions t
-        WHERE lower(t.cleaned) LIKE ? AND substr(t.date,1,7) = ? AND t.amount < 0
-        ORDER BY t.date DESC""", (f"%{key}%", month)).fetchall()
     today = date.today()
+    # Installment bills (weekly / multi-payment) are matched on a window
+    # starting at the calendar month and spanning ~per_month weekly cycles
+    # (plus a few days of tail so a late cycle still lands). No back-grace:
+    # charges are attributed forward, so a boundary charge can't be counted
+    # in two months at once.
+    if per_month > 1:
+        m0 = date(int(month[:4]), int(month[5:7]), 1)
+        span = per_month * 7 + 3
+        if month == today.strftime("%Y-%m"):
+            win_end = min(today, m0 + timedelta(days=span))
+        else:
+            if int(month[5:7]) == 12:
+                m_end = date(int(month[:4]), 12, 31)
+            else:
+                m_end = date(int(month[:4]), int(month[5:7]) + 1, 1) - timedelta(days=1)
+            win_end = min(m_end, m0 + timedelta(days=span))
+        rows = con.execute("""
+            SELECT t.date, t.amount FROM transactions t
+            WHERE lower(t.cleaned) LIKE ? AND t.amount < 0
+              AND t.date >= ? AND t.date <= ?
+            ORDER BY t.date DESC""", (f"%{key}%", m0.isoformat(), win_end.isoformat())).fetchall()
+    else:
+        rows = con.execute("""
+            SELECT t.date, t.amount FROM transactions t
+            WHERE lower(t.cleaned) LIKE ? AND substr(t.date,1,7) = ? AND t.amount < 0
+            ORDER BY t.date DESC""", (f"%{key}%", month)).fetchall()
     status, paid_date, paid_amount = "due", None, None
     manual = None
     try:
@@ -722,8 +744,10 @@ def _bill_status(con, bill, month):
     found = len(rows)
     paid_sum = round(sum(-r["amount"] for r in rows), 2)
     per_payment = round((bill["expected_amount"] or 0) / per_month, 2)
+    # Installment bills: due/overdue windows are based on the cycle anchoring,
+    # but the simplest robust signal is "have we seen per_month charges yet".
     if found >= per_month:
-        # fully paid: count the most-recent `per_month` charges
+        # fully paid: count the most-recent `per_month` charges in the window
         status = "paid"
         paid_date = rows[0]["date"]
         paid_amount = round(sum(-r["amount"] for r in rows[:per_month]), 2)
