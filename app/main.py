@@ -1292,7 +1292,11 @@ def savings_history(months: int = 12, accounts: str | None = None):
         last_day = (date(ny, nm, 1) - timedelta(days=1)).isoformat()
         ends.append((f"{y:04d}-{m:02d}", last_day))
 
-    # per-account walk (anchor + post-anchor activity <= month end)
+    # per-account backward walk from the live balance:
+    #   balance(eom) = current - sum(activity after eom)
+    # This reconstructs history correctly even when the account only has a
+    # single recent snapshot (e.g. War Chest anchored 2026-09-30), which the
+    # old forward walk could not do (it produced a flat line).
     for ym, eom in ends:
         bal = 0.0
         ok = False
@@ -1302,12 +1306,17 @@ def savings_history(months: int = 12, accounts: str | None = None):
                     continue
                 ok = True
                 ad = a["balance_date"] or ""
-                post_amt = con.execute(
+                anchor = a["balance"] + con.execute(
                     "SELECT COALESCE(SUM(amount),0) s FROM transactions "
-                    "WHERE account_id=? AND date > ? AND date <= ?",
-                    (a["id"], ad, eom),
+                    "WHERE account_id=? AND date > ?",
+                    (a["id"], ad),
                 ).fetchone()["s"]
-                bal += a["balance"] + (post_amt or 0)
+                after = con.execute(
+                    "SELECT COALESCE(SUM(amount),0) s FROM transactions "
+                    "WHERE account_id=? AND date > ?",
+                    (a["id"], eom),
+                ).fetchone()["s"]
+                bal += anchor - (after or 0)
         months_out.append({"month": ym, "balance": round(bal, 2) if ok else None})
 
     # make sure the most recent point reflects today's live balance
