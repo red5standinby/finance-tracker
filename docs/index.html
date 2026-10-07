@@ -78,6 +78,9 @@
   .inline-pair > .card{margin-top:0}
   .inline-pair > .card,.inline-pair > .panel{display:flex;flex-direction:column;min-width:0}
   .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .head-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .head-tools .multiselect{min-width:150px}
+  .head-tools .multiselect .ms-btn{padding:5px 10px;font-size:12px}
   .panel-head h2{margin:0}
   .cat-pager{display:flex;align-items:center;gap:6px}
   .pg-btn{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
@@ -999,10 +1002,13 @@ window.DEMO = true;
     <div class="panel snap span-chart">
       <div class="panel-head">
         <h2><span class="ic-lg">◫</span> Income vs expenses</h2>
-        <div class="seg" id="h-chart-seg">
-          <button class="seg-btn" data-m="6" onclick="setHomeChart(6)">6M</button>
-          <button class="seg-btn active" data-m="12" onclick="setHomeChart(12)">12M</button>
-          <button class="seg-btn" data-m="24" onclick="setHomeChart(24)">24M</button>
+        <div class="head-tools">
+          <div class="multiselect" id="h-chart-acct"></div>
+          <div class="seg" id="h-chart-seg">
+            <button class="seg-btn" data-m="6" onclick="setHomeChart(6)">6M</button>
+            <button class="seg-btn active" data-m="12" onclick="setHomeChart(12)">12M</button>
+            <button class="seg-btn" data-m="24" onclick="setHomeChart(24)">24M</button>
+          </div>
         </div>
       </div>
       <div id="h-month-chart"><div class="empty">Loading…</div></div>
@@ -2997,7 +3003,7 @@ async function loadHome(){
   renderHomeTopCats(D);    // top spending this month
   renderHomeCredit(D);     // credit & savings
   renderSnapTxns();        // recent activity rail
-  renderHomeChart();       // income vs expenses (quick-view)
+  initHomeChartAccts().then(()=>renderHomeChart());   // income vs expenses (quick-view + account scope)
   homeNews('crypto');      // news feed (default: crypto)
 }
 
@@ -3025,12 +3031,28 @@ async function homeNews(cat){
 
 // ---------- Home income-vs-expense chart w/ quick ranges ----------
 let _homeChartMonths = 12;   // current quick-view range
+let _homeChartAccts = [];    // selected account names ([] = all)
+let _homeChartAcctIds = {};  // name -> id
 async function setHomeChart(n){
   _homeChartMonths = n;
   document.querySelectorAll('#h-chart-seg .seg-btn').forEach(b=>{
     b.classList.toggle('active', Number(b.dataset.m)===n);
   });
   await renderHomeChart();
+}
+async function initHomeChartAccts(){
+  let names = [];
+  try { const A = await api('/accounts');
+    const rows = A.accounts||A.rows||A||[];
+    _homeChartAcctIds = Object.fromEntries(rows.filter(a=>a.name).map(a=>[a.name, a.id]));
+    names = rows.map(a=>a.name).filter(Boolean); } catch(e){}
+  if(!MS['h-chart-acct']){
+    msInit('h-chart-acct', {allLabel:'All accounts', placeholder:'All accounts',
+      onChange:(vals)=>{ _homeChartAccts = vals; renderHomeChart(); }});
+  }
+  const prev = msValues('h-chart-acct');
+  msSetOptions('h-chart-acct', names);
+  msSet('h-chart-acct', prev.length ? prev.filter(n=>names.includes(n)) : _homeChartAccts);
 }
 async function renderHomeChart(){
   const box = $('#h-month-chart');
@@ -3042,7 +3064,10 @@ async function renderHomeChart(){
   const startStr = start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-01';
   const endStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-31';
   let D = {};
-  try { D = await api('/dashboard?start='+startStr+'&end='+endStr); } catch(e){ D = {}; }
+  const selNames = msValues('h-chart-acct');
+  const ids = selNames.map(nm=>_homeChartAcctIds[nm]).filter(v=>v!=null);
+  const acctQs = ids.length ? '&accounts='+encodeURIComponent(ids.join(',')) : '';
+  try { D = await api('/dashboard?start='+startStr+'&end='+endStr+acctQs); } catch(e){ D = {}; }
   let months = (D.months||[]).slice(-n);
   if(!months.length){ box.innerHTML = '<div class="empty">No data</div>'; return; }
   const W=1160, H=250, padL=52, padR=14, padT=16, padB=30;
