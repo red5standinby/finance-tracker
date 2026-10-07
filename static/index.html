@@ -446,6 +446,7 @@
   .pd-ctrl input[type=month]{height:36px}
   .pd-ctrl label:not(.pd-extra) input[type=checkbox]{height:36px;width:20px}
   .pd-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .pd-plan-wrap{grid-column:1/-1;margin-top:4px}
   .pd-stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
   .pd-stat .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
   .pd-stat .val{font-size:22px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
@@ -3595,7 +3596,7 @@ function renderPdPlan(){
     <div class="pd-stat"><div class="lbl">Interest paid</div><div class="val">${fmt(plan.totalInterest)}</div><div class="sub">${interestSaved>0?fmt(interestSaved)+' saved vs min-only':'min-only plan'}</div></div>
     <div class="pd-stat"><div class="lbl">Monthly budget</div><div class="val">${fmt(plan.baseMin + extra)}</div><div class="sub">min ${fmt(plan.baseMin)} + extra ${fmt(extra)}</div></div>
     ${targetNote}`;
-  box.innerHTML = `<div class="pd-out">${html}</div>`;
+  box.innerHTML = html; // #pd-plan is already the .pd-out grid; stats are direct cells
   const nameById = {}; PD.data.cards.forEach(c=>nameById[c.id]=c.name);
   // order + per-card payoff timeline
   const rows = plan.order.map((id,i)=>{
@@ -3612,7 +3613,7 @@ function renderPdPlan(){
     </tr>`;
   }).join('');
   box.insertAdjacentHTML('beforeend', `<div class="pd-plan-wrap"><table class="pd-plan-tbl"><thead><tr>
-    <th>#</th><th>Card (${PD.method})</th><th>Balance</th><th>Paid off</th><th style="text-align:right">Interest</th>
+    <th>#</th><th class="pd-th-card">Card (${PD.method})</th><th>Balance</th><th>Paid off</th><th style="text-align:right">Interest</th>
     </tr></thead><tbody>${rows}</tbody></table></div>`);
 }
 
