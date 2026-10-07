@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="fintech">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -19,6 +19,20 @@
   html[data-theme="sunset"]{ --bg:#170f10; --panel:#221417; --panel2:#2c1a1e; --line:#42262c; --txt:#f7ece6; --mut:#b99a90; --accent:#f0885a; --good:#8fc98a; --bad:#e8666a;  --tint:240,136,90;}
   html[data-theme="grape"]{ --bg:#120f1c; --panel:#1b1628; --panel2:#241d34; --line:#332a48; --txt:#efeaf7; --mut:#a99cc4; --accent:#9b7bf0; --good:#6fc99a; --bad:#e879a0;  --tint:155,123,240;}
   html[data-theme="linen"]{ --bg:#f4f1ea; --panel:#ffffff; --panel2:#faf8f3; --line:#e2dccf; --txt:#2b2a26; --mut:#7d7768; --accent:#b08968; --good:#4f9d69; --bad:#c65a4a;  --tint:176,137,104;}
+  /* ------- High-end fintech: deep charcoal + azure, refined type scale ------- */
+  html[data-theme="fintech"]{
+    --bg:#0a0d12; --panel:#10141c; --panel2:#151b26; --line:#222b39;
+    --txt:#eef3fb; --mut:#7e8ca6; --accent:#4aa8ff; --good:#2fd6a0; --bad:#ff6b7d;
+    --tint:74,168,255;
+    --radius:16px; --hdr:62px;
+    --font-ui:"Inter","SF Pro Display",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --fs-base:15.5px; --track-tight:-.02em;
+    --panel-grad:linear-gradient(180deg,#141a25 0%,#10141c 100%);
+    --hair:rgba(255,255,255,.06);
+    --glow:0 0 0 1px rgba(74,168,255,.18),0 14px 40px -18px rgba(74,168,255,.45);
+    --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 18px 40px -24px rgba(0,0,0,.8);
+    --accent-grad:linear-gradient(135deg,#4aa8ff,#2fb8e6 55%,#2fd6a0);
+  }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
@@ -31,17 +45,23 @@
   header h1 .lffd{color:var(--accent);font-weight:800}
   header .logo{font-size:23px}
   .spacer{flex:1}
-  /* ---- theme palette picker ---- */
+  /* ---- theme selector (top bar) ---- */
   .pal-wrap{position:relative}
-  #nav-palette{font-size:17px;line-height:1;padding:8px 11px}
+  #nav-palette{display:inline-flex;align-items:center;gap:9px;padding:8px 12px;font-weight:600;font-size:14px}
+  #nav-palette .sw{width:15px;height:15px;border-radius:5px;flex:0 0 auto}
+  .theme-btn-cv{font-size:11px;color:var(--mut);margin-left:1px}
+  @media(max-width:560px){.theme-btn-lb{display:none}}
+  .pal-title{font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--mut);
+    padding:6px 10px 4px;font-weight:700}
   .pal-menu{position:absolute;right:0;top:calc(100% + 8px);background:var(--panel);border:1px solid var(--line);
-    border-radius:12px;padding:8px;display:none;flex-direction:column;gap:2px;min-width:172px;z-index:40;
+    border-radius:12px;padding:8px;display:none;flex-direction:column;gap:2px;min-width:196px;z-index:40;
     box-shadow:0 12px 30px rgba(0,0,0,.45)}
   .pal-menu.open{display:flex}
   .pal-menu button{display:flex;align-items:center;gap:10px;background:transparent;border:0;color:var(--txt);
     font:inherit;font-size:14px;padding:8px 10px;border-radius:8px;cursor:pointer;text-align:left;width:100%}
   .pal-menu button:hover{background:var(--panel2)}
   .pal-menu button.active{background:var(--panel2);outline:1px solid var(--accent)}
+  .pal-menu button.active::after{content:"✓";margin-left:auto;color:var(--accent);font-weight:700}
   .sw{width:15px;height:15px;border-radius:5px;flex:0 0 auto;border:1px solid rgba(var(--tint),.35)}
   /* ---- layout: sidebar + content ---- */
   .layout{display:flex;align-items:stretch;min-height:calc(100vh - var(--hdr))}
@@ -866,6 +886,56 @@
   .ms-panel .ms-actions .ms-apply{flex:1 1 auto;background:var(--accent);color:#fff;
     font-size:14px;font-weight:700;padding:11px 16px;border-radius:8px}
   .ms-panel .ms-actions .ms-apply:hover{filter:brightness(1.12);background:var(--accent)}
+
+  /* ============ THEME: High-end fintech treatments (scoped) ============ */
+  html[data-theme="fintech"] body{
+    font-family:var(--font-ui);font-size:var(--fs-base);
+    font-feature-settings:"tnum" 1,"cv11" 1,"ss01" 1;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  html[data-theme="fintech"] header{
+    background:linear-gradient(180deg,rgba(21,27,38,.92),rgba(16,20,28,.92));
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--hair);box-shadow:0 8px 30px -18px rgba(0,0,0,.9)}
+  html[data-theme="fintech"] header h1{font-weight:650;letter-spacing:-.015em}
+  html[data-theme="fintech"] header h1 .lffd{background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* refined cards/panels: hoverable, hairline + soft inner light */
+  html[data-theme="fintech"] .card,
+  html[data-theme="fintech"] .panel{
+    background:var(--panel-grad);border:1px solid var(--hair);
+    border-radius:var(--radius);box-shadow:var(--shadow-card)}
+  html[data-theme="fintech"] .card:hover,
+  html[data-theme="fintech"] .panel:hover{border-color:rgba(74,168,255,.28)}
+  html[data-theme="fintech"] .lbl,
+  html[data-theme="fintech"] .card .lbl{letter-spacing:.14em;font-size:11.5px;font-weight:600;color:var(--mut)}
+  html[data-theme="fintech"] .card .val{letter-spacing:var(--track-tight);font-weight:660}
+  html[data-theme="fintech"] .hero-card{border-left:none;position:relative;overflow:hidden}
+  html[data-theme="fintech"] .hero-card::before{content:"";position:absolute;inset:0;
+    background:radial-gradient(120% 90% at 100% 0%,rgba(74,168,255,.12),transparent 60%);pointer-events:none}
+  html[data-theme="fintech"] .hero-spotlight{background:linear-gradient(135deg,rgba(74,168,255,.10),rgba(47,214,160,.05) 55%,transparent 78%)}
+  html[data-theme="fintech"] .hero-spotlight .val{font-size:44px;letter-spacing:-.035em;font-weight:700}
+  html[data-theme="fintech"] .page-title,
+  html[data-theme="fintech"] .home-title{font-weight:660;letter-spacing:-.025em}
+  /* nav: gradient active pill, crisp hover */
+  html[data-theme="fintech"] nav button{border-radius:12px;font-weight:560}
+  html[data-theme="fintech"] nav button.active{background:var(--accent-grad);color:#06121f;border-color:transparent;box-shadow:0 8px 22px -10px rgba(74,168,255,.65)}
+  html[data-theme="fintech"] nav button.active .ic{color:#06121f}
+  /* segmented controls + primary buttons */
+  html[data-theme="fintech"] .seg{background:rgba(255,255,255,.03);border-color:var(--hair);border-radius:11px}
+  html[data-theme="fintech"] .seg-btn.active{background:rgba(74,168,255,.16);color:var(--txt);box-shadow:inset 0 0 0 1px rgba(74,168,255,.35)}
+  html[data-theme="fintech"] .btn{border-radius:11px;font-weight:600}
+  html[data-theme="fintech"] .btn.primary,
+  html[data-theme="fintech"] .btn:not(.ghost):not(.sm){letter-spacing:-.01em}
+  /* tables: hairline rows, tabular figures */
+  html[data-theme="fintech"] table th{letter-spacing:.08em;font-size:11px;font-weight:650;color:var(--mut);text-transform:uppercase}
+  html[data-theme="fintech"] table td{font-variant-numeric:tabular-nums;border-color:var(--hair)}
+  html[data-theme="fintech"] .hb-row{border-bottom-color:var(--hair)}
+  /* inputs */
+  html[data-theme="fintech"] input,html[data-theme="fintech"] select,html[data-theme="fintech"] textarea{
+    border-radius:11px;border-color:var(--hair);background:#0c121b}
+  html[data-theme="fintech"] input:focus,html[data-theme="fintech"] select:focus,html[data-theme="fintech"] textarea:focus{
+    outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,168,255,.16)}
+  /* progress/budget fills get a gradient sheen */
+  html[data-theme="fintech"] .bud-fill.ok,
+  html[data-theme="fintech"] .hb-bar>span{background:var(--accent-grad)}
 </style>
 </head>
 <body>
@@ -875,8 +945,14 @@
   <h1>Luna Family Finance Dashboard <span class="lffd">LFFD</span></h1>
   <div class="spacer"></div>
   <div class="pal-wrap">
-    <button class="btn ghost" id="nav-palette" title="Theme palette" aria-label="Theme palette">🎨</button>
-    <div class="pal-menu" id="pal-menu"></div>
+    <button class="btn ghost theme-btn" id="nav-palette" title="Theme" aria-label="Theme selector">
+      <span class="sw" id="nav-palette-sw"></span>
+      <span class="theme-btn-lb" id="nav-palette-lb">Theme</span>
+      <span class="theme-btn-cv">▾</span>
+    </button>
+    <div class="pal-menu" id="pal-menu">
+      <div class="pal-title">Theme</div>
+    </div>
   </div>
   <button class="btn" id="nav-import">+ Import</button>
 </header>
@@ -2341,6 +2417,7 @@ $('#nav-import').onclick = ()=>showTab('import');
 // ---------- theme palette ----------
 (function(){
   const THEMES = [
+    ['fintech', 'Fintech (Pro)', '#4aa8ff'],
     ['midnight','Midnight',   '#4f8cff'],
     ['rosegold','Rose Gold',  '#e8a0a8'],
     ['forest',  'Forest',     '#4fbf7a'],
@@ -2349,19 +2426,24 @@ $('#nav-import').onclick = ()=>showTab('import');
     ['linen',   'Linen (light)','#b08968'],
   ];
   const menu = $('#pal-menu');
+  const swEl = $('#nav-palette-sw'), lbEl = $('#nav-palette-lb');
   function apply(id){
     document.documentElement.setAttribute('data-theme', id);
     try{ localStorage.setItem('lffd-theme', id); }catch(e){}
     menu.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.theme===id));
+    const t = THEMES.find(x=>x[0]===id);
+    if(swEl && t) swEl.style.background = t[2];
+    if(lbEl) lbEl.textContent = t ? t[1] : 'Theme';
   }
-  menu.innerHTML = THEMES.map(([id,name,c])=>
-    `<button data-theme="${id}"><span class="sw" style="background:${c}"></span>${name}</button>`).join('');
+  menu.querySelectorAll('button').forEach(b=>b.remove());
+  menu.insertAdjacentHTML('beforeend', THEMES.map(([id,name,c])=>
+    `<button data-theme="${id}"><span class="sw" style="background:${c}"></span>${name}</button>`).join(''));
   menu.querySelectorAll('button').forEach(b=>b.onclick=()=>{ apply(b.dataset.theme); menu.classList.remove('open'); });
   $('#nav-palette').onclick = (e)=>{ e.stopPropagation(); menu.classList.toggle('open'); };
   document.addEventListener('click',(e)=>{ if(!e.target.closest('.pal-wrap')) menu.classList.remove('open'); });
   let saved=null; try{ saved=localStorage.getItem('lffd-theme'); }catch(e){}
   const urlTheme = new URLSearchParams(location.search).get('theme');
-  apply(urlTheme || saved || 'midnight');
+  apply(urlTheme || saved || 'fintech');
 })();
 // sidebar collapse toggle + mobile burger
 (function(){
