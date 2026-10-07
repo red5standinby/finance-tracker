@@ -864,10 +864,9 @@
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <nav>
-      <button data-tab="home" class="active"><span class="ic">⌂</span><span class="lb">Home</span></button>
+      <button data-tab="dashboard" class="active"><span class="ic">⌂</span><span class="lb">Dashboard</span></button>
       <button data-tab="bills"><span class="ic">▤</span><span class="lb">Bills</span></button>
       <button data-tab="budget"><span class="ic">◔</span><span class="lb">Budget</span></button>
-      <button data-tab="dash"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
       <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
@@ -880,7 +879,7 @@
   <main>
 
 <!-- ============ HOME (family glance screen) ============ -->
-<section id="tab-home" class="hidden">
+<section id="tab-dashboard" class="hidden">
   <div class="home-head">
     <h2 class="home-title">Home</h2>
     <div class="home-when" id="home-when"></div>
@@ -923,7 +922,7 @@
     <div class="card hero-card hero-expense" id="hero-expense">
       <div class="he-top">
         <div class="lbl" style="margin:0">Total monthly expenses</div>
-        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
+        <button class="btn ghost sm" onclick="showTab('budget')">Open ↗</button>
       </div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
@@ -956,7 +955,7 @@
     <div class="panel snap span-topspend">
       <div class="panel-head">
         <h2><span class="ic-lg">↗</span> Top spending</h2>
-        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
+        <button class="btn ghost sm" onclick="showTab('trends')">Open ↗</button>
       </div>
       <div id="h-topcat"><div class="empty">No spending yet</div></div>
     </div>
@@ -1143,88 +1142,6 @@
       </div>
     </div>
     <div id="bud-list" class="bud-list"><div class="empty">No budgets set</div></div>
-  </div>
-</section>
-
-<!-- ============ DASHBOARD ============ -->
-<section id="tab-dash">
-  <div class="filters">
-    <label class="f-half">From <input type="date" id="d-start"></label>
-    <label class="f-half">To <input type="date" id="d-end"></label>
-    <label class="f-half">Account
-      <div class="multiselect" id="d-account-ms"></div>
-    </label>
-    <label class="f-half">Quick
-      <select id="d-quick">
-        <option value="all">All time</option>
-        <option value="tm">This month</option>
-        <option value="lm">Last month</option>
-        <option value="ty">This year</option>
-        <option value="90">Last 90 days</option>
-      </select>
-    </label>
-    <button class="btn ghost" onclick="loadDashboard()">Apply</button>
-  </div>
-
-  <div class="grid cards">
-    <div class="card"><div class="lbl">Income</div><div class="val pos" id="k-income">$0</div></div>
-    <div class="card"><div class="lbl">Expenses</div><div class="val neg" id="k-expense">$0</div></div>
-    <div class="card"><div class="lbl">Net</div><div class="val" id="k-net">$0</div></div>
-    <div class="card"><div class="lbl">Uncategorized</div><div class="val" id="k-unc">0</div>
-      <div class="muted" style="font-size:12px" id="k-unc-amt"></div></div>
-  </div>
-
-  <div class="grid inline-pair">
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Spending by Category <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· click a bar to see its transactions</span></h2>
-        <div class="cat-pager" id="cat-pager"></div>
-      </div>
-      <div class="bars" id="cat-bars"></div>
-      <div class="legend" id="cat-legend"></div>
-    </div>
-
-    <div class="panel">
-      <div class="panel-head">
-        <h2>Income vs Expenses by Month</h2>
-        <button class="btn ghost sm" onclick="gotoTrends()">View more ↗</button>
-      </div>
-      <div id="month-chart"></div>
-    </div>
-  </div>
-
-  <div class="grid inline-pair">
-    <div class="panel">
-      <h2>By Account</h2>
-      <div class="table-wrap acct-wrap">
-      <table><thead><tr><th class="no-sort">Account</th><th class="no-sort">Income</th>
-        <th class="no-sort">Expenses</th><th class="no-sort">Net</th></tr></thead>
-        <tbody id="acct-body"></tbody></table>
-      </div>
-      <div class="acct-pager" id="acct-pager"></div>
-    </div>
-
-    <div class="card budget-card" id="budget-card">
-      <div class="budget-head">
-        <h2 style="margin:0">Budgets — <span id="bg-month">–</span></h2>
-        <button class="btn ghost sm" onclick="editBudgetPicker()">Edit budget</button>
-      </div>
-      <div class="budget-sum" id="bg-sum" style="margin-top:6px"></div>
-      <div id="budget-body"><div class="empty">No budgets set</div></div>
-    </div>
-  </div>
-
-  <div class="card grade-card" id="grade-card">
-    <div class="grade-head">
-      <div class="lbl">Financial Grade</div>
-      <select class="grade-acct" id="g-account" onchange="gradeAcct(this.value)" title="Scope the grade to one account">
-        <option value="">All accounts</option>
-      </select>
-    </div>
-    <div class="grade-letter" id="g-letter">–</div>
-    <div class="grade-sub" id="g-rate">–</div>
-    <div class="grade-trend" id="g-trend"></div>
-    <div class="grade-alltime" id="g-alltime"></div>
   </div>
 </section>
 
@@ -2340,9 +2257,8 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import','crypto','home','bills','paydown','budget'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
-  if(name==='home') loadHome();
-  if(name==='dash') loadDashboard();
+  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  if(name==='dashboard') loadHome();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
   if(name==='paydown') loadPaydown();
@@ -2411,7 +2327,6 @@ async function loadMeta(){
   const prevCat = $('#f-cat') ? $('#f-cat').value : '';
   // remember account selections (multi-select) so a refresh keeps them
   const prevAcct = msValues('f-account-ms');
-  const prevDash = msValues('d-account-ms');
   const prevTrend = msValues('t-account-ms');
 
   CATS = await api('/categories');
@@ -2424,12 +2339,10 @@ async function loadMeta(){
   const names = ACCTS.map(a=>a.name);
   // (re)build multi-selects if not yet initialised
   if(!MS['f-account-ms']) msInit('f-account-ms', {allLabel:'All accounts', onChange:()=>loadTxns(0)});
-  if(!MS['d-account-ms']) msInit('d-account-ms', {allLabel:'All accounts', onChange:()=>loadDashboard()});
   if(!MS['t-account-ms']) msInit('t-account-ms', {allLabel:'All accounts', onChange:()=>loadTrends()});
   if(!MS['bud-account-ms']) msInit('bud-account-ms', {allLabel:'All accounts', onChange:()=>{ if(typeof loadBudgetTab==='function') loadBudgetTab(); }});
   const prevBud = msValues('bud-account-ms');
   msSetOptions('f-account-ms', names); msSet('f-account-ms', prevAcct);
-  msSetOptions('d-account-ms', names); msSet('d-account-ms', prevDash);
   msSetOptions('t-account-ms', names); msSet('t-account-ms', prevTrend);
   msSetOptions('bud-account-ms', names); msSet('bud-account-ms', prevBud);
 
@@ -2437,58 +2350,6 @@ async function loadMeta(){
   if([...$('#f-cat').options].some(o=>o.value===prevCat)) $('#f-cat').value = prevCat;
 }
 const catByKey = k => CATS.find(c=>c.key===k) || {name:'Uncategorized',color:'#525252',key:'uncategorized'};
-
-// ---------- grade ----------
-let _gradeAcct = '';   // '' = all accounts; else account name
-function gradeAcct(name){
-  _gradeAcct = name || '';
-  // mirror the choice onto the dashboard account filter and reload
-  try {
-    const allex = ['All accounts'].concat(ACCTS.map(a=>a.name));
-    msSet('d-account-ms', name ? [name] : []);
-  } catch(e){}
-  loadDashboard();
-}
-function renderGradeAcctOptions(){
-  const sel = $('#g-account');
-  if(!sel) return;
-  const cur = _gradeAcct;
-  sel.innerHTML = '<option value="">All accounts</option>' +
-    ACCTS.map(a=>`<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('');
-  sel.value = cur;
-}
-function renderGrade(g){
-  if(!g) return;
-  $('#g-letter').textContent = g.grade;
-  $('#g-letter').style.color = g.color;
-  const card = $('#grade-card');
-  card.style.boxShadow = `inset 0 0 0 1px ${g.color}55, inset 0 -40px 80px -60px ${g.color}`;
-  card.style.background = `linear-gradient(180deg, ${g.color}14, var(--panel))`;
-  $('#g-rate').innerHTML = g.rate === null
-    ? (g.grade === 'F' ? '<span class="muted">spending with no income</span>'
-                       : '<span class="muted">no activity</span>')
-    : `savings rate <b style="color:${g.color}">${g.rate}%</b>`;
-
-  const t = g.trend;
-  const el = $('#g-trend');
-  if(t && t.direction!=='flat'){
-    const arrow = t.direction==='up' ? '▲' : '▼';
-    const word = t.direction==='up' ? 'better' : 'worse';
-    el.className = 'grade-trend ' + t.direction;
-    el.textContent = `${arrow} ${Math.abs(t.delta).toFixed(1)} pts ${word} vs prior period`;
-  } else if(t && t.direction==='flat'){
-    el.className = 'grade-trend flat'; el.textContent = '≈ flat vs prior period';
-  } else {
-    el.textContent = ''; el.className = 'grade-trend';
-  }
-  const at = g.all_time;
-  if(at && at.grade && at.grade !== 'N/A' && (g.rate !== at.rate)){
-    $('#g-alltime').innerHTML = `all-time: <b style="color:${at.color}">${at.grade}</b> · ${at.rate}%`;
-  } else {
-    $('#g-alltime').innerHTML = at && at.grade
-      ? `all-time: <b style="color:${at.color}">${at.grade}</b>` : '';
-  }
-}
 
 // ---------- dashboard ----------
 // ============ BILLS TAB ============
@@ -3618,7 +3479,7 @@ async function renderHomeGrade(){
 
   // --- Financial grade ---
   if(g.grade){
-    html += `<div class="hb-grid clickable" onclick="showTab('dash')"><div><div class="hb-name">Financial grade</div>
+    html += `<div class="hb-grid"><div><div class="hb-name">Financial grade</div>
       <div class="hb-sub">${winLabel} · net ${g.net!=null?(g.net<0?'-':'')+fmt(Math.abs(g.net)):'–'}</div></div>
       <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:20px">${esc(g.grade)}</div></div>`;
   }
@@ -3631,147 +3492,6 @@ async function renderHomeGrade(){
       <div class="hb-amt"><span class="hb-badge warn">${unc.count} · ${fmt(unc.amount)}</span></div></div>`;
   }
   box.innerHTML = html;
-}
-
-async function loadDashboard(){
-  renderGradeAcctOptions();
-  const q = new URLSearchParams();
-  const s=$('#d-start').value, e=$('#d-end').value, sel=msValues('d-account-ms');
-  if(s) q.set('start',s); if(e) q.set('end',e);
-  let acctNames = sel;
-  if(!acctNames.length && _gradeAcct) acctNames = [_gradeAcct];
-  if(acctNames.length){ const ids=acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
-    if(ids.length) q.set('accounts', ids.join(',')); }
-  const d = await api('/dashboard?'+q);
-  renderGrade(d.grade);
-  $('#k-income').textContent = fmt(d.totals.income);
-  $('#k-expense').textContent = fmt(d.totals.expense);
-  const net = d.totals.net;
-  const kn = $('#k-net'); kn.textContent = (net<0?'-':'')+fmt(net);
-  kn.className = 'val ' + (net>=0?'pos':'neg');
-  $('#k-unc').textContent = d.uncategorized.count;
-  $('#k-unc-amt').textContent = d.uncategorized.count ? fmt(d.uncategorized.amount)+' to review' : 'all tagged';
-
-  // category bars (clickable -> jump to filtered transactions)
-  const cats = d.categories.filter(c=>c.kind!=='income');
-  _catRows = cats;
-  renderCatBars();
-
-  // monthly chart
-  renderMonths(d.months);
-  // budgets (uses the latest month in the current dashboard window)
-  loadBudgets((d.months.length ? d.months[d.months.length-1].month : null), sel);
-  // accounts (fixed-height, paginated)
-  renderAccounts(d.accounts);
-}
-
-// ---------- paginated account list ----------
-const ACCT_PAGE_SIZE = 5;
-let _acctRows = [];
-let _acctPage = 0;
-
-function renderAccounts(rows){
-  _acctRows = rows || [];
-  _acctPage = 0;
-  renderAcctPage();
-}
-
-function renderAcctPage(){
-  const rows = _acctRows;
-  const body = $('#acct-body'), pager = $('#acct-pager');
-  if(!rows.length){
-    body.innerHTML = '<tr><td colspan=4 class="empty">No data</td></tr>';
-    pager.innerHTML = '';
-    return;
-  }
-  const pages = Math.max(1, Math.ceil(rows.length / ACCT_PAGE_SIZE));
-  if(_acctPage >= pages) _acctPage = pages - 1;
-  if(_acctPage < 0) _acctPage = 0;
-  const start = _acctPage * ACCT_PAGE_SIZE;
-  const slice = rows.slice(start, start + ACCT_PAGE_SIZE);
-  body.innerHTML = slice.map(a=>{
-    const net = a.income - a.expense;
-    return `<tr><td>${esc(a.name)}</td><td class="amt pos">${fmt(a.income)}</td>
-    <td class="amt neg">${fmt(a.expense)}</td>
-    <td class="amt ${net>=0?'pos':'neg'}">${(net<0?'-':'')+fmt(net)}</td></tr>`;
-  }).join('');
-  const first = start + 1, last = Math.min(start + ACCT_PAGE_SIZE, rows.length);
-  pager.innerHTML = `<span class="pg-info">Showing <b>${first}–${last}</b> of <b>${rows.length}</b></span>
-    <div class="pg-btns">
-      <button onclick="acctPrev()" ${_acctPage===0?'disabled':''}>‹ Prev</button>
-      <button onclick="acctNext()" ${_acctPage>=pages-1?'disabled':''}>Next ›</button>
-    </div>`;
-}
-
-function acctNext(){ _acctPage++; renderAcctPage(); }
-function acctPrev(){ _acctPage--; renderAcctPage(); }
-
-
-// ---------- budgets ----------
-let _budgets = null;
-
-function budgetClass(pct){
-  if(pct === null) return '';
-  return pct >= 100 ? 'over' : (pct >= 80 ? 'warn' : 'ok');
-}
-
-async function loadBudgets(month, acctNames){
-  const q = new URLSearchParams();
-  if(month) q.set('month', month);
-  if(acctNames && acctNames.length){
-    const ids = acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
-    if(ids.length) q.set('accounts', ids.join(','));
-  }
-  let d;
-  try { d = await api('/budgets?'+q); } catch(e){ return; }
-  _budgets = d;
-  renderBudgets();
-}
-
-function renderBudgets(){
-  const d = _budgets; if(!d) return;
-  $('#bg-month').textContent = d.month;
-  const rows = d.rows.filter(r => r.budget > 0);
-  const t = d.totals;
-  const pct = t.budget > 0 ? Math.round(t.spent / t.budget * 100) : null;
-  $('#bg-sum').innerHTML = t.budget > 0
-    ? `budgeted <b>${fmt(t.budget)}</b> · spent <b class="${pct>=100?'neg':''}">${fmt(t.spent)}</b>` +
-      ` · <b class="${t.budget-t.spent<0?'neg':'pos'}">` +
-      (t.budget - t.spent < 0 ? `${fmt(t.spent-t.budget)} over budget`
-                              : `${fmt(t.budget-t.spent)} left`) + `</b>`
-    : '<span class="muted">click “set budget” on a category to start</span>';
-
-  if(!rows.length){ $('#budget-body').innerHTML = '<div class="empty">No active budgets yet — set one on a category</div>'; return; }
-  const max = Math.max(1, ...rows.map(r => Math.max(r.budget, r.spent)));
-  $('#budget-body').innerHTML = rows.map(r => {
-    const w = Math.min(100, r.spent / max * 100).toFixed(1);
-    const cls = budgetClass(r.pct);
-    const remTxt = r.remaining < 0
-      ? `<span class="over">${fmt(-r.remaining)} over</span>`
-      : `${fmt(r.remaining)} left`;
-    return `<div class="bg-row">
-      <span class="bar-lbl" title="${esc(r.name)}">${esc(r.name)}</span>
-      <div class="bg-track"><div class="bg-fill ${cls}" style="width:${w}%"></div></div>
-      <div class="bg-nums">${fmt(r.spent)} / ${fmt(r.budget)}
-        <span class="muted">·</span> ${remTxt}
-        <button class="bg-edit" onclick="editBudget('${r.key}')">edit</button></div>
-    </div>`;
-  }).join('');
-}
-
-function editBudget(key){
-  const d = _budgets; if(!d) return;
-  const row = d.rows.find(r => r.key === key); if(!row) return;
-  const cur = row.budget > 0 ? row.budget : '';
-  const inp = prompt(`Monthly budget for “${row.name}” (blank to clear):`, cur);
-  if(inp === null) return;
-  const val = parseFloat(String(inp).replace(/[$,]/g,''));
-  if(String(inp).trim() !== '' && (isNaN(val) || val < 0)){ alert('Enter a positive number, or leave blank to clear.'); return; }
-  fetch('/api/budgets', {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({category_key: key, amount: (String(inp).trim()==='' ? 0 : val)})})
-    .then(r => r.ok ? loadBudgets(d.month, msValues('d-account-ms')) : alert('Could not save budget'))
-    .catch(() => alert('Could not save budget'));
 }
 
 // ---------- Budget tab (dedicated) ----------
@@ -3913,84 +3633,7 @@ function budgetAddCategory(){
 }
 
 // Jump from a dashboard category bar into filtered Transactions.
-function gotoCategory(key){
-  showTab('txns');
-  $('#f-q').value=''; $('#f-start').value=''; $('#f-end').value='';
-  $('#f-hidden').checked=false;
-  msSet('f-account-ms', []);
-  // wait a tick for the tab to render its selects, then set category
-  setTimeout(()=>{ $('#f-cat').value = key; loadTxns(0); }, 0);
-}
-
 let _lastTrends = null;
-
-// ---------- paginated category bars ----------
-const CAT_PAGE_SIZE = 12;
-let _catRows = [];
-let _catPage = 0;
-function catPage(p){ _catPage = p; renderCatBars(); }
-function renderCatBars(){
-  const cats = _catRows;
-  const total = cats.length;
-  const pages = Math.max(1, Math.ceil(total / CAT_PAGE_SIZE));
-  if(_catPage >= pages) _catPage = pages - 1;
-  if(_catPage < 0) _catPage = 0;
-  const start = _catPage * CAT_PAGE_SIZE;
-  const slice = cats.slice(start, start + CAT_PAGE_SIZE);
-  const max = Math.max(1, ...slice.map(c=>c.total));
-  $('#cat-bars').innerHTML = slice.length ? slice.map(c=>`
-    <div class="bar-row clickable" onclick="gotoCategory('${c.key}')" title="View ${esc(c.name)} transactions">
-      <span class="bar-lbl">${esc(c.name)}</span>
-      <div class="bar-track"><div class="bar-fill"
-        style="width:${(c.total/max*100).toFixed(1)}%;background:${c.color}"></div></div>
-      <span class="amt">${fmt(c.total)}</span>
-    </div>`).join('') : '<div class="empty">No expense data in range</div>';
-  $('#cat-legend').innerHTML = '';
-  const pager = $('#cat-pager');
-  if(!pager) return;
-  pager.innerHTML = total > CAT_PAGE_SIZE
-    ? `<button class="pg-btn" ${_catPage<=0?'disabled':''} onclick="catPage(${_catPage-1})" title="Previous">‹</button>
-       <span class="pg-info">${_catPage+1}/${pages}</span>
-       <button class="pg-btn" ${_catPage>=pages-1?'disabled':''} onclick="catPage(${_catPage+1})" title="Next">›</button>`
-    : '';
-}
-
-function renderMonths(months){
-  if(!months.length){ $('#month-chart').innerHTML='<div class="empty">No data</div>'; return; }
-  const MORE = months.length > 3;
-  const shown = months.slice(-3);
-  const W=760,H=220,pad=34, bw=(W-pad*2)/shown.length;
-  const max = Math.max(1, ...shown.map(m=>Math.max(m.income,m.expense)));
-  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
-  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--line)"/>`;
-  shown.forEach((m,i)=>{
-    const x = pad + i*bw;
-    const ih = (m.income/max)*(H-pad*2);
-    const eh = (m.expense/max)*(H-pad*2);
-    svg += `<rect x="${x+bw*0.14}" y="${H-pad-ih}" width="${bw*0.32}" height="${ih}" rx="3" fill="#22c55e"/>`;
-    svg += `<rect x="${x+bw*0.52}" y="${H-pad-eh}" width="${bw*0.32}" height="${eh}" rx="3" fill="#ef4444"/>`;
-    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="var(--mut)" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
-  });
-  svg += '</svg>';
-  $('#month-chart').innerHTML = svg +
-    `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>
-     <span><span class="dot" style="background:#ef4444"></span>Expenses</span></span>` +
-    (MORE ? `<button class="btn ghost sm" style="margin-left:auto" onclick="gotoTrends()">last 3 of ${months.length} — View more ↗</button>` : '') +
-    `</div>`;
-}
-
-// jump from dashboard cards to the full Trends view
-function gotoTrends(){ showTab('trends'); }
-// quick pick a category to set/edit a budget from the budget card header
-function editBudgetPicker(){
-  const d=_budgets; if(!d || !d.rows.length){ toast('No categories to budget yet'); return; }
-  const opts = d.rows.slice().sort((a,b)=>a.name.localeCompare(b.name))
-    .map(r=>`<option value="${r.key}">${esc(r.name)}</option>`).join('');
-  const pick = prompt('Set a budget for which category?\n' + d.rows.slice().sort((a,b)=>a.name.localeCompare(b.name)).map(r=>r.name).join('\n'));
-  if(!pick) return;
-  const row = d.rows.find(r=>r.name.toLowerCase()===pick.trim().toLowerCase());
-  if(row) editBudget(row.key); else toast('Category not found');
-}
 
 // ---------- savings ----------
 const SAV_PAGE_SIZE = 12;
@@ -4208,18 +3851,6 @@ function renderTrendChart(d){
      <span><span class="dot" style="background:#ef4444"></span>Expenses</span>
      <span class="muted">· 3-mo avg income ${fmt(d.avg_3mo.income)}, spend ${fmt(d.avg_3mo.expense)}</span>`;
 }
-
-// quick range
-$('#d-quick').onchange = e=>{
-  const v = e.target.value, now = new Date(), y=now.getFullYear(), m=now.getMonth();
-  const dstr = dt=>dt.toISOString().slice(0,10);
-  if(v==='all'){ $('#d-start').value=''; $('#d-end').value=''; }
-  if(v==='tm'){ $('#d-start').value=dstr(new Date(y,m,1)); $('#d-end').value=dstr(new Date(y,m+1,0)); }
-  if(v==='lm'){ $('#d-start').value=dstr(new Date(y,m-1,1)); $('#d-end').value=dstr(new Date(y,m,0)); }
-  if(v==='ty'){ $('#d-start').value=`${y}-01-01`; $('#d-end').value=`${y}-12-31`; }
-  if(v==='90'){ const s=new Date(now); s.setDate(s.getDate()-90); $('#d-start').value=dstr(s); $('#d-end').value=dstr(now); }
-  loadDashboard();
-};
 
 // ---------- transactions ----------
 let SELECTED = new Set();
@@ -4794,7 +4425,7 @@ async function loadRules(){
 async function delRule(id){ await api('/rules/'+id,{method:'DELETE'}); toast('Rule deleted'); loadRules(); }
 async function recategorize(){
   const r = await api('/recategorize',{method:'POST'});
-  toast(`Re-categorized ${r.updated} transactions`); loadDashboard();
+  toast(`Re-categorized ${r.updated} transactions`);
 }
 
 // ---------- import ----------
@@ -4921,11 +4552,10 @@ async function toggleAcct(id, include){
 // ---------- boot ----------
 (async function(){
   await loadMeta();
-  $('#d-quick').value='all';
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['home','dash','trends','savings','txns','rules','crypto','import','bills','paydown'].includes(h)) showTab(h);
-  else showTab('home');
+  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget'].includes(h)) showTab(h);
+  else showTab('dashboard');
 })();
 </script>
 </body>
