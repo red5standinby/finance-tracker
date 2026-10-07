@@ -363,7 +363,7 @@
   th{text-align:left;color:var(--mut);font-weight:600;padding:12px 12px;
     border-bottom:1px solid var(--line);white-space:nowrap;font-size:12.5px;cursor:pointer;user-select:none}
   th.no-sort{cursor:default}
-  td{padding:14px 12px;border-bottom:1px solid rgba(36,48,68,.5);vertical-align:middle}
+  td{padding:8px 12px;border-bottom:1px solid rgba(36,48,68,.5);vertical-align:middle}
   tr:hover td{background:rgba(var(--tint),.05)}
   .amt{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:600}
   .pill{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;
@@ -442,12 +442,13 @@
   .toolbar{display:flex;flex-direction:column;gap:12px}
   .tb-row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
   .tb-row label{color:var(--mut);font-size:13px;display:flex;flex-direction:column;gap:6px}
-  .tb-row label input:not([type=checkbox]),.tb-row label select{min-width:130px}
+  .tb-row label input:not([type=checkbox]),.tb-row label select{min-width:130px;height:36px}
   .tb-row label input[type=checkbox]{min-width:20px;width:20px}
   .tb-row label .multiselect{min-width:160px}
-  .tb-row .tb-actions{display:flex;gap:10px}
+  .tb-row .tb-actions{display:flex;gap:10px;height:36px}
+  .tb-row .tb-actions .btn{height:36px}
   .cb-label{flex-direction:row!important;align-items:center!important;gap:9px!important;
-    padding-bottom:9px;cursor:pointer;white-space:nowrap}
+    height:36px;cursor:pointer;white-space:nowrap}
   .txn-statusbar{display:flex;align-items:center;justify-content:space-between;
     flex-wrap:wrap;gap:12px;margin:16px 0 12px}
   .pager{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
