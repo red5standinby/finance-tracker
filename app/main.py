@@ -1209,6 +1209,95 @@ def set_account_balance(acct_id: int, body: BalanceBody):
     return {"ok": True, "balance": body.balance, "balance_date": bdate}
 
 
+# ---------------- Credit-card paydown tool ----------------
+class PaydownBody(BaseModel):
+    balance: float | None = None
+    apr: float | None = None
+    min_payment: float | None = None
+    balance_date: str | None = None
+
+
+@app.get("/api/paydown")
+def get_paydown():
+    """Credit cards + their paydown config, combined totals, and payment stats."""
+    from datetime import date as _date
+    with db() as con:
+        accts = [dict(r) for r in con.execute(
+            "SELECT id, name, bank, balance, balance_date, apr, min_payment "
+            "FROM accounts WHERE kind='credit' AND COALESCE(exclude,0)=0 ORDER BY name")]
+        cards = []
+        for a in accts:
+            aid = a["id"]
+            # payments = positive-amount rows (credits/payments toward the card)
+            row = con.execute(
+                "SELECT COUNT(*) n, COALESCE(SUM(amount),0) total, MAX(date) last "
+                "FROM transactions WHERE account_id=? AND amount > 0", (aid,)).fetchone()
+            spend = con.execute(
+                "SELECT COALESCE(SUM(amount),0) s FROM transactions "
+                "WHERE account_id=? AND amount < 0", (aid,)).fetchone()["s"]
+            cards.append({
+                "id": aid,
+                "name": a["name"],
+                "bank": a["bank"],
+                "balance": a["balance"],
+                "balance_date": a["balance_date"],
+                "apr": a["apr"],
+                "min_payment": a["min_payment"],
+                "payments_count": row["n"],
+                "payments_total": round(row["total"], 2),
+                "payments_last": row["last"],
+                "charges_total": round(abs(spend), 2),
+            })
+    known = [c for c in cards if c["balance"] is not None]
+    total_owed = round(sum(c["balance"] for c in known), 2)
+    total_min = round(sum((c["min_payment"] or 0) for c in cards), 2)
+    # balance-weighted average APR
+    denom = sum(c["balance"] for c in known) or 0
+    avg_apr = round(sum((c["apr"] or 0) * c["balance"] for c in known) / denom, 2) if denom else 0
+    return {
+        "cards": cards,
+        "totals": {
+            "owed": total_owed,
+            "min": total_min,
+            "avg_apr": avg_apr,
+            "cards_with_balance": len(known),
+            "cards_total": len(cards),
+        },
+    }
+
+
+@app.patch("/api/paydown/{acct_id}")
+def patch_paydown(acct_id: int, body: PaydownBody):
+    from datetime import date as _date
+    sets, vals = [], []
+    for col in ("balance", "apr", "min_payment"):
+        v = getattr(body, col)
+        if v is not None:
+            sets.append(f"{col}=?")
+            vals.append(v)
+    if body.balance is not None:
+        sets.append("balance_date=?")
+        vals.append(body.balance_date or _date.today().isoformat())
+    if not sets:
+        raise HTTPException(400, "nothing to update")
+    vals.append(acct_id)
+    with db() as con:
+        cur = con.execute(f"UPDATE accounts SET {', '.join(sets)} WHERE id=? AND kind='credit'", vals)
+        if cur.rowcount == 0:
+            raise HTTPException(404, "credit account not found")
+    return {"ok": True}
+
+
+@app.get("/api/paydown/{acct_id}/payments")
+def get_paydown_payments(acct_id: int, limit: int = 100):
+    with db() as con:
+        rows = con.execute(
+            "SELECT id, date, description, cleaned, amount, account_id "
+            "FROM transactions WHERE account_id=? AND amount > 0 "
+            "ORDER BY date DESC, id DESC LIMIT ?", (acct_id, limit)).fetchall()
+    return [dict(r) for r in rows]
+
+
 @app.get("/api/rules")
 def get_rules():
     with db() as con:

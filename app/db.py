@@ -18,7 +18,9 @@ CREATE TABLE IF NOT EXISTS accounts (
     kind TEXT DEFAULT 'checking',   -- checking|savings|credit
     exclude INTEGER DEFAULT 0,      -- 1 = ignore in totals (e.g. Warchest)
     balance REAL DEFAULT NULL,      -- current balance (savings/reserve accounts)
-    balance_date TEXT DEFAULT NULL  -- date the balance was last confirmed
+    balance_date TEXT DEFAULT NULL, -- date the balance was last confirmed
+    apr REAL DEFAULT NULL,          -- annual % rate (credit cards)
+    min_payment REAL DEFAULT NULL   -- minimum monthly payment (credit cards)
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -165,6 +167,11 @@ def init_db(seed_categories: Iterable[dict]):
             con.execute("ALTER TABLE accounts ADD COLUMN balance REAL DEFAULT NULL")
         if "balance_date" not in acols:
             con.execute("ALTER TABLE accounts ADD COLUMN balance_date TEXT DEFAULT NULL")
+        # migration: APR + min payment for credit-card paydown tool
+        if "apr" not in acols:
+            con.execute("ALTER TABLE accounts ADD COLUMN apr REAL DEFAULT NULL")
+        if "min_payment" not in acols:
+            con.execute("ALTER TABLE accounts ADD COLUMN min_payment REAL DEFAULT NULL")
         # migration: add manual_paid_month to older bills tables
         bcols = {r[1] for r in con.execute("PRAGMA table_info(bills)")}
         if bcols and "manual_paid_month" not in bcols:

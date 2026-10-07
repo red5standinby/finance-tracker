@@ -437,6 +437,27 @@
   .seg-btn{background:transparent;border:0;color:var(--mut);font-size:12px;font-weight:600;padding:4px 11px;border-radius:7px;cursor:pointer;letter-spacing:.3px}
   .seg-btn:hover{color:var(--txt)}
   .seg-btn.active{background:var(--accent);color:#fff}
+  /* paydown planner controls */
+  .pd-ctrl{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;margin:6px 0 18px}
+  .pd-ctrl label{color:var(--mut);font-size:13px;display:flex;flex-direction:column;gap:6px}
+  .pd-ctrl label.pd-extra{flex-direction:row;align-items:center;gap:10px}
+  .pd-ctrl label.pd-extra input[type=range]{width:190px;accent-color:var(--accent)}
+  .pd-extra-val{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums;min-width:52px}
+  .pd-ctrl input[type=month]{height:36px}
+  .pd-ctrl label:not(.pd-extra) input[type=checkbox]{height:36px;width:20px}
+  .pd-out{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .pd-stat{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .pd-stat .lbl{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  .pd-stat .val{font-size:22px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
+  .pd-stat .sub{color:var(--mut);font-size:12px;margin-top:2px}
+  .pd-plan-tbl{width:100%;margin-top:16px}
+  .pd-plan-tbl th{font-size:11.5px}
+  .pd-plan-tbl td{padding:8px 12px}
+  .pd-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--panel2);color:var(--mut)}
+  .pd-card-inputs{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
+  .pd-card-inputs label{display:flex;flex-direction:column;gap:4px;color:var(--mut);font-size:11.5px}
+  .pd-card-inputs input{width:110px;height:34px;font-size:14px}
+  .pd-card-total{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
 
   /* ---------- transactions toolbar ---------- */
   .toolbar{display:flex;flex-direction:column;gap:12px}
@@ -739,6 +760,7 @@ window.DEMO = true;
       <button data-tab="dash"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
+      <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
       <button data-tab="txns"><span class="ic">≡</span><span class="lb">Transactions</span></button>
       <button data-tab="rules"><span class="ic">⚙</span><span class="lb">Rules</span></button>
@@ -1080,7 +1102,71 @@ window.DEMO = true;
   <div id="sav-panels"></div>
 </section>
 
-<!-- ============ TRANSACTIONS ============ -->
+<!-- ============ CREDIT CARD PAYDOWN ============ -->
+<section id="tab-paydown" class="hidden">
+  <!-- Totals spotlight -->
+  <div class="grid home-hero" style="margin-bottom:16px">
+    <div class="card hero-card hero-spotlight" id="pd-hero-owed">
+      <div class="lbl">Total credit card debt</div>
+      <div class="val neg" id="pd-owed">$0</div>
+      <div class="muted" style="font-size:12px" id="pd-owed-sub">—</div>
+    </div>
+    <div class="card hero-card" id="pd-hero-min">
+      <div class="lbl">Minimums / month</div>
+      <div class="val" id="pd-min">$0</div>
+      <div class="muted" style="font-size:12px" id="pd-min-sub">—</div>
+    </div>
+    <div class="card hero-card" id="pd-hero-apr">
+      <div class="lbl">Avg APR</div>
+      <div class="val" id="pd-apr">0%</div>
+      <div class="muted" style="font-size:12px" id="pd-apr-sub">balance-weighted</div>
+    </div>
+  </div>
+
+  <!-- Per-card configurable cards -->
+  <div class="panel" style="margin-bottom:16px">
+    <h2>Cards <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· enter/update balances &amp; APRs, then plan below</span></h2>
+    <div class="grid cards" id="pd-cards"></div>
+  </div>
+
+  <!-- Payoff calculator -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-head">
+      <h2><span class="ic-lg">∑</span> Payoff planner</h2>
+      <div class="seg" id="pd-method-seg">
+        <button class="seg-btn" data-m="snowball" onclick="setPdMethod('snowball')">Snowball</button>
+        <button class="seg-btn active" data-m="avalanche" onclick="setPdMethod('avalanche')">Avalanche</button>
+      </div>
+    </div>
+    <div class="pd-ctrl">
+      <label class="pd-extra">Extra / month
+        <input type="range" id="pd-extra" min="0" max="1000" step="25" value="200" oninput="renderPdPlan()">
+        <span class="pd-extra-val" id="pd-extra-val">$200</span>
+      </label>
+      <label>Target date <input type="month" id="pd-target" onchange="renderPdPlan()"></label>
+      <label>min only <input type="checkbox" id="pd-minonly" onchange="renderPdPlan()"></label>
+    </div>
+    <div class="pd-out" id="pd-plan"><div class="empty">Add balances above to see your plan</div></div>
+  </div>
+
+  <!-- Combined payment history -->
+  <div class="panel">
+    <div class="panel-head">
+      <h2><span class="ic-lg">≡</span> Paydown history</h2>
+      <div class="seg" id="pd-hist-seg">
+        <button class="seg-btn active" data-a="all" onclick="loadPdHistory(0)">All cards</button>
+        <button class="seg-btn" data-a="3" onclick="loadPdHistory(3)">Chase</button>
+        <button class="seg-btn" data-a="4" onclick="loadPdHistory(4)">Gemini</button>
+        <button class="seg-btn" data-a="14" onclick="loadPdHistory(14)">Citizens</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table><thead><tr>
+        <th>Date</th><th>Card</th><th>Description</th><th style="text-align:right">Payment</th>
+      </tr></thead><tbody id="pd-hist-body"></tbody></table>
+    </div>
+  </div>
+</section>
 <section id="tab-txns" class="hidden">
   <div class="panel">
     <div class="toolbar">
@@ -2034,11 +2120,12 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['dash','trends','savings','txns','rules','import','crypto','home','bills'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['dash','trends','savings','txns','rules','import','crypto','home','bills','paydown'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='home') loadHome();
   if(name==='dash') loadDashboard();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
+  if(name==='paydown') loadPaydown();
   if(name==='crypto') loadCrypto();
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
@@ -3392,6 +3479,219 @@ async function bulkApply(){
   }catch(e){ toast('Error: '+e.message); }
 }
 
+// ================= CREDIT CARD PAYDOWN =================
+let PD = { data:null, method:'avalanche' };
+
+async function loadPaydown(){
+  const box = $('#pd-cards');
+  if(!box) return;
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  try{
+    PD.data = await api('/paydown');
+  }catch(e){
+    box.innerHTML = '<div class="empty">Could not load cards</div>';
+    return;
+  }
+  renderPdHero();
+  renderPdCards();
+  renderPdPlan();
+  loadPdHistory(0);
+}
+
+function renderPdHero(){
+  const t = PD.data.totals, cards = PD.data.cards;
+  const anyBal = t.cards_with_balance > 0;
+  $('#pd-owed').textContent = anyBal ? fmt(t.owed) : '—';
+  $('#pd-owed').className = 'val neg';
+  $('#pd-owed-sub').textContent = anyBal
+    ? t.cards_with_balance + ' of ' + t.cards_total + ' cards with a balance'
+    : 'Enter balances below to start';
+  $('#pd-min').textContent = t.min ? fmt(t.min) : '—';
+  $('#pd-min-sub').textContent = t.cards_total + ' credit cards';
+  $('#pd-apr').textContent = (t.avg_apr||0).toFixed(2) + '%';
+  $('#pd-apr-sub').textContent = 'balance-weighted average';
+}
+
+function renderPdCards(){
+  const box = $('#pd-cards');
+  const cards = PD.data.cards;
+  if(!cards.length){ box.innerHTML = '<div class="empty">No credit accounts found</div>'; return; }
+  box.innerHTML = cards.map(c=>{
+    const bal = c.balance;
+    const last = c.balance_date ? ' <span class="muted">· updated '+c.balance_date+'</span>' : '';
+    return `<div class="card pd-card" data-id="${c.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div>
+          <div class="muted" style="font-size:12px">${esc(c.bank||'')}</div>
+          <div style="font-weight:700;font-size:15px">${esc(c.name)}</div>
+        </div>
+        <button class="btn ghost sm" onclick="showTab('txns')" title="View transactions">↗</button>
+      </div>
+      <div style="margin:12px 0 4px"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'—':fmt(bal)}</span>${last}</div>
+      <div class="muted" style="font-size:12px">${c.payments_count} payments · ${fmt(c.payments_total)} paid${c.payments_last?' (last '+c.payments_last+')':''}</div>
+      <div class="pd-card-inputs">
+        <label>Balance <input type="number" step="0.01" id="pd-bal-${c.id}" value="${bal==null?'':bal}" placeholder="0.00"></label>
+        <label>APR % <input type="number" step="0.01" id="pd-apr-${c.id}" value="${c.apr==null?'':c.apr}" placeholder="e.g. 24.99"></label>
+        <label>Min pmt <input type="number" step="0.01" id="pd-min-${c.id}" value="${c.min_payment==null?'':c.min_payment}" placeholder="e.g. 35"></label>
+        <label>&nbsp;<button class="btn" style="height:34px" onclick="savePdCard(${c.id})">Save</button></label>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function savePdCard(id){
+  const body = {};
+  const bal = $('#pd-bal-'+id).value, apr = $('#pd-apr-'+id).value, min = $('#pd-min-'+id).value;
+  if(bal!=='') body.balance = parseFloat(bal);
+  if(apr!=='') body.apr = parseFloat(apr);
+  if(min!=='') body.min_payment = parseFloat(min);
+  if(!Object.keys(body).length){ toast('Nothing to save'); return; }
+  try{
+    await api('/paydown/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    toast('Saved');
+    PD.data = await api('/paydown');
+    renderPdHero(); renderPdCards(); renderPdPlan();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+function setPdMethod(m){
+  PD.method = m;
+  document.querySelectorAll('#pd-method-seg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.m===m));
+  renderPdPlan();
+}
+
+// Core amortization simulator: given per-card balance/apr/min and a fixed
+// total monthly budget, allocate payments by snowball or avalanche.
+function simulatePayoff(cards, monthlyBudget, method){
+  // deep copy working balances
+  let work = cards.map(c=>({id:c.id,name:c.name,bal:+(c.balance||0),apr:+(c.apr||0),min:+(c.min_payment||0)}));
+  work = work.filter(c=>c.bal>0.01);
+  if(!work.length) return null;
+  const order = [...work].sort((a,b)=> method==='snowball' ? a.bal-b.bal : b.apr-a.apr);
+  const rank = {}; order.forEach((c,i)=>rank[c.id]=i);
+  work.sort((a,b)=>rank[a.id]-rank[b.id]);
+  const baseMin = work.reduce((s,c)=>s + (c.min||0), 0);
+  if(monthlyBudget < baseMin) monthlyBudget = baseMin;
+  let totalInterest=0, months=0, perCard={};
+  work.forEach(c=>perCard[c.id]={interest:0,paid:0,payoff:null});
+  const MAXM=600;
+  while(work.some(c=>c.bal>0.01) && months<MAXM){
+    months++;
+    let budget = monthlyBudget;
+    // 1) minimums first
+    for(const c of work){
+      if(c.bal<=0.01) continue;
+      const mi = c.apr/100/12 * c.bal;
+      let pay = Math.min(c.min||0, c.bal + mi);
+      if(pay<=0) pay = Math.min(c.bal+mi, Math.max(1, c.bal+mi));
+      c.bal += mi; totalInterest += mi; perCard[c.id].interest += mi;
+      const applied = Math.min(pay, c.bal);
+      c.bal -= applied; perCard[c.id].paid += applied; budget -= applied;
+    }
+    // 2) leftover goes to the priority (first non-zero) card
+    if(budget>0.01){
+      for(const c of work){
+        if(c.bal<=0.01) continue;
+        const applied = Math.min(budget, c.bal);
+        c.bal -= applied; perCard[c.id].paid += applied; budget -= applied;
+        if(budget<=0.01) break;
+      }
+    }
+    for(const c of work){ if(c.payoff===null && c.bal<=0.01) c.payoff=months; }
+  }
+  return {
+    months, totalInterest, totalPaid: work.reduce((s,c)=>s+perCard[c.id].paid,0)+0,
+    perCard, order: work.map(c=>c.id), baseMin,
+    freed: monthlyBudget - baseMin,
+  };
+}
+
+function renderPdPlan(){
+  const box = $('#pd-plan'); if(!box || !PD.data) return;
+  const extraEl = $('#pd-extra');
+  let extra = extraEl ? parseFloat(extraEl.value||0) : 0;
+  const ev = $('#pd-extra-val'); if(ev) ev.textContent = '$'+extra;
+  const minOnly = $('#pd-minonly') && $('#pd-minonly').checked;
+  if(minOnly) extra = 0;
+  const cards = PD.data.cards.filter(c=>c.balance>0.01);
+  if(!cards.length){ box.innerHTML = '<div class="empty">Add balances above to see your plan</div>'; return; }
+  const baseMin = cards.reduce((s,c)=>s + (+c.min_payment||0), 0);
+  const budget = baseMin + extra;
+  const plan = simulatePayoff(PD.data.cards, budget, PD.method);
+  if(!plan){ box.innerHTML = '<div class="empty">No balances entered yet</div>'; return; }
+  // baseline (minimums only) for comparison
+  const basePlan = simulatePayoff(PD.data.cards, baseMin, PD.method);
+  const now = new Date();
+  const payoffDate = new Date(now.getFullYear(), now.getMonth()+plan.months, 1);
+  const interestSaved = basePlan ? basePlan.totalInterest - plan.totalInterest : 0;
+  const fmtDate = d => d.toLocaleDateString('en-US',{month:'short',year:'numeric'});
+  // target-date hint
+  let targetNote = '';
+  const tEl = $('#pd-target');
+  if(tEl && tEl.value){
+    const [ty,tm] = tEl.value.split('-').map(Number);
+    const targetMonths = (ty-now.getFullYear())*12 + (tm-1-now.getMonth());
+    if(targetMonths>0){
+      // required extra to hit target
+      let lo=0, hi=5000, need=null;
+      for(let i=0;i<40;i++){
+        const mid=(lo+hi)/2;
+        const p=simulatePayoff(PD.data.cards, baseMin+mid, PD.method);
+        if(p && p.months<=targetMonths){ need=mid; hi=mid; } else lo=mid;
+      }
+      if(need!=null) targetNote = `<div class="pd-stat"><div class="lbl">To hit ${tEl.value}</div><div class="val">${fmt(baseMin+Math.ceil(need))}</div><div class="sub">/mo total (≈$${Math.ceil(need)} extra)</div></div>`;
+      else targetNote = `<div class="pd-stat"><div class="lbl">To hit ${tEl.value}</div><div class="val">—</div><div class="sub">needs >$5k/mo</div></div>`;
+    }
+  }
+  let html = `
+    <div class="pd-stat"><div class="lbl">Payoff time</div><div class="val">${plan.months} mo</div><div class="sub">≈ ${fmtDate(payoffDate)}</div></div>
+    <div class="pd-stat"><div class="lbl">Interest paid</div><div class="val">${fmt(plan.totalInterest)}</div><div class="sub">${interestSaved>0?fmt(interestSaved)+' saved vs min-only':'min-only plan'}</div></div>
+    <div class="pd-stat"><div class="lbl">Monthly budget</div><div class="val">${fmt(plan.baseMin + extra)}</div><div class="sub">min ${fmt(plan.baseMin)} + extra ${fmt(extra)}</div></div>
+    ${targetNote}`;
+  box.innerHTML = `<div class="pd-out">${html}</div>`;
+  const nameById = {}; PD.data.cards.forEach(c=>nameById[c.id]=c.name);
+  // order + per-card payoff timeline
+  const rows = plan.order.map((id,i)=>{
+    const c = PD.data.cards.find(x=>x.id===id);
+    const pc = plan.perCard[id];
+    const payoffMo = pc.payoff; 
+    const pd2 = payoffMo!=null ? new Date(now.getFullYear(), now.getMonth()+payoffMo, 1) : null;
+    return `<tr>
+      <td>${i+1}</td>
+      <td>${esc(c.name)} <span class="pd-badge">${(c.apr||0).toFixed(2)}%</span></td>
+      <td class="muted">${fmt(c.balance)}</td>
+      <td>${pd2?fmtDate(pd2):'—'}</td>
+      <td class="amt">${fmt(pc.interest)}</td>
+    </tr>`;
+  }).join('');
+  box.insertAdjacentHTML('beforeend', `<table class="pd-plan-tbl"><thead><tr>
+    <th>#</th><th>Card (${PD.method})</th><th>Balance</th><th>Paid off</th><th style="text-align:right">Interest</th>
+    </tr></thead><tbody>${rows}</tbody></table>`);
+}
+
+async function loadPdHistory(acctId){
+  const box = $('#pd-hist-body'); if(!box) return;
+  document.querySelectorAll('#pd-hist-seg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.a===String(acctId)));
+  box.innerHTML = '<tr><td colspan=4 class="empty">Loading…</td></tr>';
+  try{
+    const ids = acctId ? [acctId] : PD.data.cards.map(c=>c.id);
+    const nameById = {}; PD.data.cards.forEach(c=>nameById[c.id]=c.name);
+    let all = [];
+    for(const id of ids){
+      const rows = await api('/paydown/'+id+'/payments?limit=60');
+      all = all.concat(rows.map(r=>({...r, cname:nameById[id]})));
+    }
+    all.sort((a,b)=> (a.date<b.date?1:a.date>b.date?-1:0));
+    all = all.slice(0,80);
+    box.innerHTML = all.length ? all.map(r=>`<tr>
+      <td class="muted">${r.date}</td>
+      <td>${esc(r.cname||'')}</td>
+      <td title="${esc(r.description)}">${esc(r.cleaned||r.description)}</td>
+      <td class="amt pos">+${fmt(r.amount)}</td>
+    </tr>`).join('') : '<tr><td colspan=4 class="empty">No payments found</td></tr>';
+  }catch(e){ box.innerHTML = '<tr><td colspan=4 class="empty">Could not load payments</td></tr>'; }
+}
+
 function esc(s){ return (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function catSelect(id, key, color){
   const opts = CATS.map(c=>`<option value="${c.key}" ${c.key===key?'selected':''}>${c.name}</option>`).join('');
@@ -3645,7 +3945,7 @@ async function toggleAcct(id, include){
   $('#d-quick').value='all';
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['home','dash','trends','savings','txns','rules','crypto','import'].includes(h)) showTab(h);
+  if(h && ['home','dash','trends','savings','txns','rules','crypto','import','bills','paydown'].includes(h)) showTab(h);
   else showTab('home');
 })();
 </script>
