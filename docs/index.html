@@ -220,16 +220,22 @@
   .hs-sub div{display:flex;flex-direction:column;gap:1px;min-width:0}
   .hs-sub b{font-size:15px;font-variant-numeric:tabular-nums}
   .hs-sub span{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px}
-  .hero-bills .hs-go{margin-top:auto;padding-top:12px;color:var(--accent);font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
-  .hero-bills .hs-go span{transition:transform .15s ease}
-  .hero-bills:hover .hs-go span{transform:translateX(3px)}
   .hero-bills{display:flex;flex-direction:column}
+  .hero-expense{display:flex;flex-direction:column}
+  .he-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .he-top.clickable{cursor:pointer}
   /* budget mini-bar inside the expenses card */
-  .he-budget{margin-top:auto;padding-top:12px}
+  .he-budget{margin-top:10px;padding-top:0}
   .he-bar{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden}
   .he-bar>span{display:block;height:100%;border-radius:5px;width:0;background:var(--good);transition:width .3s ease}
   .he-bud-figs{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px}
   .he-bud-figs b{font-size:13px}
+  /* embedded list inside the big hero cards (budget health / recurring bills) */
+  .he-list{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);overflow-y:auto;max-height:190px;flex:1}
+  .he-list::-webkit-scrollbar{width:6px}
+  .he-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+  .he-list .hb-row,.he-list .hb-grid{padding:7px 0}
+  .he-list .hb-badge{font-size:10.5px}
   /* Snapshot cards (Home) — fintech-style asymmetric grid */
   .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:stretch}
   /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
@@ -909,9 +915,12 @@ window.DEMO = true;
       </div>
     </div>
 
-    <!-- Total monthly expenses + budget -->
-    <div class="card hero-card" id="hero-expense">
-      <div class="lbl">Total monthly expenses</div>
+    <!-- Total monthly expenses + budget health -->
+    <div class="card hero-card hero-expense" id="hero-expense">
+      <div class="he-top">
+        <div class="lbl" style="margin:0">Total monthly expenses</div>
+        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
+      </div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
       <div class="he-budget">
@@ -921,37 +930,23 @@ window.DEMO = true;
           <b id="h-bud-left" style="font-variant-numeric:tabular-nums">—</b>
         </div>
       </div>
+      <div id="h-budgets" class="he-list"><div class="empty">No budgets set</div></div>
     </div>
 
-    <!-- Bills hub (left to pay + status) -->
-    <div class="card hero-card hero-bills clickable" id="hero-bills" onclick="showTab('bills')">
-      <div class="lbl">Bills · left to pay</div>
+    <!-- Bills hub (left to pay + recurring checklist) -->
+    <div class="card hero-card hero-bills" id="hero-bills">
+      <div class="he-top clickable" onclick="showTab('bills')">
+        <div class="lbl" style="margin:0">Bills · left to pay</div>
+        <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
+      </div>
       <div class="val" id="h-bills-hero">$0</div>
       <div class="muted" style="font-size:12px" id="h-bills-hero-sub">—</div>
-      <div class="hs-go">Open Bills <span>→</span></div>
+      <div id="h-bills" class="he-list"><div class="empty">Nothing scheduled</div></div>
     </div>
   </div>
 
-  <!-- TIER 2: rich cards — the original home checklist/health/spending/credit, bold layout -->
+  <!-- TIER 2: rich cards — spending/activity/chart/credit/news -->
   <div class="grid snap-grid">
-
-    <!-- Recurring bills — the checklist (spotlight) -->
-    <div class="panel snap span-bills">
-      <div class="panel-head">
-        <h2><span class="ic-lg">▤</span> Recurring bills <span class="mut-sub">· this month's checklist</span></h2>
-        <button class="btn ghost sm" onclick="showTab('bills')">Open ↗</button>
-      </div>
-      <div id="h-bills"><div class="empty">Nothing scheduled</div></div>
-    </div>
-
-    <!-- Budget health -->
-    <div class="panel snap span-savings">
-      <div class="panel-head">
-        <h2><span class="ic-lg">◐</span> Budget health <span class="mut-sub" id="h-bud-month">· —</span></h2>
-        <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
-      </div>
-      <div id="h-budgets"><div class="empty">No budgets set</div></div>
-    </div>
 
     <!-- Top spending this month (span3) -->
     <div class="panel snap span-topspend">
@@ -3295,23 +3290,20 @@ async function renderHomeBills(D){
   let B = {};
   try { B = await api('/bills'); } catch(e){ B = {}; }
   const rows = B.rows || [];
-  const c = B.counts || {};
   if(!rows.length){
     box.innerHTML = '<div class="empty">No bills tracked yet — open the Bills tab to confirm suggestions.</div>';
     return;
   }
-  const head = `<div style="margin-bottom:8px">` +
-    `<span class="hb-badge ok" style="margin-right:6px">${c.paid||0} paid</span>` +
-    ((c.due||0)?`<span class="hb-badge warn" style="margin-right:6px">${c.due} due</span>`:'') +
-    ((c.overdue||0)?`<span class="hb-badge over" style="margin-right:6px">${c.overdue} overdue</span>`:'') +
-    `</div>`;
-  const shown = rows.slice(0,6).map(r=>{
+  // checklist lives in the hero card; counts already show in the card subtitle
+  const order = {overdue:0, missed:1, due:2, upcoming:3, paid:4};
+  const sorted = rows.slice().sort((a,b)=>(order[a.status]??9)-(order[b.status]??9) || (a.due_day||99)-(b.due_day||99));
+  box.innerHTML = sorted.map(r=>{
     const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
     const stLabel = r.status==='missed' ? 'missed' : r.status;
+    const due = r.due_day ? ' · ' + ordinal(r.due_day) : '';
     return `<div class="hb-row"><span class="hb-name">${esc(r.name)}</span>` +
-      `<span class="hb-badge ${stColor}">${stLabel}</span></div>`;
+      `<span class="hb-badge ${stColor}">${stLabel}${due}</span></div>`;
   }).join('');
-  box.innerHTML = head + shown;
 }
 function ymRange(which){
   const now = new Date();
@@ -3321,20 +3313,13 @@ function ymRange(which){
 
 function renderHomeBudgets(B){
   const box = $('#h-budgets');
-  $('#h-bud-month').textContent = '· ' + (B.month || '');
   const rows = (B.rows || []).filter(r=>r.budget>0);
   if(!rows.length){ box.innerHTML = '<div class="empty">No budgets set</div>'; return; }
-  const over = rows.filter(r=>r.pct>=100).length;
-  const near = rows.filter(r=>r.pct>=80 && r.pct<100).length;
-  let head = '';
-  if(over) head += `<div class="hb-badge over" style="margin-right:6px">${over} over</div>`;
-  if(near) head += `<div class="hb-badge warn" style="margin-right:6px">${near} near limit</div>`;
-  if(!over && !near) head += `<div class="hb-badge ok">on track</div>`;
-  const sortd = rows.slice().sort((a,b)=>b.pct-a.pct).slice(0,5);
-  box.innerHTML = `<div style="margin-bottom:8px">${head}</div>` + sortd.map(r=>{
+  const sortd = rows.slice().sort((a,b)=>b.pct-a.pct);
+  box.innerHTML = sortd.map(r=>{
     const pct = Math.min(100, Math.round(r.pct));
     const col = r.pct>=100 ? 'var(--bad)' : (r.pct>=80 ? '#eab308' : 'var(--good)');
-    return `<div class="hb-grid"><div style="min-width:0">
+    return `<div class="hb-grid"><div style="min-width:0;flex:1">
       <div class="hb-name">${esc(r.name)}</div>
       <div class="hb-bar"><span style="width:${pct}%;background:${col}"></span></div>
       </div><div style="text-align:right;white-space:nowrap">
