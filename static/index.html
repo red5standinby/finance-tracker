@@ -209,6 +209,21 @@
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
   .home-hero{grid-template-columns:repeat(3,1fr)}
   @media(max-width:760px){.home-hero{grid-template-columns:1fr}}
+  /* Total savings hero — headline + inline toggle graph + split */
+  .hs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .hs-seg .seg-btn{padding:3px 9px;font-size:11.5px}
+  .hs-chart{margin:10px 0 6px}
+  .hs-chart svg{display:block;width:100%;height:auto}
+  .hs-split{display:flex;gap:10px;margin-top:10px}
+  .hs-sub{flex:1;display:flex;align-items:center;gap:8px;background:rgba(var(--tint),.07);border-radius:9px;padding:8px 10px}
+  .hs-sub .ic{font-size:16px;color:var(--accent);opacity:.85}
+  .hs-sub div{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .hs-sub b{font-size:15px;font-variant-numeric:tabular-nums}
+  .hs-sub span{color:var(--mut);font-size:10.5px;text-transform:uppercase;letter-spacing:.5px}
+  .hero-bills .hs-go{margin-top:auto;padding-top:12px;color:var(--accent);font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+  .hero-bills .hs-go span{transition:transform .15s ease}
+  .hero-bills:hover .hs-go span{transform:translateX(3px)}
+  .hero-bills{display:flex;flex-direction:column}
   /* Snapshot cards (Home) — fintech-style asymmetric grid */
   .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:stretch}
   /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
@@ -270,9 +285,9 @@
   .hero-card.good{border-left-color:var(--good)}
   .hero-card .val{font-size:34px}
   /* spotlight hero card — the money headline */
-  .hero-spotlight{grid-column:span 2;position:relative;overflow:hidden;
+  .hero-spotlight{position:relative;overflow:hidden;
     background:linear-gradient(135deg,rgba(var(--tint),.10),transparent 70%)}
-  .hero-spotlight .val{font-size:46px;letter-spacing:-1px}
+  .hero-spotlight .val{font-size:40px;letter-spacing:-1px}
   .hero-spotlight .lbl{color:var(--txt);opacity:.9}
   @media(max-width:760px){.hero-spotlight{grid-column:span 1}}
   .hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
@@ -787,15 +802,38 @@
 
   <!-- TIER 1: big decision numbers -->
   <div class="grid home-hero">
-    <div class="card hero-card hero-spotlight" id="hero-spend">
-      <div class="lbl">Budget remaining this month</div>
-      <div class="val" id="h-spend">$0</div>
-      <div class="muted" style="font-size:12px" id="h-spend-sub">—</div>
+    <!-- Total savings (savings + crypto) with toggle graph -->
+    <div class="card hero-card hero-spotlight" id="hero-savings">
+      <div class="hs-head">
+        <div class="lbl" style="margin:0">Total savings</div>
+        <div class="seg hs-seg" id="h-tot-seg">
+          <button class="seg-btn active" data-v="all" onclick="setHomeTot('all')">All</button>
+          <button class="seg-btn" data-v="savings" onclick="setHomeTot('savings')">Savings</button>
+          <button class="seg-btn" data-v="crypto" onclick="setHomeTot('crypto')">Crypto</button>
+        </div>
+      </div>
+      <div class="val" id="h-tot-val">$0</div>
+      <div class="muted" style="font-size:12px" id="h-tot-sub">—</div>
+      <div id="h-tot-chart" class="hs-chart"></div>
+      <div class="hs-split">
+        <div class="hs-sub"><span class="ic">₿</span><div><b id="h-crypto-val">$0</b><span>in crypto</span></div></div>
+        <div class="hs-sub"><span class="ic">◈</span><div><b id="h-savings-val">$0</b><span>in savings</span></div></div>
+      </div>
     </div>
-    <div class="card hero-card" id="hero-acct">
-      <div class="lbl">Cash on hand</div>
-      <div class="val" id="h-cash">$0</div>
-      <div class="muted" style="font-size:12px" id="h-acct-sub">—</div>
+
+    <!-- Total monthly expenses -->
+    <div class="card hero-card" id="hero-expense">
+      <div class="lbl">Total monthly expenses</div>
+      <div class="val" id="h-monthly-exp">$0</div>
+      <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
+    </div>
+
+    <!-- Bills hub -->
+    <div class="card hero-card hero-bills clickable" id="hero-bills" onclick="showTab('bills')">
+      <div class="lbl">Bills</div>
+      <div class="val" id="h-bills-hero">$0</div>
+      <div class="muted" style="font-size:12px" id="h-bills-hero-sub">—</div>
+      <div class="hs-go">Open Bills <span>→</span></div>
     </div>
   </div>
 
@@ -2745,44 +2783,34 @@ async function loadHome(){
   const expense = (D.totals && D.totals.expense) || 0;
   const net = income - expense;
 
-    // ---- HERO 1: budget remaining this month ----
-    // Remaining headroom against monthly budget targets. The subtitle always
-    // states what was actually spent so the number can't be read as free cash.
-    const budTot = (B.totals && B.totals.budget) || 0;
-    const budSpent = (B.totals && B.totals.spent) || 0;        // budgeted cats
-    const spentAll = (B.totals && B.totals.spent_all) || budSpent; // ALL expense cats
-    const spentUnbud = Math.max(0, spentAll - budSpent);
-    let left, leftSub;
-    if(budTot > 0){
-      left = budTot - budSpent;
-      leftSub = fmt(budSpent) + ' spent of ' + fmt(budTot) + ' budgeted';
-      if(spentUnbud > 0.01) leftSub += ' · ' + fmt(spentUnbud) + ' spent outside budgets';
-    } else {
-      left = income - expense;
-      leftSub = 'income so far this month minus spending';
-    }
-    const hs = $('#h-spend');
-    hs.textContent = (left<0?'-':'') + fmt(left);
-    hs.className = 'val ' + (left<0?'neg':'pos');
-    $('#h-spend-sub').textContent = leftSub;
-    $('#hero-spend').className = 'card hero-card hero-spotlight ' + (left<0?'bad':'good');
+  // ---- HERO 1: total savings (savings + crypto), graph toggleable ----
+  await renderHomeSavings();
 
-  // ---- HERO 2: cash position ----
+  // ---- HERO 2: total monthly expenses this month ----
+  {
+    const he = $('#h-monthly-exp');
+    he.textContent = fmt(expense);
+    he.className = 'val ' + (expense > 0 ? 'neg' : '');
+    const budTot = (B.totals && B.totals.budget) || 0;
+    const budSpent = (B.totals && B.totals.spent) || 0;
+    $('#h-monthly-exp-sub').textContent = budTot > 0
+      ? fmt(budSpent) + ' of ' + fmt(budTot) + ' budgeted · ' + ym.slice(5) + '/01→today'
+      : 'spent so far in ' + ym;
+  }
+
+  // ---- HERO 3: bills hub -> Bills page ----
   try {
-    const ac = await api('/accounts');
-    const cash = ac.filter(a=>!a.exclude && (a.kind==='checking'||a.kind==='savings'));
-    const withBal = cash.filter(a=>a.balance != null);
-    const hc = $('#h-cash');
-    if(withBal.length){
-      const total = withBal.reduce((s,a)=>s + (a.balance||0), 0);
-      hc.textContent = fmt(total); hc.className = 'val pos';
-      $('#h-acct-sub').textContent = withBal.map(a=>a.name).join(' · ');
-    } else if(cash.length){
-      hc.textContent = '—';
-      $('#h-acct-sub').textContent = cash.map(a=>a.name).join(' · ') + ' — no balance sync yet';
-    } else {
-      hc.textContent = '—';
-    }
+    const BL = await api('/bills');
+    const c = BL.counts || {};
+    const due = (c.due || 0) + (c.overdue || 0);
+    $('#h-bills-hero').textContent = fmt(c.left || 0);
+    $('#h-bills-hero').className = 'val ' + ((c.overdue || 0) ? 'neg' : (due ? 'warn' : 'pos'));
+    const parts = [];
+    if (c.paid) parts.push(c.paid + ' paid');
+    if (c.due) parts.push(c.due + ' due');
+    if (c.overdue) parts.push(c.overdue + ' overdue');
+    $('#h-bills-hero-sub').textContent = parts.length ? 'left to pay · ' + parts.join(' · ')
+      : (c.total ? 'all paid this month 🎉' : 'no bills tracked yet');
   } catch(e){}
 
   // ---- Rich home cards (original home content, bold layout) ----
@@ -2868,6 +2896,178 @@ async function renderHomeChart(){
     `<span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
 }
 function fmtShort(v){ v=Math.abs(v||0); if(v>=1000) return '$'+(v/1000).toFixed(v>=10000?0:1)+'k'; return '$'+Math.round(v); }
+
+// ---------- Home: total savings (savings + crypto) with toggle graph ----------
+let _homeTot = { view: 'all', savings: null, crypto: null, cryptoSeries: null };
+let _homeTotMonths = 12;
+
+async function setHomeTot(view){
+  _homeTot.view = view;
+  document.querySelectorAll('#h-tot-seg .seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.v===view);
+  });
+  await renderHomeSavings();
+}
+
+async function renderHomeSavings(){
+  const box = $('#h-tot-chart');
+  if(!box) return;
+  // ---- fetch savings history + live savings balance ----
+  if(!_homeTot.savings){
+    let sh = {}, sv = {};
+    try { sh = await api('/savings/history?months=' + _homeTotMonths); } catch(e){ sh = {}; }
+    try { sv = await api('/savings'); } catch(e){ sv = {}; }
+    _homeTot.savings = {
+      history: sh.months || [],
+      current: (sh.current!=null ? sh.current : ((sv.totals||{}).balance)),
+      deposits: (sv.totals||{}).deposits || 0,
+      interest: (sv.totals||{}).interest || 0,
+      accounts: (sv.accounts||[]).length
+    };
+  }
+  // ---- fetch crypto holdings + prices + per-coin chart ----
+  if(!_homeTot.crypto){
+    let hold = [], mk = {};
+    try { hold = await api('/crypto/holdings'); } catch(e){ hold = []; }
+    try { mk = await api('/crypto/markets?ids=' + encodeURIComponent(hold.map(h=>h.coin_id).join(','))); } catch(e){ mk = {}; }
+    const byId = Object.fromEntries((mk.coins||[]).map(c=>[c.id,c]));
+    let value = 0, chg24 = 0, priced = false;
+    const legs = [];
+    hold.forEach(h=>{
+      const c = byId[h.coin_id];
+      const price = c && c.price != null ? c.price : null;
+      const v = price != null ? (h.amount||0)*price : null;
+      if(v != null){ value += v; priced = true; chg24 += v*((c.chg_24h||0)/100); }
+      legs.push({coin_id:h.coin_id, amount:h.amount||0, price, value:v, chg24:c?c.chg_24h:null});
+    });
+    // build a 12-month series: chart each coin over 365d, sample monthly
+    let series = null;
+    if(legs.length){
+      try {
+        const charts = await Promise.all(legs.map(lg=>api('/crypto/chart?id='+encodeURIComponent(lg.coin_id)+'&days=365').catch(()=>({prices:[]}))));
+        const buckets = monthsBuckets(_homeTotMonths);
+        series = buckets.map(b=>({month:b.ym, balance:b.eom ? null : null}));
+        // accumulate: for each month bucket, take each coin's last price <= eom
+        series = buckets.map(b=>{
+          let total = 0, any = false;
+          legs.forEach((lg,idx)=>{
+            const prices = (charts[idx]&&charts[idx].prices)||[];
+            let px = null;
+            for(const p of prices){ if(new Date(p[0]).toISOString().slice(0,10) <= b.eom) px = p[1]; else break; }
+            if(px == null && lg.price != null){ px = lg.price; }
+            if(px != null){ total += lg.amount*px; any = true; }
+          });
+          return { month: b.ym, balance: any ? Math.round(total*100)/100 : null };
+        });
+        // pin the last bucket to live value so it lines up with the headline
+        if(series.length && priced) series[series.length-1].balance = Math.round(value*100)/100;
+      } catch(e){ series = null; }
+    }
+    _homeTot.crypto = { value: priced ? Math.round(value*100)/100 : null, chg24, holdCount: hold.length, legs, series };
+  }
+
+  const s = _homeTot.savings || {}, cx = _homeTot.crypto || {};
+  const savVal = (s.current != null) ? s.current : 0;
+  const cxVal  = (cx.value != null) ? cx.value : 0;
+  const total  = savVal + cxVal;
+  _homeTot._total = total; _homeTot._savVal = savVal; _homeTot._cxVal = cxVal;
+
+  // headline value depends on selected view
+  const view = _homeTot.view;
+  const shownVal = view==='savings' ? savVal : view==='crypto' ? cxVal : total;
+  $('#h-tot-val').textContent = fmt(shownVal);
+  $('#h-tot-val').className = 'val ' + (shownVal < 0 ? 'neg' : 'pos');
+
+  // subtitle: context for the selected view
+  if(view==='savings'){
+    $('#h-tot-sub').textContent = (s.accounts||0) + ' account' + ((s.accounts||0)===1?'':'s')
+      + ' · ' + fmt(s.deposits||0) + ' in · ' + fmt(s.interest||0) + ' interest';
+  } else if(view==='crypto'){
+    const ch = cx.chg24||0;
+    $('#h-tot-sub').innerHTML = (cx.holdCount||0) + ' holding' + ((cx.holdCount||0)===1?'':'s')
+      + ' · 24h <b class="' + (ch>=0?'pos':'neg') + '">' + (ch>=0?'+':'-') + fmt(Math.abs(ch)) + '</b>';
+  } else {
+    const ch = cx.chg24||0;
+    $('#h-tot-sub').innerHTML = 'savings + crypto · 24h <b class="' + (ch>=0?'pos':'neg') + '">'
+      + (ch>=0?'+':'-') + fmt(Math.abs(ch)) + '</b>';
+  }
+
+  // split sub-section (always shows both, regardless of toggle)
+  $('#h-crypto-val').textContent = cx.value!=null ? fmt(cxVal) : '—';
+  $('#h-savings-val').textContent = s.current!=null ? fmt(savVal) : '—';
+
+  // graph
+  const svSeries = (s.history||[]).map(m=>m.balance);
+  const cxSeries = (cx.series||[]).map(m=>m.balance);
+  const n = Math.max(svSeries.length, cxSeries.length);
+  let vals;
+  if(view==='savings') vals = svSeries;
+  else if(view==='crypto') vals = cxSeries;
+  else {
+    vals = [];
+    for(let i=0;i<n;i++){
+      const a = svSeries[i]!=null ? svSeries[i] : (svSeries.length? svSeries[svSeries.length-1] : 0);
+      const b = cxSeries[i]!=null ? cxSeries[i] : (cxSeries.length? cxSeries[0] : 0);
+      // only sum where both series have a point; otherwise use whichever exists
+      if(svSeries[i]==null && cxSeries[i]==null) vals.push(null);
+      else vals.push((svSeries[i]||0) + (cxSeries[i]||0));
+    }
+  }
+  const labels = ((view==='crypto'? cx.series : s.history)||[]).map(m=>m.month);
+  box.innerHTML = homeTotChart(vals, labels) +
+    `<div class="legend"><span><span class="dot" style="background:${view==='savings'?'#22c55e':view==='crypto'?'#f7931a':'#4f8cff'}"></span>${
+      view==='savings'?'Savings balance':view==='crypto'?'Crypto value':'Total (savings + crypto)'}</span></div>`;
+}
+
+function monthsBuckets(n){
+  const now = new Date(); const out = [];
+  for(let i=n-1;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const ny = d.getMonth()===11 ? d.getFullYear()+1 : d.getFullYear();
+    const nm = d.getMonth()===11 ? 0 : d.getMonth()+1;
+    const eom = new Date(ny, nm, 0).toISOString().slice(0,10);
+    out.push({ ym: d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), eom });
+  }
+  return out;
+}
+
+function homeTotChart(vals, labels){
+  vals = (vals||[]).map(v=>v==null?null:Number(v));
+  if(!vals.some(v=>v!=null)) return '<div class="empty" style="padding:12px 0">No history yet.</div>';
+  const W=560, H=120, padL=6, padR=6, padT=10, padB=18;
+  const known = vals.filter(v=>v!=null);
+  let min = Math.min(...known), max = Math.max(...known);
+  if(min===max){ min-=1; max+=1; }
+  const pad = (max-min)*0.12; min-=pad; max+=pad;
+  const n = vals.length;
+  const x = i => padL + (n<=1?0:(i/(n-1))*(W-padL-padR));
+  const y = v => (H-padB) - ((v-min)/(max-min))*(H-padT-padB);
+  // build contiguous segments (skip nulls)
+  let segs = [], cur = [];
+  vals.forEach((v,i)=>{ if(v==null){ if(cur.length){segs.push(cur);cur=[];} } else cur.push([i,v]); });
+  if(cur.length) segs.push(cur);
+  const areaCol = '#22c55e';
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+  // gridlines
+  [0,0.5,1].forEach(f=>{ const yy=y(min+f*(max-min)); svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 4" opacity="0.6"/>`; });
+  segs.forEach(seg=>{
+    if(seg.length>1){
+      const pts = seg.map(([i,v])=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+      const area = `M ${x(seg[0][0]).toFixed(1)},${(H-padB).toFixed(1)} L ` + pts + ` L ${x(seg[seg.length-1][0]).toFixed(1)},${(H-padB).toFixed(1)} Z`;
+      svg += `<path d="${area}" fill="${areaCol}" opacity="0.12"/>`;
+      svg += `<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
+    }
+    const [li,lv] = seg[seg.length-1];
+    svg += `<circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3" fill="var(--accent)"/>`;
+  });
+  // sparse month labels
+  (labels||[]).forEach((m,i)=>{
+    const step = Math.max(1, Math.round(n/6));
+    if(i%step===0 || i===n-1) svg += `<text x="${x(i).toFixed(1)}" y="${H-4}" fill="var(--mut)" font-size="9.5" text-anchor="middle">${(m||'').slice(2)}</text>`;
+  });
+  svg += '</svg>';
+  return svg;
+}
 
 // ---------- Home snapshot renderers ----------
 async function renderSnapBills(){

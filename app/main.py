@@ -1169,6 +1169,94 @@ def get_savings(accounts: str | None = None):
     }
 
 
+@app.get("/api/savings/history")
+def savings_history(months: int = 12, accounts: str | None = None):
+    """Month-end savings balance walk, for the Home savings-vs-crypto chart.
+
+    Savings moves are transfers (not income/expense), so we reconstruct the
+    balance from the stored anchor + activity after the anchor date, mirroring
+    the /api/savings maths, and emit one point per month-end (plus today).
+    """
+    ids = [int(x) for x in accounts.split(",") if x.strip().isdigit()] if accounts else []
+    where = "WHERE a.kind='savings'"
+    params: list = []
+    if ids:
+        where = "WHERE a.kind='savings' AND a.id IN (%s)" % ",".join("?" * len(ids))
+        params += ids
+    with db() as con:
+        accts = con.execute(f"SELECT * FROM accounts a {where}", params).fetchall()
+        all_txns: list = []
+        anchor_balance = 0.0
+        anchor_date = ""
+        has_anchor = False
+        for a in accts:
+            txns = con.execute(
+                "SELECT date, amount FROM transactions WHERE account_id=? ORDER BY date",
+                (a["id"],),
+            ).fetchall()
+            all_txns += [dict(t) for t in txns]
+            if a["balance"] is not None:
+                has_anchor = True
+                anchor_balance += a["balance"]
+                # use the account's own anchor date; empty -> counts everything after ""
+                ad = a["balance_date"] or ""
+                if ad > anchor_date:
+                    anchor_date = ad
+
+    if not has_anchor:
+        return {"months": [], "current": None, "current_month": None, "txn_net": 0.0}
+
+    all_txns.sort(key=lambda t: t["date"] or "")
+    txn_total = round(sum(t["amount"] for t in all_txns), 2)
+    # activity after the latest anchor date (each account contributes its own)
+    post = round(sum(t["amount"] for t in all_txns if (t["date"] or "") > anchor_date), 2)
+    current = round(anchor_balance + post, 2)
+
+    # build month-end series by walking the anchor forward with dated activity
+    today = date.today()
+    months_out: list = []
+    ends = []
+    for i in range(months - 1, -1, -1):
+        m = today.month - i
+        y = today.year
+        while m <= 0:
+            m += 12
+            y -= 1
+        ny, nm = (y + 1, 1) if m == 12 else (y, m + 1)
+        last_day = (date(ny, nm, 1) - timedelta(days=1)).isoformat()
+        ends.append((f"{y:04d}-{m:02d}", last_day))
+
+    # per-account walk (anchor + post-anchor activity <= month end)
+    for ym, eom in ends:
+        bal = 0.0
+        ok = False
+        with db() as con:
+            for a in accts:
+                if a["balance"] is None:
+                    continue
+                ok = True
+                ad = a["balance_date"] or ""
+                post_amt = con.execute(
+                    "SELECT COALESCE(SUM(amount),0) s FROM transactions "
+                    "WHERE account_id=? AND date > ? AND date <= ?",
+                    (a["id"], ad, eom),
+                ).fetchone()["s"]
+                bal += a["balance"] + (post_amt or 0)
+        months_out.append({"month": ym, "balance": round(bal, 2) if ok else None})
+
+    # make sure the most recent point reflects today's live balance
+    if months_out:
+        months_out[-1]["balance"] = current
+
+    return {
+        "months": months_out,
+        "current": current,
+        "current_month": today.strftime("%Y-%m"),
+        "txn_net": txn_total,
+        "anchor_date": anchor_date,
+    }
+
+
 @app.get("/api/accounts")
 def get_accounts():
     with db() as con:

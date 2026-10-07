@@ -4586,5 +4586,60 @@
     "category": "crypto"
    }
   ]
+ },
+ "savingsHistory": {
+  "months": [
+   {
+    "month": "2025-11",
+    "balance": 25000.0
+   },
+   {
+    "month": "2025-12",
+    "balance": 26120.0
+   },
+   {
+    "month": "2026-01",
+    "balance": 26440.0
+   },
+   {
+    "month": "2026-02",
+    "balance": 27960.0
+   },
+   {
+    "month": "2026-03",
+    "balance": 28130.0
+   },
+   {
+    "month": "2026-04",
+    "balance": 29800.0
+   },
+   {
+    "month": "2026-05",
+    "balance": 30170.0
+   },
+   {
+    "month": "2026-06",
+    "balance": 30340.0
+   },
+   {
+    "month": "2026-07",
+    "balance": 32160.0
+   },
+   {
+    "month": "2026-08",
+    "balance": 32530.0
+   },
+   {
+    "month": "2026-09",
+    "balance": 33600.0
+   },
+   {
+    "month": "2026-10",
+    "balance": 34020.0
+   }
+  ],
+  "current": 34020.0,
+  "current_month": "2026-10",
+  "txn_net": 0.0
  }
 }
