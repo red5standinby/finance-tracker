@@ -207,8 +207,9 @@
   .home-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
   .home-title{font-size:20px;margin:0}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
-  .home-hero{grid-template-columns:repeat(3,1fr)}
-  @media(max-width:760px){.home-hero{grid-template-columns:1fr}}
+  .home-hero{grid-template-columns:repeat(2,1fr)}
+  #hero-savings{grid-column:1/-1}
+  @media(max-width:760px){.home-hero{grid-template-columns:1fr}#hero-savings{grid-column:auto}}
   /* Total savings hero — headline + inline toggle graph + split */
   .hs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
   .hs-seg .seg-btn{padding:3px 9px;font-size:11.5px}
