@@ -224,6 +224,12 @@
   .hero-bills .hs-go span{transition:transform .15s ease}
   .hero-bills:hover .hs-go span{transform:translateX(3px)}
   .hero-bills{display:flex;flex-direction:column}
+  /* budget mini-bar inside the expenses card */
+  .he-budget{margin-top:auto;padding-top:12px}
+  .he-bar{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden}
+  .he-bar>span{display:block;height:100%;border-radius:5px;width:0;background:var(--good);transition:width .3s ease}
+  .he-bud-figs{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px}
+  .he-bud-figs b{font-size:13px}
   /* Snapshot cards (Home) — fintech-style asymmetric grid */
   .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:stretch}
   /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
@@ -903,16 +909,23 @@ window.DEMO = true;
       </div>
     </div>
 
-    <!-- Total monthly expenses -->
+    <!-- Total monthly expenses + budget -->
     <div class="card hero-card" id="hero-expense">
       <div class="lbl">Total monthly expenses</div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
+      <div class="he-budget">
+        <div class="he-bar"><span id="h-bud-bar"></span></div>
+        <div class="he-bud-figs">
+          <span id="h-bud-label" class="muted">No budget set</span>
+          <b id="h-bud-left" style="font-variant-numeric:tabular-nums">—</b>
+        </div>
+      </div>
     </div>
 
-    <!-- Bills hub -->
+    <!-- Bills hub (left to pay + status) -->
     <div class="card hero-card hero-bills clickable" id="hero-bills" onclick="showTab('bills')">
-      <div class="lbl">Bills</div>
+      <div class="lbl">Bills · left to pay</div>
       <div class="val" id="h-bills-hero">$0</div>
       <div class="muted" style="font-size:12px" id="h-bills-hero-sub">—</div>
       <div class="hs-go">Open Bills <span>→</span></div>
@@ -2868,19 +2881,33 @@ async function loadHome(){
   // ---- HERO 1: total savings (savings + crypto), graph toggleable ----
   await renderHomeSavings();
 
-  // ---- HERO 2: total monthly expenses this month ----
+  // ---- HERO 2: total monthly expenses (merged with budget) ----
   {
     const he = $('#h-monthly-exp');
     he.textContent = fmt(expense);
     he.className = 'val ' + (expense > 0 ? 'neg' : '');
     const budTot = (B.totals && B.totals.budget) || 0;
-    const budSpent = (B.totals && B.totals.spent) || 0;
-    $('#h-monthly-exp-sub').textContent = budTot > 0
-      ? fmt(budSpent) + ' of ' + fmt(budTot) + ' budgeted · ' + ym.slice(5) + '/01→today'
-      : 'spent so far in ' + ym;
+    const budSpent = (B.totals && B.totals.spent) || 0;      // spend in budgeted cats
+    const spentAll = (B.totals && B.totals.spent_all) || budSpent;
+    const spentUnbud = Math.max(0, spentAll - budSpent);
+    const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left');
+    if (budTot > 0) {
+      const pct = Math.min(100, Math.round(budSpent / budTot * 100));
+      const remaining = budTot - budSpent;
+      bar.style.width = pct + '%';
+      bar.style.background = budSpent >= budTot ? 'var(--bad)' : (pct >= 80 ? '#eab308' : 'var(--good)');
+      lbl.textContent = fmt(budSpent) + ' of ' + fmt(budTot) + ' budget' + (spentUnbud > 0.01 ? ' · ' + fmt(spentUnbud) + ' outside' : '');
+      left.textContent = (remaining < 0 ? '-' : '') + fmt(remaining) + (remaining < 0 ? ' over' : ' left');
+      left.style.color = remaining < 0 ? 'var(--bad)' : 'var(--good)';
+    } else {
+      bar.style.width = '0';
+      lbl.textContent = 'No budget set · ' + ym.slice(5) + '/01→today';
+      left.textContent = '—'; left.style.color = '';
+    }
+    $('#h-monthly-exp-sub').textContent = 'spent so far in ' + ym;
   }
 
-  // ---- HERO 3: bills hub -> Bills page ----
+  // ---- HERO 3: bills hub (left to pay) -> Bills page ----
   try {
     const BL = await api('/bills');
     const c = BL.counts || {};
@@ -2891,7 +2918,7 @@ async function loadHome(){
     if (c.paid) parts.push(c.paid + ' paid');
     if (c.due) parts.push(c.due + ' due');
     if (c.overdue) parts.push(c.overdue + ' overdue');
-    $('#h-bills-hero-sub').textContent = parts.length ? 'left to pay · ' + parts.join(' · ')
+    $('#h-bills-hero-sub').textContent = parts.length ? 'this month · ' + parts.join(' · ')
       : (c.total ? 'all paid this month 🎉' : 'no bills tracked yet');
   } catch(e){}
 
