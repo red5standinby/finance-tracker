@@ -207,9 +207,16 @@
   .card .val{font-size:28px;font-weight:700;margin-top:6px;font-variant-numeric:tabular-nums}
   .pos{color:var(--good)} .neg{color:var(--bad)}
   /* ---------- HOME / glance screen ---------- */
-  .home-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:4px}
-  .home-title{font-size:20px;margin:0}
+  .home-head,.page-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;
+    margin:2px 0 18px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+  .home-title,.page-title{font-size:23px;font-weight:700;letter-spacing:-.01em;margin:0;line-height:1.15}
+  .page-head .page-sub{color:var(--mut);font-size:13px;font-weight:400;margin-top:3px}
+  .page-head .ph-left{display:flex;flex-direction:column;min-width:0}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
+  @media(max-width:560px){
+    .home-title,.page-title{font-size:20px}
+    .home-head,.page-head{margin-bottom:14px;padding-bottom:10px}
+  }
   .home-hero{grid-template-columns:repeat(2,1fr)}
   #hero-savings{grid-column:1/-1}
   @media(max-width:760px){.home-hero{grid-template-columns:1fr}#hero-savings{grid-column:auto}}
@@ -893,7 +900,7 @@
 <!-- ============ HOME (family glance screen) ============ -->
 <section id="tab-dashboard" class="hidden">
   <div class="home-head">
-    <h2 class="home-title">Home</h2>
+    <h2 class="home-title">Dashboard</h2>
     <div class="home-when" id="home-when"></div>
   </div>
 
@@ -1125,6 +1132,12 @@
 
 <!-- ============ BUDGET ============ -->
 <section id="tab-budget" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Budget</h2>
+      <div class="page-sub">Plan monthly spending by category and track what's left</div>
+    </div>
+  </div>
   <div class="filters">
     <div class="b-filter-row">
       <div class="bg-monthnav">
@@ -1159,6 +1172,12 @@
 
 <!-- ============ TRENDS ============ -->
 <section id="tab-trends" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Trends</h2>
+      <div class="page-sub">Income vs. expenses over time, by month and category</div>
+    </div>
+  </div>
   <div class="filters">
     <label class="f-half">From <input type="date" id="t-start"></label>
     <label class="f-half">To <input type="date" id="t-end"></label>
@@ -1219,8 +1238,13 @@
 
 <!-- ============ SAVINGS ============ -->
 <section id="tab-savings" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Savings &amp; Reserves</h2>
+      <div class="page-sub">Money in/out of savings is a transfer, kept out of cash-flow totals</div>
+    </div>
+  </div>
   <div class="panel">
-    <h2>Savings &amp; Reserves <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· money in/out of savings is a transfer, kept out of cash-flow totals</span></h2>
     <div class="grid cards" id="sav-cards"></div>
   </div>
   <div id="sav-panels"></div>
@@ -1228,6 +1252,12 @@
 
 <!-- ============ CREDIT CARD PAYDOWN ============ -->
 <section id="tab-paydown" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Paydown</h2>
+      <div class="page-sub">Pay off credit cards faster — payoff plans and interest cost</div>
+    </div>
+  </div>
   <!-- Guided intro -->
   <div class="panel pd-intro" id="pd-intro">
     <div class="pd-intro-head">
@@ -1314,6 +1344,12 @@
   </div>
 </section>
 <section id="tab-txns" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Transactions</h2>
+      <div class="page-sub">Search, filter, and re-categorize every transaction</div>
+    </div>
+  </div>
   <div class="panel">
     <div class="toolbar">
       <div class="tb-row">
@@ -1360,6 +1396,12 @@
 
 <!-- ============ RULES ============ -->
 <section id="tab-rules" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Rules</h2>
+      <div class="page-sub">Categories and auto-tagging rules learned from your edits</div>
+    </div>
+  </div>
   <div class="panel">
     <h2>Categories</h2>
     <div class="chips" id="cat-chips"></div>
@@ -1390,6 +1432,12 @@
 
 <!-- ============ IMPORT ============ -->
 <section id="tab-import" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Import</h2>
+      <div class="page-sub">Upload a bank statement (CSV) to add new transactions</div>
+    </div>
+  </div>
   <div class="panel">
     <h2>Upload Bank Statement</h2>
     <div class="filters">
@@ -1434,6 +1482,12 @@
 
 <!-- ============ CRYPTO ============ -->
 <section id="tab-crypto" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Crypto</h2>
+      <div class="page-sub">Holdings, live prices, and market news</div>
+    </div>
+  </div>
   <div class="card cx-portfolio">
     <div class="cx-portfolio-top">
       <div>
