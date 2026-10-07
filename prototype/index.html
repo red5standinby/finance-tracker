@@ -1331,6 +1331,10 @@ window.DEMO = true;
           <button class="seg-btn active" data-v="list" onclick="setBillsView('list')">List</button>
           <button class="seg-btn" data-v="cal" onclick="setBillsView('cal')">Calendar</button>
         </div>
+        <div class="seg b-expand-seg" id="b-expand-seg">
+          <button class="seg-btn" onclick="billsExpandAll(true)" title="Expand all groups">Expand all</button>
+          <button class="seg-btn" onclick="billsExpandAll(false)" title="Collapse all groups">Collapse all</button>
+        </div>
         <input type="search" id="b-search" placeholder="Search a transaction to add…" oninput="billSearch(this.value)"
                style="background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:6px 10px;font-size:13px;min-width:200px">
         <button class="btn sm" onclick="openBillForm()">+ Create a bill</button>
@@ -2810,7 +2814,7 @@ async function loadBills(){
     if(g.flat){ return `<div class="bgroup open" data-key="${g.key}"><div class="bgroup-body">${g.bills.map(r=>billRowHtml(r)).join('')}</div></div>`; }
     const isOpen = _billOpenGroups[g.key] !== undefined
       ? _billOpenGroups[g.key]
-      : (gc.overdue > 0 || gc.due > 0);   // default: open if anything due/overdue
+      : (_billGroupsDefaultOpen !== null ? _billGroupsDefaultOpen : (gc.overdue > 0 || gc.due > 0));   // default: open if anything due/overdue
     if(_billOpenGroups[g.key] === undefined) _billOpenGroups[g.key] = isOpen;  // seed so toggle flips from here
     const badge = gc.overdue ? `<span class="hb-badge over">${gc.overdue} overdue</span>`
                 : gc.due     ? `<span class="hb-badge warn">${gc.due} due</span>`
@@ -2832,11 +2836,28 @@ async function loadBills(){
 // re-render the bills list when a filter/sort/hide control changes (client-side, no refetch)
 function billsFilterChanged(){ loadBills(); }
 
+// ---- Bills: expand / collapse every group at once ----
+function billsExpandAll(open){
+  // flip every group's persisted state, then animate in place (no refetch)
+  Object.keys(_billOpenGroups).forEach(k => { _billOpenGroups[k] = !!open; });
+  const nodes = document.querySelectorAll('#b-list .bgroup');
+  if(nodes.length){
+    nodes.forEach(g => { g.classList.toggle('open', !!open); if(open && !(_billOpenGroups[g.dataset.key]!==undefined)) _billOpenGroups[g.dataset.key] = true; });
+  } else {
+    loadBills();
+  }
+  // any groups that appear later should inherit this state
+  _billGroupsDefaultOpen = !!open;
+}
+let _billGroupsDefaultOpen = null;   // null = auto (per-group), true/false = forced by expand/collapse all
+
 // ---- Bills: List <-> Calendar view ----
 function setBillsView(v){
   _billsView = v;
   document.querySelectorAll('#b-view-seg .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.v===v));
   const list = $('#b-list'), cal = $('#b-cal');
+  const expSeg = $('#b-expand-seg');
+  if(expSeg) expSeg.style.display = (v === 'cal') ? 'none' : '';
   if(v === 'cal'){
     // default the calendar to the same month the bills are for
     if(!_calYM) _calYM = _billsYM || (new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'));
