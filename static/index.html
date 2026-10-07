@@ -8,7 +8,7 @@
 <link rel="alternate icon" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Manrope:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044;
@@ -36,6 +36,22 @@
     --glow:0 0 0 1px rgba(74,168,255,.18),0 14px 40px -18px rgba(74,168,255,.45);
     --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 18px 40px -24px rgba(0,0,0,.8);
     --accent-grad:linear-gradient(135deg,#4aa8ff,#2fb8e6 55%,#2fd6a0);
+  }
+  /* ------- Apiary: near-black + gold "digital stewardship" ops console ------- */
+  html[data-theme="apiary"]{
+    --bg:#0a0a0a; --panel:#101010; --panel2:#151515; --line:rgba(255,255,255,.07);
+    --txt:#ffffff; --mut:rgba(255,255,255,.45); --accent:#c2a378; --good:#22c55e; --bad:#ff4d4d;
+    --tint:194,163,120;
+    --radius:16px; --hdr:64px;
+    --font-ui:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --font-title:"Manrope","Inter",ui-sans-serif,system-ui,sans-serif;
+    --font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;
+    --fs-base:15px; --track-tight:0;
+    --panel-grad:linear-gradient(180deg,#141414 0%,#0e0e0e 100%);
+    --hair:rgba(255,255,255,.05);
+    --glow:0 0 0 1px rgba(194,163,120,.22),0 0 24px -6px rgba(194,163,120,.5);
+    --shadow-card:0 1px 2px 0 rgba(0,0,0,.5);
+    --accent-grad:linear-gradient(135deg,#d9bd8f,#c2a378 55%,#a8884f);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--txt);
@@ -940,6 +956,72 @@
   /* progress/budget fills get a gradient sheen */
   html[data-theme="fintech"] .bud-fill.ok,
   html[data-theme="fintech"] .hb-bar>span{background:var(--accent-grad)}
+
+  /* ============ THEME: Apiary — near-black + gold ops console (scoped) ============ */
+  html[data-theme="apiary"] body{
+    font-family:var(--font-ui);font-size:var(--fs-base);color:#fff;background:#0a0a0a;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  /* titles/tags in Manrope, heavily tracked uppercase */
+  html[data-theme="apiary"] .home-title,
+  html[data-theme="apiary"] .page-title{
+    font-family:var(--font-title);font-weight:700;font-size:17px;letter-spacing:2.8px;
+    text-transform:uppercase;color:#fff}
+  html[data-theme="apiary"] header{
+    background:rgba(10,10,10,.8);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--hair);box-shadow:none}
+  html[data-theme="apiary"] header h1{
+    font-family:var(--font-title);font-weight:700;font-size:14px;letter-spacing:2.8px;text-transform:uppercase}
+  html[data-theme="apiary"] header h1 .lffd{
+    background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  /* nav: quiet uppercase items, gold active with left rule */
+  html[data-theme="apiary"] nav button{
+    font-family:var(--font-title);text-transform:uppercase;letter-spacing:1.6px;font-weight:600;
+    font-size:11px;color:rgba(255,255,255,.4);border-radius:0;position:relative;padding-left:16px}
+  html[data-theme="apiary"] nav button:hover{color:#fff;background:rgba(255,255,255,.03)}
+  html[data-theme="apiary"] nav button.active{
+    color:var(--accent);background:linear-gradient(90deg,rgba(194,163,120,.10),transparent)}
+  html[data-theme="apiary"] nav button.active::before{
+    content:"";position:absolute;left:0;top:6px;bottom:6px;width:2px;background:var(--accent);
+    box-shadow:0 0 8px rgba(194,163,120,.8)}
+  /* panels/cards: hairline glass, gold glow on hover */
+  html[data-theme="apiary"] .panel,
+  html[data-theme="apiary"] .snap,
+  html[data-theme="apiary"] .card{
+    background:var(--panel-grad);border:1px solid var(--hair);box-shadow:var(--shadow-card)}
+  html[data-theme="apiary"] .panel:hover,
+  html[data-theme="apiary"] .snap:hover{border-color:rgba(194,163,120,.30)}
+  html[data-theme="apiary"] .panel:hover{box-shadow:var(--glow)}
+  /* labels: gold mono micro-caps */
+  html[data-theme="apiary"] .card .lbl,
+  html[data-theme="apiary"] .panel-head h2,
+  html[data-theme="apiary"] .snap .panel-head h2{
+    font-family:var(--font-title);text-transform:uppercase;font-weight:700;
+    letter-spacing:2.6px;font-size:10.5px;color:var(--accent)}
+  html[data-theme="apiary"] .panel h2{
+    font-family:var(--font-title);text-transform:uppercase;font-weight:700;
+    letter-spacing:2.6px;font-size:11px;color:var(--accent)}
+  /* figures: Manrope, tight, tabular */
+  html[data-theme="apiary"] .card .val,
+  html[data-theme="apiary"] .hero-card .val,
+  html[data-theme="apiary"] .hero-spotlight .val{
+    font-family:var(--font-title);font-weight:300;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  html[data-theme="apiary"] .snap .snap-big{font-family:var(--font-title);font-weight:300;letter-spacing:-.5px}
+  /* inputs */
+  html[data-theme="apiary"] input,html[data-theme="apiary"] select,html[data-theme="apiary"] textarea{
+    background:#0d0d0d;border:1px solid var(--hair);border-radius:10px}
+  html[data-theme="apiary"] input:focus,html[data-theme="apiary"] select:focus,html[data-theme="apiary"] textarea:focus{
+    outline:none;border-color:rgba(194,163,120,.55);box-shadow:0 0 0 3px rgba(194,163,120,.14)}
+  /* buttons */
+  html[data-theme="apiary"] .btn{border-radius:10px}
+  html[data-theme="apiary"] .btn.primary,
+  html[data-theme="apiary"] .primary{
+    background:var(--accent);color:#141008;font-weight:700;letter-spacing:.4px;border-color:transparent}
+  html[data-theme="apiary"] .btn.primary:hover{filter:brightness(1.08)}
+  /* progress fills: gold */
+  html[data-theme="apiary"] .bud-fill.ok,
+  html[data-theme="apiary"] .hb-bar>span{background:var(--accent-grad)}
+  /* seg controls / pills */
+  html[data-theme="apiary"] .seg button.active{background:var(--accent);color:#141008}
 </style>
 </head>
 <body>
@@ -2422,6 +2504,7 @@ $('#nav-import').onclick = ()=>showTab('import');
 (function(){
   const THEMES = [
     ['fintech', 'Fintech (Pro)', '#4aa8ff'],
+    ['apiary',  'Apiary (Gold)', '#c2a378'],
     ['midnight','Midnight',   '#4f8cff'],
     ['rosegold','Rose Gold',  '#e8a0a8'],
     ['forest',  'Forest',     '#4fbf7a'],
