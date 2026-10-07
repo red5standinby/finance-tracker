@@ -83,6 +83,7 @@ window.DEMO = true;
     else if(path.startsWith('/budgets')) body = d.budgets;
     else if(path.startsWith('/trends')) body = d.trends;
     else if(path.startsWith('/savings/history')) body = d.savingsHistory || {months:[], current:null, current_month:null};
+    else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
     else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
     else if(path.startsWith('/transactions')) body = d.transactions;

@@ -326,6 +326,8 @@
   .hb-bar>span{display:block;height:100%;border-radius:5px}
   .hb-grid{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
   .hb-grid:last-child{border-bottom:none}
+  .hb-grid.clickable{cursor:pointer;border-radius:8px;padding-left:8px;padding-right:8px;margin-left:-8px;margin-right:-8px;transition:background .12s}
+  .hb-grid.clickable:hover{background:rgba(var(--tint),.06)}
   .hb-sub{color:var(--mut);font-size:12px}
   .hero-card.clickable,.hb-row.clickable{cursor:pointer}
   .hb-badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700}
@@ -2865,6 +2867,9 @@ async function loadHome(){
   let D = {}, B = {};
   try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
   try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
+  let PD = {}, SV = {};
+  try { PD = await api('/paydown'); } catch(e){ PD = {}; }
+  try { SV = await api('/savings'); } catch(e){ SV = {}; }
 
   const income = (D.totals && D.totals.income) || 0;
   const expense = (D.totals && D.totals.expense) || 0;
@@ -2918,7 +2923,7 @@ async function loadHome(){
   renderHomeBills(D);      // recurring bills checklist
   renderHomeBudgets(B);    // budget health bars
   renderHomeTopCats(D);    // top spending this month
-  renderHomeCredit(D);     // credit & savings
+  renderHomeCredit(D, PD, SV);  // credit & savings
   renderSnapTxns();        // recent activity rail
   initHomeChartAccts().then(()=>renderHomeChart());   // income vs expenses (quick-view + account scope)
   homeNews('crypto');      // news feed (default: crypto)
@@ -3392,22 +3397,68 @@ function renderHomeTopCats(D){
   }).join('');
 }
 
-function renderHomeCredit(D){
+function renderHomeCredit(D, PD, SV){
   const box = $('#h-credit');
+  if(!box) return;
   const g = D.grade || {};
   const rate = g.rate;
+  PD = PD || {}; SV = SV || {};
+  const pdT = PD.totals || {};
+  const svT = SV.totals || {};
+  const owed = pdT.owed;
+  const svBal = (svT.balance != null) ? svT.balance : null;
+  const nCards = pdT.cards_total || 0;
+  const nSav = (SV.accounts||[]).length;
   let html = '';
-  if(rate != null){
-    const col = rate>=20?'var(--good)':(rate>=0?'#eab308':'var(--bad)');
-    html += `<div class="hb-grid"><div><div class="hb-name">Savings rate this month</div>
-      <div class="hb-sub">net ÷ income</div></div>
-      <div class="hb-amt" style="color:${col};font-size:20px">${rate>=0?'+':''}${rate.toFixed(1)}%</div></div>`;
+
+  // --- Credit card debt ---
+  if(owed != null){
+    const col = owed > 0 ? 'var(--bad)' : 'var(--good)';
+    const sub = [];
+    if(nCards) sub.push(nCards + ' card' + (nCards===1?'':'s'));
+    if(pdT.avg_apr) sub.push('avg ' + pdT.avg_apr.toFixed(1) + '% APR');
+    if(pdT.min) sub.push(fmt(pdT.min) + '/mo min');
+    html += `<div class="hb-grid clickable" onclick="showTab('paydown')"><div>
+      <div class="hb-name">Credit card debt</div>
+      <div class="hb-sub">${sub.join(' · ') || 'no cards'}</div></div>
+      <div class="hb-amt" style="color:${col};font-size:20px">${fmt(owed)}</div></div>`;
   }
+
+  // --- Savings ---
+  if(svBal != null){
+    html += `<div class="hb-grid clickable" onclick="showTab('savings')"><div>
+      <div class="hb-name">Savings</div>
+      <div class="hb-sub">${nSav} account${nSav===1?'':'s'} · ${fmt(svT.deposits||0)} in · ${fmt(svT.interest||0)} interest</div></div>
+      <div class="hb-amt" style="color:var(--good);font-size:20px">${fmt(svBal)}</div></div>`;
+  }
+
+  // --- Net (savings - card debt) ---
+  if(svBal != null && owed != null){
+    const netc = svBal - owed;
+    html += `<div class="hb-grid"><div><div class="hb-name">Savings vs card debt</div>
+      <div class="hb-sub">savings − what you owe</div></div>
+      <div class="hb-amt" style="color:${netc>=0?'var(--good)':'var(--bad)'};font-size:18px">${netc<0?'-':''}${fmt(Math.abs(netc))}</div></div>`;
+  }
+
+  // --- Savings rate ---
+  const rateAll = (g.all_time||{}).rate;
+  const showRate = (rate != null) ? rate : (rateAll != null ? rateAll : null);
+  if(showRate != null){
+    const col = showRate>=20?'var(--good)':(showRate>=0?'#eab308':'var(--bad)');
+    const isAll = (rate == null);
+    html += `<div class="hb-grid"><div><div class="hb-name">Savings rate</div>
+      <div class="hb-sub">${isAll?'all-time':'this month'} · net ÷ income</div></div>
+      <div class="hb-amt" style="color:${col};font-size:18px">${showRate>=0?'+':''}${showRate.toFixed(1)}%</div></div>`;
+  }
+
+  // --- Financial grade ---
   if(g.grade){
-    html += `<div class="hb-grid"><div><div class="hb-name">Financial grade</div>
+    html += `<div class="hb-grid clickable" onclick="showTab('dash')"><div><div class="hb-name">Financial grade</div>
       <div class="hb-sub">all-time: ${esc((g.all_time||{}).grade||'–')}</div></div>
-      <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:22px">${esc(g.grade)}</div></div>`;
+      <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:20px">${esc(g.grade)}</div></div>`;
   }
+
+  // --- Needs review ---
   const unc = D.uncategorized;
   if(unc && unc.count){
     html += `<div class="hb-grid clickable" onclick="showTab('txns')"><div>

@@ -5139,5 +5139,55 @@
    "paid_amount": 4568.85,
    "left": 2544.53
   }
+ },
+ "paydown": {
+  "cards": [
+   {
+    "id": 3,
+    "name": "Chase Mastercard",
+    "bank": "Chase Credit Card",
+    "balance": 288.0,
+    "balance_date": "2026-10-07",
+    "apr": 29.24,
+    "min_payment": 98.0,
+    "payments_count": 32,
+    "payments_total": 15900.12,
+    "payments_last": "2026-09-16",
+    "charges_total": 15878.76
+   },
+   {
+    "id": 14,
+    "name": "Citizens Credit Card",
+    "bank": "citizens",
+    "balance": 2368.0,
+    "balance_date": "2026-10-06",
+    "apr": 27.24,
+    "min_payment": 40.0,
+    "payments_count": 56,
+    "payments_total": 28347.56,
+    "payments_last": "2026-09-28",
+    "charges_total": 30487.26
+   },
+   {
+    "id": 4,
+    "name": "Gemini Credit Card",
+    "bank": "Gemini Credit Card",
+    "balance": 1426.0,
+    "balance_date": "2026-10-07",
+    "apr": 24.99,
+    "min_payment": 54.0,
+    "payments_count": 48,
+    "payments_total": 9136.23,
+    "payments_last": "2026-09-08",
+    "charges_total": 9647.31
+   }
+  ],
+  "totals": {
+   "owed": 4082.0,
+   "min": 192.0,
+   "avg_apr": 26.6,
+   "cards_with_balance": 3,
+   "cards_total": 3
+  }
  }
 }
