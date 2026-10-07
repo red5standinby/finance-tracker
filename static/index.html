@@ -76,7 +76,7 @@
   .inline-pair{grid-template-columns:1fr 1fr;align-items:stretch;margin-top:16px}
   .inline-pair > .panel{margin-top:0}
   .inline-pair > .card{margin-top:0}
-  .inline-pair > .card,.inline-pair > .panel{display:flex;flex-direction:column}
+  .inline-pair > .card,.inline-pair > .panel{display:flex;flex-direction:column;min-width:0}
   .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
   .panel-head h2{margin:0}
   .cat-pager{display:flex;align-items:center;gap:6px}
@@ -455,9 +455,15 @@
   .pd-plan-tbl td{padding:8px 12px}
   .pd-badge{font-size:11px;padding:2px 8px;border-radius:10px;background:var(--panel2);color:var(--mut)}
   .pd-card-inputs{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px}
-  .pd-card-inputs label{display:flex;flex-direction:column;gap:4px;color:var(--mut);font-size:11.5px}
+  .pd-card-inputs label{display:flex;flex-direction:column;gap:4px;color:var(--mut);font-size:11.5px;min-width:0}
   .pd-card-inputs input{width:110px;height:34px;font-size:14px}
   .pd-card-total{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+  .pd-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .pd-card-name{font-weight:700;font-size:15px;line-height:1.25}
+  .pd-card-bank{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.4px}
+  .pd-card-amt{margin:12px 0 2px}
+  .pd-card-sub{color:var(--mut);font-size:12px}
+  .pd-x{flex:0 0 auto;width:30px;height:30px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}
 
   /* ---------- transactions toolbar ---------- */
   .toolbar{display:flex;flex-direction:column;gap:12px}
@@ -591,17 +597,39 @@
     .bulkbar .btn{flex:1 1 auto}
     table{font-size:13px}
     th,td{padding:11px 9px}
+    .acct-wrap th,.acct-wrap td{padding:9px 6px}
+    #tab-dash .grid.inline-pair{grid-template-columns:1fr}
     .panel{padding:16px}
     .legend{gap:12px}
     .pie-wrap{gap:16px;justify-content:center}
     #t-pie{flex:1 1 100%;max-width:340px;margin:0 auto}
     .pie-legend{flex:1 1 100%;max-width:none}
+    /* paydown tab: prevent horizontal slide on mobile */
+    #pd-cards{grid-template-columns:1fr}
+    .pd-card-inputs{gap:10px}
+    .pd-card-inputs label{flex:1 1 calc(50% - 5px);min-width:0}
+    .pd-card-inputs input{width:100%;min-width:0}
+    .pd-card-inputs label.pd-save{flex:1 1 100%}
+    .pd-card-inputs label.pd-save .btn{width:100%}
+    .pd-ctrl{gap:14px}
+    .pd-ctrl label.pd-extra{flex:1 1 100%}
+    .pd-ctrl label.pd-extra input[type=range]{width:auto;flex:1;min-width:0}
+    .pd-out{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+    #tab-paydown .pd-plan-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+    #tab-paydown .seg{flex-wrap:wrap}
+    #tab-paydown .panel-head{gap:10px}
   }
   @media (max-width: 480px){
     .bar-row{grid-template-columns:84px 1fr 68px;font-size:11px}
     .filters label,.tb-row label{flex:1 1 100%}
     header h1{font-size:14px}
     input[type=checkbox]{width:22px;height:22px;flex:0 0 22px;min-width:22px}
+    /* paydown: full-width inputs on small phones */
+    .pd-card-inputs label{flex:1 1 100%}
+    .pd-card-total{font-size:22px}
+    .pd-out{grid-template-columns:1fr 1fr}
+    /* keep 2-up card grids from overflowing narrow phones */
+    .cards{grid-template-columns:1fr}
   }
   /* keep long tables scrollable rather than stretching the page */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}  img,svg{max-width:100%}
@@ -3439,20 +3467,20 @@ function renderPdCards(){
     const bal = c.balance;
     const last = c.balance_date ? ' <span class="muted">· updated '+c.balance_date+'</span>' : '';
     return `<div class="card pd-card" data-id="${c.id}">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
-        <div>
-          <div class="muted" style="font-size:12px">${esc(c.bank||'')}</div>
-          <div style="font-weight:700;font-size:15px">${esc(c.name)}</div>
+      <div class="pd-card-head">
+        <div style="min-width:0">
+          <div class="pd-card-bank">${esc(c.bank||'Card')}</div>
+          <div class="pd-card-name">${esc(c.name)}</div>
         </div>
-        <button class="btn ghost sm" onclick="showTab('txns')" title="View transactions">↗</button>
+        <button class="btn ghost sm pd-x" onclick="showTab('txns')" title="View transactions">↗</button>
       </div>
-      <div style="margin:12px 0 4px"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'—':fmt(bal)}</span>${last}</div>
-      <div class="muted" style="font-size:12px">${c.payments_count} payments · ${fmt(c.payments_total)} paid${c.payments_last?' (last '+c.payments_last+')':''}</div>
+      <div class="pd-card-amt"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'—':fmt(bal)}</span>${last}</div>
+      <div class="pd-card-sub">${c.payments_count} payments · ${fmt(c.payments_total)} paid${c.payments_last?' · last '+c.payments_last:''}</div>
       <div class="pd-card-inputs">
         <label>Balance <input type="number" step="0.01" id="pd-bal-${c.id}" value="${bal==null?'':bal}" placeholder="0.00"></label>
         <label>APR % <input type="number" step="0.01" id="pd-apr-${c.id}" value="${c.apr==null?'':c.apr}" placeholder="e.g. 24.99"></label>
         <label>Min pmt <input type="number" step="0.01" id="pd-min-${c.id}" value="${c.min_payment==null?'':c.min_payment}" placeholder="e.g. 35"></label>
-        <label>&nbsp;<button class="btn" style="height:34px" onclick="savePdCard(${c.id})">Save</button></label>
+        <label class="pd-save">&nbsp;<button class="btn" style="height:34px" onclick="savePdCard(${c.id})">Save</button></label>
       </div>
     </div>`;
   }).join('');
@@ -3583,9 +3611,9 @@ function renderPdPlan(){
       <td class="amt">${fmt(pc.interest)}</td>
     </tr>`;
   }).join('');
-  box.insertAdjacentHTML('beforeend', `<table class="pd-plan-tbl"><thead><tr>
+  box.insertAdjacentHTML('beforeend', `<div class="pd-plan-wrap"><table class="pd-plan-tbl"><thead><tr>
     <th>#</th><th>Card (${PD.method})</th><th>Balance</th><th>Paid off</th><th style="text-align:right">Interest</th>
-    </tr></thead><tbody>${rows}</tbody></table>`);
+    </tr></thead><tbody>${rows}</tbody></table></div>`);
 }
 
 async function loadPdHistory(acctId){
