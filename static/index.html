@@ -209,18 +209,23 @@
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
   .home-hero{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
   /* Snapshot cards (Home) — fintech-style asymmetric grid */
-  .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:start}
+  .snap-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;margin-top:16px;align-items:stretch}
   /* spans: activity rail (2) + bills spotlight (4) / trends (3) + savings (3) / crypto (full) */
   .span-txns{grid-column:span 2;grid-row:span 2}
-  .span-bills{grid-column:span 4}
+  .span-bills{grid-column:span 3}
   .span-trends{grid-column:span 4}
-  .span-savings{grid-column:span 2}
+  .span-savings{grid-column:span 3}
   .span-crypto{grid-column:span 4}
   .span-txns-wide{grid-column:span 6}
-  .span-topspend{grid-column:span 2}
-  .span-recent{grid-column:span 2}
-  .span-credit{grid-column:span 2}
+  .span-topspend{grid-column:span 3}
+  .span-recent{grid-column:span 3}
+  .span-credit{grid-column:span 3}
+  .span-news{grid-column:span 3}
   .span-chart{grid-column:span 6}
+  /* even out heights within the Home grid */
+  .snap-grid > .snap{height:100%}
+  /* news feed: keep the bottom row compact */
+  #h-news{overflow-y:auto;max-height:280px;padding-right:4px}
   .snap{display:flex;flex-direction:column}
   .snap>.empty,.snap>div[id^="h-snap"]{flex:1}
   .snap .panel-head{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(36,48,68,.6)}
@@ -252,12 +257,12 @@
   @media(max-width:980px){
     .snap-grid{grid-template-columns:repeat(2,1fr)}
     .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide,
-    .span-topspend,.span-recent,.span-credit,.span-chart{grid-column:span 2;grid-row:auto}
+    .span-topspend,.span-recent,.span-credit,.span-chart,.span-news{grid-column:span 2;grid-row:auto}
   }
   @media(max-width:620px){
     .snap-grid{grid-template-columns:1fr}
     .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide,
-    .span-topspend,.span-recent,.span-credit,.span-chart{grid-column:span 1}
+    .span-topspend,.span-recent,.span-credit,.span-chart,.span-news{grid-column:span 1}
   }
   .hero-card{border-left:3px solid var(--accent)}
   .hero-card.bad{border-left-color:var(--bad)}
@@ -646,9 +651,9 @@
 <div class="layout">
   <aside class="sidebar" id="sidebar">
     <nav>
-      <button data-tab="home"><span class="ic">⌂</span><span class="lb">Home</span></button>
+      <button data-tab="home" class="active"><span class="ic">⌂</span><span class="lb">Home</span></button>
       <button data-tab="bills"><span class="ic">▤</span><span class="lb">Bills</span></button>
-      <button data-tab="dash" class="active"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
+      <button data-tab="dash"><span class="ic">◫</span><span class="lb">Dashboard</span></button>
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
@@ -706,7 +711,7 @@
       <div id="h-budgets"><div class="empty">No budgets set</div></div>
     </div>
 
-    <!-- Top spending this month -->
+    <!-- Top spending this month (span3) -->
     <div class="panel snap span-topspend">
       <div class="panel-head">
         <h2><span class="ic-lg">↗</span> Top spending</h2>
@@ -724,16 +729,7 @@
       <div id="h-snap-txns"><div class="empty">Loading…</div></div>
     </div>
 
-    <!-- Credit & savings -->
-    <div class="panel snap span-credit">
-      <div class="panel-head">
-        <h2><span class="ic-lg">◈</span> Credit &amp; savings</h2>
-        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
-      </div>
-      <div id="h-credit"><div class="empty">No data</div></div>
-    </div>
-
-    <!-- Income vs expenses chart w/ quick range toggle -->
+    <!-- Income vs expenses chart w/ quick range toggle (full width) -->
     <div class="panel snap span-chart">
       <div class="panel-head">
         <h2><span class="ic-lg">◫</span> Income vs expenses</h2>
@@ -744,6 +740,27 @@
         </div>
       </div>
       <div id="h-month-chart"><div class="empty">Loading…</div></div>
+    </div>
+
+    <!-- Credit & savings (moved to bottom) -->
+    <div class="panel snap span-credit">
+      <div class="panel-head">
+        <h2><span class="ic-lg">◈</span> Credit &amp; savings</h2>
+        <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
+      </div>
+      <div id="h-credit"><div class="empty">No data</div></div>
+    </div>
+
+    <!-- News feed (next to Credit & savings) -->
+    <div class="panel snap span-news">
+      <div class="panel-head">
+        <h2><span class="ic-lg">◔</span> News</h2>
+        <div class="seg" id="h-news-seg">
+          <button class="seg-btn active" data-cat="crypto" onclick="homeNews('crypto')">Crypto</button>
+          <button class="seg-btn" data-cat="gov" onclick="homeNews('gov')">Policy</button>
+        </div>
+      </div>
+      <div id="h-news"><div class="empty">Loading headlines…</div></div>
     </div>
 
   </div>
@@ -2472,6 +2489,29 @@ async function loadHome(){
   renderHomeCredit(D);     // credit & savings
   renderSnapTxns();        // recent activity rail
   renderHomeChart();       // income vs expenses (quick-view)
+  homeNews('crypto');      // news feed (default: crypto)
+}
+
+// ---------- Home news feed (reuses /crypto/news) ----------
+let _homeNewsCat = 'crypto';
+async function homeNews(cat){
+  _homeNewsCat = cat;
+  const seg = document.getElementById('h-news-seg');
+  if(seg) seg.querySelectorAll('.seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.cat===cat));
+  const box = $('#h-news');
+  if(!box) return;
+  box.innerHTML = '<div class="empty">Loading headlines…</div>';
+  try{
+    const d = await api('/crypto/news?category='+cat+'&limit=6');
+    const items = d.items || [];
+    if(!items.length){ box.innerHTML = '<div class="empty">No headlines right now.</div>'; return; }
+    box.innerHTML = items.map(i=>{
+      const t = i.published ? new Date(i.published) : null;
+      const when = t && !isNaN(t) ? t.toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+      return `<div class="cx-news-item"><a href="${i.url}" target="_blank" rel="noopener">${esc(i.title)}</a>`+
+        `<div class="cx-news-meta">${esc(i.source||'')}${when?' · '+when:''}</div></div>`;
+    }).join('');
+  }catch(e){ box.innerHTML = '<div class="empty">News unavailable.</div>'; }
 }
 
 // ---------- Home income-vs-expense chart w/ quick ranges ----------
@@ -3551,8 +3591,8 @@ async function toggleAcct(id, include){
   $('#d-quick').value='all';
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['dash','trends','savings','txns','rules','crypto','import'].includes(h)) showTab(h);
-  else loadDashboard();
+  if(h && ['home','dash','trends','savings','txns','rules','crypto','import'].includes(h)) showTab(h);
+  else showTab('home');
 })();
 </script>
 </body>
