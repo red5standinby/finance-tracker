@@ -217,6 +217,10 @@
   .span-savings{grid-column:span 2}
   .span-crypto{grid-column:span 4}
   .span-txns-wide{grid-column:span 6}
+  .span-topspend{grid-column:span 2}
+  .span-recent{grid-column:span 2}
+  .span-credit{grid-column:span 2}
+  .span-chart{grid-column:span 6}
   .snap{display:flex;flex-direction:column}
   .snap>.empty,.snap>div[id^="h-snap"]{flex:1}
   .snap .panel-head{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(36,48,68,.6)}
@@ -247,11 +251,13 @@
   .span-crypto .snap-txn{flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:none}
   @media(max-width:980px){
     .snap-grid{grid-template-columns:repeat(2,1fr)}
-    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide{grid-column:span 2;grid-row:auto}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide,
+    .span-topspend,.span-recent,.span-credit,.span-chart{grid-column:span 2;grid-row:auto}
   }
   @media(max-width:620px){
     .snap-grid{grid-template-columns:1fr}
-    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide{grid-column:span 1}
+    .span-txns,.span-bills,.span-trends,.span-savings,.span-crypto,.span-txns-wide,
+    .span-topspend,.span-recent,.span-credit,.span-chart{grid-column:span 1}
   }
   .hero-card{border-left:3px solid var(--accent)}
   .hero-card.bad{border-left-color:var(--bad)}
@@ -420,6 +426,11 @@
   .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--mut)}
   .legend span{display:flex;align-items:center;gap:6px}
   .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 auto}
+  /* segmented quick-view control (income/expense range) */
+  .seg{display:inline-flex;background:rgba(var(--tint),.08);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px}
+  .seg-btn{background:transparent;border:0;color:var(--mut);font-size:12px;font-weight:600;padding:4px 11px;border-radius:7px;cursor:pointer;letter-spacing:.3px}
+  .seg-btn:hover{color:var(--txt)}
+  .seg-btn.active{background:var(--accent);color:#fff}
 
   /* ---------- transactions toolbar ---------- */
   .toolbar{display:flex;flex-direction:column;gap:12px}
@@ -777,16 +788,25 @@ window.DEMO = true;
     </div>
 
     <!-- Top spending this month -->
-    <div class="panel snap span-trends">
+    <div class="panel snap span-topspend">
       <div class="panel-head">
-        <h2><span class="ic-lg">↗</span> Top spending this month</h2>
+        <h2><span class="ic-lg">↗</span> Top spending</h2>
         <button class="btn ghost sm" onclick="showTab('dash')">Open ↗</button>
       </div>
       <div id="h-topcat"><div class="empty">No spending yet</div></div>
     </div>
 
+    <!-- Recent activity (moved next to Top spending) -->
+    <div class="panel snap span-recent">
+      <div class="panel-head">
+        <h2><span class="ic-lg">≡</span> Recent activity</h2>
+        <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
+      </div>
+      <div id="h-snap-txns"><div class="empty">Loading…</div></div>
+    </div>
+
     <!-- Credit & savings -->
-    <div class="panel snap span-savings">
+    <div class="panel snap span-credit">
       <div class="panel-head">
         <h2><span class="ic-lg">◈</span> Credit &amp; savings</h2>
         <button class="btn ghost sm" onclick="showTab('savings')">Open ↗</button>
@@ -794,13 +814,17 @@ window.DEMO = true;
       <div id="h-credit"><div class="empty">No data</div></div>
     </div>
 
-    <!-- Recent activity (rail, full width bottom) -->
-    <div class="panel snap span-txns-wide">
+    <!-- Income vs expenses chart w/ quick range toggle -->
+    <div class="panel snap span-chart">
       <div class="panel-head">
-        <h2><span class="ic-lg">≡</span> Recent activity</h2>
-        <button class="btn ghost sm" onclick="showTab('txns')">Open ↗</button>
+        <h2><span class="ic-lg">◫</span> Income vs expenses</h2>
+        <div class="seg" id="h-chart-seg">
+          <button class="seg-btn" data-m="6" onclick="setHomeChart(6)">6M</button>
+          <button class="seg-btn active" data-m="12" onclick="setHomeChart(12)">12M</button>
+          <button class="seg-btn" data-m="24" onclick="setHomeChart(24)">24M</button>
+        </div>
       </div>
-      <div id="h-snap-txns"><div class="empty">Loading…</div></div>
+      <div id="h-month-chart"><div class="empty">Loading…</div></div>
     </div>
 
   </div>
@@ -2528,7 +2552,60 @@ async function loadHome(){
   renderHomeTopCats(D);    // top spending this month
   renderHomeCredit(D);     // credit & savings
   renderSnapTxns();        // recent activity rail
+  renderHomeChart();       // income vs expenses (quick-view)
 }
+
+// ---------- Home income-vs-expense chart w/ quick ranges ----------
+let _homeChartMonths = 12;   // current quick-view range
+async function setHomeChart(n){
+  _homeChartMonths = n;
+  document.querySelectorAll('#h-chart-seg .seg-btn').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.m)===n);
+  });
+  await renderHomeChart();
+}
+async function renderHomeChart(){
+  const box = $('#h-month-chart');
+  if(!box) return;
+  const n = _homeChartMonths;
+  // fetch a wide window; slice to the selected range client-side
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth()-(n-1), 1);
+  const startStr = start.getFullYear()+'-'+String(start.getMonth()+1).padStart(2,'0')+'-01';
+  const endStr = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-31';
+  let D = {};
+  try { D = await api('/dashboard?start='+startStr+'&end='+endStr); } catch(e){ D = {}; }
+  let months = (D.months||[]).slice(-n);
+  if(!months.length){ box.innerHTML = '<div class="empty">No data</div>'; return; }
+  const W=1160, H=250, padL=52, padR=14, padT=16, padB=30;
+  const bw = (W-padL-padR)/months.length;
+  const max = Math.max(1, ...months.map(m=>Math.max(m.income||0,m.expense||0)));
+  const yScale = v => (H-padB) - (v/max)*(H-padT-padB);
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+  // gridlines + y labels
+  for(let g=0; g<=4; g++){
+    const val = max*g/4, y = yScale(val);
+    svg += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-dasharray="${g?'3 4':'0'}"/>`;
+    svg += `<text x="${padL-8}" y="${(y+3).toFixed(1)}" fill="var(--mut)" font-size="10" text-anchor="end">${fmtShort(val)}</text>`;
+  }
+  const ih = bw*0.30, gap = bw*0.06;
+  months.forEach((m,i)=>{
+    const cx = padL + i*bw + bw/2;
+    const inc = m.income||0, exp = m.expense||0;
+    const ix = cx - ih - gap/2, ex = cx + gap/2;
+    svg += `<rect x="${ix.toFixed(1)}" y="${yScale(inc).toFixed(1)}" width="${ih.toFixed(1)}" height="${((H-padB)-yScale(inc)).toFixed(1)}" rx="2" fill="#22c55e"/>`;
+    svg += `<rect x="${ex.toFixed(1)}" y="${yScale(exp).toFixed(1)}" width="${ih.toFixed(1)}" height="${((H-padB)-yScale(exp)).toFixed(1)}" rx="2" fill="#ef4444"/>`;
+    // label: sparse when many months
+    const showLbl = months.length<=12 || i%2===0;
+    if(showLbl) svg += `<text x="${cx.toFixed(1)}" y="${H-padB+15}" fill="var(--mut)" font-size="10" text-anchor="middle">${m.month.slice(2)}</text>`;
+  });
+  svg += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--line)"/>`;
+  svg += '</svg>';
+  box.innerHTML = svg +
+    `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>`+
+    `<span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
+}
+function fmtShort(v){ v=Math.abs(v||0); if(v>=1000) return '$'+(v/1000).toFixed(v>=10000?0:1)+'k'; return '$'+Math.round(v); }
 
 // ---------- Home snapshot renderers ----------
 async function renderSnapBills(){
