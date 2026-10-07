@@ -2951,9 +2951,18 @@ async function loadHome(){
   let D = {}, B = {};
   try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
   try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
-  let PD = {}, SV = {};
+  let PD = {}, SV = {}, CX = null;
   try { PD = await api('/paydown'); } catch(e){ PD = {}; }
   try { SV = await api('/savings'); } catch(e){ SV = {}; }
+  try {
+    const hold = await api('/crypto/holdings');
+    const mk = await api('/crypto/markets?ids=' + encodeURIComponent((hold||[]).map(h=>h.coin_id).join(',')));
+    const by = Object.fromEntries(((mk&&mk.coins)||[]).map(c=>[c.id,c]));
+    let cxv = 0, priced = false;
+    (hold||[]).forEach(h=>{ const c = by[h.coin_id];
+      if(c && c.price != null){ cxv += (h.amount||0)*c.price; priced = true; } });
+    CX = { value: priced ? Math.round(cxv*100)/100 : null, count: (hold||[]).length };
+  } catch(e){ CX = null; }
 
   const income = (D.totals && D.totals.income) || 0;
   const expense = (D.totals && D.totals.expense) || 0;
@@ -3007,7 +3016,7 @@ async function loadHome(){
   renderHomeBills(D);      // recurring bills checklist
   renderHomeBudgets(B);    // budget health bars
   renderHomeTopCats(D);    // top spending this month
-  renderHomeCredit(D, PD, SV);  // credit & savings
+  renderHomeCredit(D, PD, SV, CX);  // credit & savings
   renderSnapTxns();        // recent activity rail
   initHomeChartAccts().then(()=>renderHomeChart());   // income vs expenses (quick-view + account scope)
   homeNews('crypto');      // news feed (default: crypto)
@@ -3481,7 +3490,7 @@ function renderHomeTopCats(D){
   }).join('');
 }
 
-function renderHomeCredit(D, PD, SV){
+function renderHomeCredit(D, PD, SV, CX){
   const box = $('#h-credit');
   if(!box) return;
   const g = D.grade || {};
@@ -3490,7 +3499,9 @@ function renderHomeCredit(D, PD, SV){
   const pdT = PD.totals || {};
   const svT = SV.totals || {};
   const owed = pdT.owed;
-  const svBal = (svT.balance != null) ? svT.balance : null;
+  const cash = (svT.balance != null) ? svT.balance : null;
+  const cx = CX && CX.value != null ? CX.value : null;
+  const totalSav = (cash != null || cx != null) ? (cash||0) + (cx||0) : null;
   const nCards = pdT.cards_total || 0;
   const nSav = (SV.accounts||[]).length;
   let html = '';
@@ -3508,19 +3519,31 @@ function renderHomeCredit(D, PD, SV){
       <div class="hb-amt" style="color:${col};font-size:20px">${fmt(owed)}</div></div>`;
   }
 
-  // --- Savings ---
-  if(svBal != null){
+  // --- Total savings = cash + crypto ---
+  if(totalSav != null){
+    const parts = [];
+    if(cash != null) parts.push(fmt(cash) + ' cash');
+    if(cx != null) parts.push(fmt(cx) + ' crypto');
     html += `<div class="hb-grid clickable" onclick="showTab('savings')"><div>
-      <div class="hb-name">Savings</div>
-      <div class="hb-sub">${nSav} account${nSav===1?'':'s'} · ${fmt(svT.deposits||0)} in · ${fmt(svT.interest||0)} interest</div></div>
-      <div class="hb-amt" style="color:var(--good);font-size:20px">${fmt(svBal)}</div></div>`;
+      <div class="hb-name">Total savings</div>
+      <div class="hb-sub">${parts.join(' + ') || nSav + ' account' + (nSav===1?'':'s')}</div></div>
+      <div class="hb-amt" style="color:var(--good);font-size:20px">${fmt(totalSav)}</div></div>`;
+    // breakdown sub-rows (keeps cash vs crypto legible)
+    const subrow = (label, val, extra, onclick) => `<div class="hb-grid clickable" onclick="${onclick}" style="padding-top:2px;padding-bottom:2px"><div>
+      <div class="hb-name" style="font-size:12.5px">${label}</div>
+      <div class="hb-sub">${extra}</div></div>
+      <div class="hb-amt" style="font-size:13.5px;font-weight:600">${val}</div></div>`;
+    if(cash != null) html += subrow('· Cash / savings', fmt(cash),
+      `${nSav} account${nSav===1?'':'s'} · ${fmt(svT.interest||0)} interest`, "showTab('savings')");
+    if(cx != null) html += subrow('· Crypto', fmt(cx),
+      `${CX.count||0} holding${(CX.count||0)===1?'':'s'}`, "showTab('crypto')");
   }
 
-  // --- Net (savings - card debt) ---
-  if(svBal != null && owed != null){
-    const netc = svBal - owed;
-    html += `<div class="hb-grid"><div><div class="hb-name">Savings vs card debt</div>
-      <div class="hb-sub">savings − what you owe</div></div>
+  // --- Net (total savings - card debt) ---
+  if(totalSav != null && owed != null){
+    const netc = totalSav - owed;
+    html += `<div class="hb-grid"><div><div class="hb-name">Net position</div>
+      <div class="hb-sub">total savings − what you owe</div></div>
       <div class="hb-amt" style="color:${netc>=0?'var(--good)':'var(--bad)'};font-size:18px">${netc<0?'-':''}${fmt(Math.abs(netc))}</div></div>`;
   }
 
