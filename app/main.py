@@ -686,16 +686,26 @@ def _detect_bill_candidates(con):
 def _bill_status(con, bill, month):
     """Compute this month's paid/due/overdue state for one bill.
 
-    Matches a txn whose cleaned merchant *contains* the bill's match key
+    Matches txns whose cleaned merchant *contains* the bill's match key
     (case-insensitive) — merchants are often fragmented across variants
     (NETFLIX 1 / NETFLIX COM ...), so substring matching is intentional.
-    Returns paid (with date+amount) or a due-state derived from due_day.
+
+    Installments: when payments_per_month > 1 (e.g. weekly daycare), the
+    bill is 'paid' once that many matching charges are found this month,
+    'partial' while fewer have posted (paid_amount sums what came in),
+    and due/overdue/upcoming otherwise.
     """
     key = (bill["match_cleaned"] or "").lower()
-    row = con.execute("""
+    try:
+        per_month = int(bill["payments_per_month"] or 1)
+    except (KeyError, IndexError, TypeError):
+        per_month = 1
+    if per_month < 1:
+        per_month = 1
+    rows = con.execute("""
         SELECT t.date, t.amount FROM transactions t
         WHERE lower(t.cleaned) LIKE ? AND substr(t.date,1,7) = ? AND t.amount < 0
-        ORDER BY t.date DESC LIMIT 1""", (f"%{key}%", month)).fetchone()
+        ORDER BY t.date DESC""", (f"%{key}%", month)).fetchall()
     today = date.today()
     status, paid_date, paid_amount = "due", None, None
     manual = None
@@ -706,9 +716,22 @@ def _bill_status(con, bill, month):
     if manual == month:
         # user hand-marked this month paid (cash / other account / early)
         return {"status": "paid", "paid_date": None, "paid_amount": bill["expected_amount"],
-                "variance": None, "manual": True}
-    if row:
-        status, paid_date, paid_amount = "paid", row["date"], round(-row["amount"], 2)
+                "variance": None, "manual": True,
+                "paid_count": per_month, "expected_count": per_month,
+                "remaining_count": 0, "per_payment": round((bill["expected_amount"] or 0)/per_month, 2)}
+    found = len(rows)
+    paid_sum = round(sum(-r["amount"] for r in rows), 2)
+    per_payment = round((bill["expected_amount"] or 0) / per_month, 2)
+    if found >= per_month:
+        # fully paid: count the most-recent `per_month` charges
+        status = "paid"
+        paid_date = rows[0]["date"]
+        paid_amount = round(sum(-r["amount"] for r in rows[:per_month]), 2)
+    elif found > 0 and per_month > 1:
+        # some installments in — still accruing
+        status = "partial"
+        paid_date = rows[0]["date"]
+        paid_amount = paid_sum
     else:
         day = bill["due_day"] or 1
         try:
@@ -727,8 +750,12 @@ def _bill_status(con, bill, month):
         "status": status,
         "paid_date": paid_date,
         "paid_amount": paid_amount,
-        "variance": round(paid_amount - bill["expected_amount"], 2) if paid_amount is not None else None,
+        "variance": round(paid_amount - bill["expected_amount"], 2) if (paid_amount is not None and status == "paid") else None,
         "manual": False,
+        "paid_count": min(found, per_month) if status in ("paid", "partial") else 0,
+        "expected_count": per_month,
+        "remaining_count": max(0, per_month - found),
+        "per_payment": per_payment,
     }
 
 
@@ -759,6 +786,7 @@ class BillIn(BaseModel):
     kind: str | None = None
     category_key: str | None = None
     active: bool | None = None
+    payments_per_month: int | None = None
 
 
 @app.get("/api/bills")
@@ -777,15 +805,19 @@ def get_bills(month: str | None = None, include_inactive: bool = False):
             out.append(d)
     counts = {
         "paid": sum(1 for r in out if r["status"] == "paid"),
-        "due": sum(1 for r in out if r["status"] in ("due", "upcoming")),
+        "partial": sum(1 for r in out if r["status"] == "partial"),
+        "due": sum(1 for r in out if r["status"] in ("due", "upcoming", "partial")),
         "overdue": sum(1 for r in out if r["status"] in ("overdue", "missed")),
         "total": len(out),
         "expected": round(sum(r.get("expected_amount") or 0 for r in out), 2),
-        "paid_amount": round(sum((r.get("paid_amount") or 0) for r in out if r["status"] == "paid"), 2),
-        "left": round(sum((r.get("expected_amount") or 0) for r in out if r["status"] != "paid"), 2),
+        "paid_amount": round(sum((r.get("paid_amount") or 0) for r in out if r["status"] in ("paid", "partial")), 2),
+        "left": round(sum(
+            (r.get("expected_amount") or 0) - (r.get("paid_amount") or 0) if r["status"] == "partial"
+            else (0 if r["status"] == "paid" else (r.get("expected_amount") or 0))
+            for r in out), 2),
     }
-    # surface overdue first, then due, then paid
-    order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "paid": 4}
+    # surface overdue first, then due/partial, then paid
+    order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "partial": 3, "paid": 4}
     out.sort(key=lambda r: (order.get(r["status"], 9), r["due_day"] or 0))
     return {"month": month, "rows": out, "counts": counts}
 
@@ -848,7 +880,8 @@ def bills_grouped(month: str | None = None, include_inactive: bool = False):
             "bills": items,
             "counts": {
                 "paid": sum(1 for r in items if r["status"] == "paid"),
-                "due": sum(1 for r in items if r["status"] in ("due", "upcoming")),
+                "partial": sum(1 for r in items if r["status"] == "partial"),
+                "due": sum(1 for r in items if r["status"] in ("due", "upcoming", "partial")),
                 "overdue": sum(1 for r in items if r["status"] in ("overdue", "missed")),
                 "total": len(items),
                 "expected": round(sum(r.get("expected_amount") or 0 for r in items), 2),
@@ -863,14 +896,16 @@ def add_bill(body: BillIn):
     if not key:
         raise HTTPException(400, "name or match_cleaned required")
     with db() as con:
-        con.execute("""INSERT INTO bills(name,match_cleaned,expected_amount,due_day,kind,category_key,active)
-            VALUES(?,?,?,?,?,?,1)
+        con.execute("""INSERT INTO bills(name,match_cleaned,expected_amount,due_day,kind,category_key,active,payments_per_month)
+            VALUES(?,?,?,?,?,?,1,?)
             ON CONFLICT(match_cleaned) DO UPDATE SET
               name=excluded.name, expected_amount=excluded.expected_amount,
               due_day=excluded.due_day, kind=excluded.kind,
-              category_key=excluded.category_key, active=1""",
+              category_key=excluded.category_key, active=1,
+              payments_per_month=excluded.payments_per_month""",
             (body.name or key.title(), key, body.expected_amount or 0,
-             body.due_day or 0, body.kind or "bill", body.category_key or ""))
+             body.due_day or 0, body.kind or "bill", body.category_key or "",
+             body.payments_per_month or 1))
     return {"ok": True, "match_cleaned": key}
 
 
@@ -886,6 +921,7 @@ def patch_bill(bill_id: int, body: BillIn):
         if body.kind is not None:            sets.append("kind=?");            params.append(body.kind)
         if body.category_key is not None:    sets.append("category_key=?");    params.append(body.category_key)
         if body.active is not None:          sets.append("active=?");          params.append(1 if body.active else 0)
+        if body.payments_per_month is not None: sets.append("payments_per_month=?"); params.append(max(1, body.payments_per_month))
         if sets:
             con.execute(f"UPDATE bills SET {', '.join(sets)} WHERE id=?", (*params, bill_id))
     return {"ok": True}

@@ -84,6 +84,7 @@ window.DEMO = true;
     else if(path.startsWith('/trends')) body = d.trends;
     else if(path.startsWith('/savings/history')) body = d.savingsHistory || {months:[], current:null, current_month:null};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
+    else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
     else if(path.startsWith('/transactions')) body = d.transactions;
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;

@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS bills (
     category_key TEXT DEFAULT '',    -- optional category link
     active INTEGER DEFAULT 1,        -- 1 = shown on dashboard
     manual_paid_month TEXT DEFAULT NULL,  -- 'YYYY-MM' the user hand-marked paid (override)
+    payments_per_month INTEGER DEFAULT 1, -- installments expected each month (e.g. weekly = 4)
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_cleaned ON bills(match_cleaned);
@@ -176,6 +177,8 @@ def init_db(seed_categories: Iterable[dict]):
         bcols = {r[1] for r in con.execute("PRAGMA table_info(bills)")}
         if bcols and "manual_paid_month" not in bcols:
             con.execute("ALTER TABLE bills ADD COLUMN manual_paid_month TEXT DEFAULT NULL")
+        if bcols and "payments_per_month" not in bcols:
+            con.execute("ALTER TABLE bills ADD COLUMN payments_per_month INTEGER DEFAULT 1")
         # seed built-in categories (INSERT OR IGNORE keeps any user edits/creations)
         for c in seed_categories:
             con.execute(

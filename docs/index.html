@@ -852,6 +852,7 @@ window.DEMO = true;
     else if(path.startsWith('/trends')) body = d.trends;
     else if(path.startsWith('/savings/history')) body = d.savingsHistory || {months:[], current:null, current_month:null};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
+    else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
     else if(path.startsWith('/transactions')) body = d.transactions;
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
@@ -2747,12 +2748,18 @@ function billRowHtml(r){
   const now2 = new Date();
   const todayDom = now2.getDate();
   const daysInMonth = new Date(now2.getFullYear(), now2.getMonth()+1, 0).getDate();
-  const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : 'warn';
-  const stLabel = r.status==='missed' ? 'missed' : r.status;
+  const perMonth = r.expected_count || r.payments_per_month || 1;
+  const isInstall = perMonth > 1;
+  const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : (r.status==='partial' ? 'warn' : 'warn');
+  const stLabel = r.status==='missed' ? 'missed' : (r.status==='partial'
+    ? `${r.paid_count||0}/${perMonth} paid` : r.status);
   const dd = r.due_day || 0;
   let barHtml = '';
   if(r.status === 'paid'){
     barHtml = `<div class="duebar"><span style="width:100%;background:var(--good)"></span></div>`;
+  } else if(r.status === 'partial' && isInstall){
+    const pct = Math.round((r.paid_count||0)/perMonth*100);
+    barHtml = `<div class="duebar"><span style="width:${pct}%;background:var(--accent)"></span></div>`;
   } else {
     const target = dd > 0 ? Math.min(100, Math.round(dd/daysInMonth*100)) : null;
     const fill = dd > 0 ? Math.min(100, Math.round(todayDom/dd*100)) : 0;
@@ -2767,15 +2774,19 @@ function billRowHtml(r){
   let right = '';
   if(r.status==='paid'){
     right = `<div class="hb-amt">${fmt(r.paid_amount||0)}</div><div class="hb-sub">paid ${r.paid_date ? r.paid_date.slice(5) : ''}`;
+    if(isInstall) right += ` · ${perMonth}/${perMonth}`;
     if(r.variance != null && Math.abs(r.variance) >= 1) right += ` · ${r.variance>0?'+':''}${fmt(r.variance)} vs usual`;
     right += `</div>`;
+  } else if(r.status==='partial' && isInstall){
+    right = `<div class="hb-amt">${fmt(r.paid_amount||0)} <span class="muted" style="font-size:12px;font-weight:400">of ${fmt(r.expected_amount||0)}</span></div>` +
+      `<div class="hb-sub">${r.paid_count||0} of ${perMonth} paid · ${r.remaining_count||0} left${r.per_payment?' · '+fmt(r.per_payment)+' each':''}</div>`;
   } else {
     let when = '';
     if(dd > 0){
       const inDays = dd - todayDom;
       when = inDays > 0 ? `· in ${inDays}d` : (inDays === 0 ? '· today' : `· ${-inDays}d past due`);
     }
-    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due on the ${dd?ordinal(dd):'?'} ${when}</div>`;
+    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due on the ${dd?ordinal(dd):'?'} ${when}${isInstall?' · '+perMonth+' payments':''}</div>`;
   }
   return `<div class="hb-grid" style="align-items:center">
     <div style="min-width:0;flex:1">
@@ -2854,6 +2865,11 @@ async function openBillForm(bill){
         '<label class="fld">Expected amount<input id="bf-amt" type="number" step="0.01" value="'+(bill?(bill.expected_amount||''):'')+'" placeholder="20.20"></label>'+
         '<label class="fld">Due on the<input id="bf-day" type="number" min="1" max="31" value="'+(bill&&bill.due_day?bill.due_day:'')+'" placeholder="13"></label>'+
       '</div>'+
+      '<div class="fld-row">'+
+        '<label class="fld">Payments per month<input id="bf-per" type="number" min="1" max="31" value="'+((bill&&bill.payments_per_month)?bill.payments_per_month:1)+'" placeholder="1"></label>'+
+        '<label class="fld">Each payment<input id="bf-each" type="text" readonly value="'+(bill&&(bill.payments_per_month>1)?fmt((bill.expected_amount||0)/bill.payments_per_month):'—')+'" title="Expected amount ÷ payments per month"></label>'+
+      '</div>'+
+      '<div class="muted" style="font-size:11.5px;margin:-6px 0 10px">Set payments per month to 1 for a single bill. Use &gt;1 for weekly/installment bills (e.g. weekly daycare = 4).</div>'+
       '<label class="fld">Category<select id="bf-cat">'+opts+'</select></label>'+
       '<label class="fld">Type<select id="bf-kind">'+
         '<option value="bill"'+(bill&&bill.kind==='card'?'':' selected')+'>Bill</option>'+
@@ -2866,6 +2882,11 @@ async function openBillForm(bill){
     '</div>';
   d.classList.add('open');
   setTimeout(()=>{const el=document.getElementById('bf-name');if(el)el.focus();},30);
+  const aEl=document.getElementById('bf-amt'), pEl=document.getElementById('bf-per'), eEl=document.getElementById('bf-each');
+  const refreshEach=()=>{ const a=parseFloat(aEl.value)||0, p=Math.max(1,parseInt(pEl.value)||1);
+    eEl.value = (a>0 && p>1) ? fmt(a/p) : '—'; };
+  if(aEl) aEl.addEventListener('input', refreshEach);
+  if(pEl) pEl.addEventListener('input', refreshEach);
 }
 
 function closeBillForm(){ document.getElementById('bill-modal').classList.remove('open'); }
@@ -2875,11 +2896,12 @@ async function submitBillForm(id){
   const match = (document.getElementById('bf-match').value||'').trim().toLowerCase();
   const amt = parseFloat(document.getElementById('bf-amt').value)||0;
   const day = parseInt(document.getElementById('bf-day').value)||0;
+  const per = Math.max(1, parseInt(document.getElementById('bf-per').value)||1);
   const cat = document.getElementById('bf-cat').value;
   const kind = document.getElementById('bf-kind').value;
   if(!name && !match){ alert('Give the bill a name or a match merchant.'); return; }
   const body = { name:(name||match), match_cleaned:(match||name.toLowerCase()),
-    expected_amount:amt, due_day:day, category_key:cat, kind:kind };
+    expected_amount:amt, due_day:day, category_key:cat, kind:kind, payments_per_month:per };
   try {
     if(id){ await api('/bills/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }
     else { await jpost('/bills', body); }
@@ -2891,7 +2913,8 @@ async function addBill(c){
   try {
     await jpost('/bills', {
       name:c.name, match_cleaned:c.match_cleaned, expected_amount:c.expected_amount,
-      due_day:c.due_day, kind:c.kind, category_key:c.category_key || 'other' });
+      due_day:c.due_day, kind:c.kind, category_key:c.category_key || 'other',
+      payments_per_month:c.payments_per_month || 1 });
     loadBills();
   } catch(e){ alert('Could not add bill: ' + e.message); }
 }
