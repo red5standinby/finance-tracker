@@ -213,6 +213,8 @@
   /* Total savings hero — headline + inline toggle graph + split */
   .hs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
   .hs-seg .seg-btn{padding:3px 9px;font-size:11.5px}
+  .hs-chartrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 2px;flex-wrap:wrap}
+  .hs-seg2 .seg-btn{padding:2px 8px;font-size:11px}
   .hs-chart{margin:10px 0 6px}
   .hs-chart svg{display:block;width:100%;height:auto}
   .hs-split{display:flex;gap:10px;margin-top:10px}
@@ -281,6 +283,15 @@
   .snap .snap-txn .d{color:var(--mut);font-size:11.5px;min-width:52px}
   .snap .snap-txn .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .snap .snap-txn .a{font-variant-numeric:tabular-nums;white-space:nowrap}
+  /* recent-activity card: two-line rows so copy isn't cramped */
+  .span-recent .snap-txn{display:block;padding:9px 2px;gap:0;border-bottom:1px solid rgba(36,48,68,.5)}
+  .span-recent .snap-txn:last-child{border-bottom:none}
+  .span-recent .snap-txn .r1{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+  .span-recent .snap-txn .r1 .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:13.5px}
+  .span-recent .snap-txn .r1 .a{font-weight:700;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .span-recent .snap-txn .r2{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:3px}
+  .span-recent .snap-txn .r2 .d{color:var(--mut);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .span-recent .snap-txn .r2 .cat{font-size:11px;white-space:nowrap}
   /* crypto — horizontal scroll of compact coin tiles */
   .span-crypto .snap-txn{flex-direction:column;align-items:flex-start;gap:2px;padding:6px 0;border-bottom:none}
   @media(max-width:980px){
@@ -628,6 +639,10 @@
     display:flex;flex-direction:column;justify-content:center;align-items:center;
     text-align:center;transition:box-shadow .3s}
   .grade-card .lbl{align-self:stretch;text-align:left}
+  .grade-head{display:flex;align-items:center;justify-content:space-between;gap:12px;align-self:stretch}
+  .grade-acct{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);
+    padding:5px 9px;font-size:12px;font-weight:600;cursor:pointer;max-width:200px}
+  .grade-acct:hover{border-color:var(--accent)}
   .grade-letter{font-size:58px;font-weight:800;line-height:1.05;letter-spacing:-2px;
     margin:4px 0 2px;font-variant-numeric:tabular-nums}
   .grade-sub{font-size:13px;color:var(--mut);font-weight:600}
@@ -827,6 +842,18 @@
       </div>
       <div class="val" id="h-tot-val">$0</div>
       <div class="muted" style="font-size:12px" id="h-tot-sub">—</div>
+      <div class="hs-chartrow">
+        <div class="seg hs-seg2" id="h-tot-type">
+          <button class="seg-btn active" data-t="area" onclick="setHomeTotType('area')" title="Area chart">Area</button>
+          <button class="seg-btn" data-t="line" onclick="setHomeTotType('line')" title="Line chart">Line</button>
+          <button class="seg-btn" data-t="bars" onclick="setHomeTotType('bars')" title="Bar chart">Bars</button>
+        </div>
+        <div class="seg hs-seg2" id="h-tot-range">
+          <button class="seg-btn" data-r="6" onclick="setHomeTotRange(6)">6M</button>
+          <button class="seg-btn active" data-r="12" onclick="setHomeTotRange(12)">12M</button>
+          <button class="seg-btn" data-r="24" onclick="setHomeTotRange(24)">24M</button>
+        </div>
+      </div>
       <div id="h-tot-chart" class="hs-chart"></div>
       <div class="hs-split">
         <div class="hs-sub"><span class="ic">₿</span><div><b id="h-crypto-val">$0</b><span>in crypto</span></div></div>
@@ -1086,7 +1113,12 @@
   </div>
 
   <div class="card grade-card" id="grade-card">
-    <div class="lbl">Financial Grade</div>
+    <div class="grade-head">
+      <div class="lbl">Financial Grade</div>
+      <select class="grade-acct" id="g-account" onchange="gradeAcct(this.value)" title="Scope the grade to one account">
+        <option value="">All accounts</option>
+      </select>
+    </div>
     <div class="grade-letter" id="g-letter">–</div>
     <div class="grade-sub" id="g-rate">–</div>
     <div class="grade-trend" id="g-trend"></div>
@@ -2298,6 +2330,24 @@ async function loadMeta(){
 const catByKey = k => CATS.find(c=>c.key===k) || {name:'Uncategorized',color:'#525252',key:'uncategorized'};
 
 // ---------- grade ----------
+let _gradeAcct = '';   // '' = all accounts; else account name
+function gradeAcct(name){
+  _gradeAcct = name || '';
+  // mirror the choice onto the dashboard account filter and reload
+  try {
+    const allex = ['All accounts'].concat(ACCTS.map(a=>a.name));
+    msSet('d-account-ms', name ? [name] : []);
+  } catch(e){}
+  loadDashboard();
+}
+function renderGradeAcctOptions(){
+  const sel = $('#g-account');
+  if(!sel) return;
+  const cur = _gradeAcct;
+  sel.innerHTML = '<option value="">All accounts</option>' +
+    ACCTS.map(a=>`<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('');
+  sel.value = cur;
+}
 function renderGrade(g){
   if(!g) return;
   $('#g-letter').textContent = g.grade;
@@ -2921,7 +2971,7 @@ async function renderHomeChart(){
 function fmtShort(v){ v=Math.abs(v||0); if(v>=1000) return '$'+(v/1000).toFixed(v>=10000?0:1)+'k'; return '$'+Math.round(v); }
 
 // ---------- Home: total savings (savings + crypto) with toggle graph ----------
-let _homeTot = { view: 'all', savings: null, crypto: null, cryptoSeries: null };
+let _homeTot = { view: 'all', type: 'area', savings: null, crypto: null, cryptoSeries: null };
 let _homeTotMonths = 12;
 
 async function setHomeTot(view){
@@ -2930,6 +2980,23 @@ async function setHomeTot(view){
     b.classList.toggle('active', b.dataset.v===view);
   });
   await renderHomeSavings();
+}
+function setHomeTotType(t){
+  _homeTot.type = t;
+  document.querySelectorAll('#h-tot-type .seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.t===t);
+  });
+  renderHomeSavings();
+}
+function setHomeTotRange(r){
+  if(r === _homeTotMonths) return;
+  _homeTotMonths = r;
+  document.querySelectorAll('#h-tot-range .seg-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.r===String(r));
+  });
+  // force refetch for the new window
+  _homeTot.savings = null; _homeTot.crypto = null;
+  renderHomeSavings();
 }
 
 async function renderHomeSavings(){
@@ -3037,7 +3104,7 @@ async function renderHomeSavings(){
     }
   }
   const labels = ((view==='crypto'? cx.series : s.history)||[]).map(m=>m.month);
-  box.innerHTML = homeTotChart(vals, labels) +
+  box.innerHTML = homeTotChart(vals, labels, _homeTot.type) +
     `<div class="legend"><span><span class="dot" style="background:${view==='savings'?'#22c55e':view==='crypto'?'#f7931a':'#4f8cff'}"></span>${
       view==='savings'?'Savings balance':view==='crypto'?'Crypto value':'Total (savings + crypto)'}</span></div>`;
 }
@@ -3054,10 +3121,11 @@ function monthsBuckets(n){
   return out;
 }
 
-function homeTotChart(vals, labels){
+function homeTotChart(vals, labels, type){
+  type = type || 'area';
   vals = (vals||[]).map(v=>v==null?null:Number(v));
   if(!vals.some(v=>v!=null)) return '<div class="empty" style="padding:12px 0">No history yet.</div>';
-  const W=560, H=120, padL=6, padR=6, padT=10, padB=18;
+  const W=560, H=140, padL=6, padR=6, padT=10, padB=18;
   const known = vals.filter(v=>v!=null);
   let min = Math.min(...known), max = Math.max(...known);
   if(min===max){ min-=1; max+=1; }
@@ -3069,20 +3137,29 @@ function homeTotChart(vals, labels){
   let segs = [], cur = [];
   vals.forEach((v,i)=>{ if(v==null){ if(cur.length){segs.push(cur);cur=[];} } else cur.push([i,v]); });
   if(cur.length) segs.push(cur);
-  const areaCol = '#22c55e';
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f8cff';
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
   // gridlines
   [0,0.5,1].forEach(f=>{ const yy=y(min+f*(max-min)); svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 4" opacity="0.6"/>`; });
-  segs.forEach(seg=>{
-    if(seg.length>1){
+  if(type==='bars'){
+    const bw = Math.max(3, (W-padL-padR)/n * 0.62);
+    vals.forEach((v,i)=>{
+      if(v==null) return;
+      const yy=y(v), h=Math.max(1,(H-padB)-yy);
+      svg += `<rect x="${(x(i)-bw/2).toFixed(1)}" y="${yy.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${accent}" opacity="0.72"/>`;
+    });
+  } else {
+    segs.forEach(seg=>{
       const pts = seg.map(([i,v])=>`${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-      const area = `M ${x(seg[0][0]).toFixed(1)},${(H-padB).toFixed(1)} L ` + pts + ` L ${x(seg[seg.length-1][0]).toFixed(1)},${(H-padB).toFixed(1)} Z`;
-      svg += `<path d="${area}" fill="${areaCol}" opacity="0.12"/>`;
-      svg += `<polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2"/>`;
-    }
-    const [li,lv] = seg[seg.length-1];
-    svg += `<circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3" fill="var(--accent)"/>`;
-  });
+      if(type==='area' && seg.length>1){
+        const area = `M ${x(seg[0][0]).toFixed(1)},${(H-padB).toFixed(1)} L ` + pts + ` L ${x(seg[seg.length-1][0]).toFixed(1)},${(H-padB).toFixed(1)} Z`;
+        svg += `<path d="${area}" fill="${accent}" opacity="0.14"/>`;
+      }
+      if(seg.length>1) svg += `<polyline points="${pts}" fill="none" stroke="${accent}" stroke-width="2"/>`;
+      const [li,lv] = seg[seg.length-1];
+      svg += `<circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3" fill="${accent}"/>`;
+    });
+  }
   // sparse month labels
   (labels||[]).forEach((m,i)=>{
     const step = Math.max(1, Math.round(n/6));
@@ -3197,10 +3274,14 @@ async function renderSnapTxns(){
     const cat = catByKey(t.ckey);
     const short = String(t.date||'').slice(5);
     return `<div class="snap-txn">` +
-      `<span class="d">${esc(short)}</span>` +
-      `<span class="n" title="${esc(t.description)}">${esc(t.cleaned||t.description)}</span>` +
-      `<span class="a" style="color:${cat.color||'var(--mut)'};font-size:11px">${esc(cat.name)}</span>` +
-      `<span class="a ${col}" style="min-width:74px;text-align:right">${(t.amount<0?'-':'+')+fmt(t.amount)}</span></div>`;
+      `<div class="r1">` +
+        `<span class="n" title="${esc(t.description)}">${esc(t.cleaned||t.description)}</span>` +
+        `<span class="a ${col}">${(t.amount<0?'-':'+')+fmt(t.amount)}</span>` +
+      `</div>` +
+      `<div class="r2">` +
+        `<span class="d">${esc(short)}</span>` +
+        `<span class="cat" style="color:${cat.color||'var(--mut)'}">${esc(cat.name)}</span>` +
+      `</div></div>`;
   }).join('');
 }
 
@@ -3290,10 +3371,13 @@ function renderHomeCredit(D){
 }
 
 async function loadDashboard(){
+  renderGradeAcctOptions();
   const q = new URLSearchParams();
   const s=$('#d-start').value, e=$('#d-end').value, sel=msValues('d-account-ms');
   if(s) q.set('start',s); if(e) q.set('end',e);
-  if(sel.length){ const ids=sel.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
+  let acctNames = sel;
+  if(!acctNames.length && _gradeAcct) acctNames = [_gradeAcct];
+  if(acctNames.length){ const ids=acctNames.map(n=>(ACCTS.find(x=>x.name===n)||{}).id).filter(Boolean);
     if(ids.length) q.set('accounts', ids.join(',')); }
   const d = await api('/dashboard?'+q);
   renderGrade(d.grade);
