@@ -2341,6 +2341,14 @@ async function loadBills(){
 // re-render the bills list when a filter/sort/hide control changes (client-side, no refetch)
 function billsFilterChanged(){ loadBills(); }
 
+// 1 -> "1st", 2 -> "2nd", 3 -> "3rd", 11-13 -> "th", else "th"
+function ordinal(n){
+  n = parseInt(n,10);
+  if(!n) return '';
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
 function toggleBillGroup(key){
   const next = !(_billOpenGroups[key] || false);
   _billOpenGroups[key] = next;
@@ -2366,7 +2374,7 @@ function billRowHtml(r){
     const col = r.status==='overdue' ? 'var(--bad)' : (fill>=80 ? '#eab308' : 'var(--accent)');
     if(target != null){
       barHtml = `<div class="duebar"><span style="width:${fill}%;background:${col}"></span>` +
-        `<span class="duemark" style="left:${target}%" title="due day ${dd}"></span></div>`;
+        `<span class="duemark" style="left:${target}%" title="due on the ${ordinal(dd)}"></span></div>`;
     } else {
       barHtml = `<div class="duebar"><span style="width:0%"></span></div>`;
     }
@@ -2380,9 +2388,9 @@ function billRowHtml(r){
     let when = '';
     if(dd > 0){
       const inDays = dd - todayDom;
-      when = inDays > 0 ? `· due in ${inDays}d` : (inDays === 0 ? '· due today' : `· ${-inDays}d past due`);
+      when = inDays > 0 ? `· in ${inDays}d` : (inDays === 0 ? '· today' : `· ${-inDays}d past due`);
     }
-    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due ~day ${dd||'?'} ${when}</div>`;
+    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">due on the ${dd?ordinal(dd):'?'} ${when}</div>`;
   }
   return `<div class="hb-grid" style="align-items:center">
     <div style="min-width:0;flex:1">
@@ -2459,7 +2467,7 @@ async function openBillForm(bill){
       '<label class="fld">Match merchant (text in the transaction)<input id="bf-match" value="'+esc(bill?(bill.match_cleaned||''):'')+'" placeholder="e.g. netflix"></label>'+
       '<div class="fld-row">'+
         '<label class="fld">Expected amount<input id="bf-amt" type="number" step="0.01" value="'+(bill?(bill.expected_amount||''):'')+'" placeholder="20.20"></label>'+
-        '<label class="fld">Due day (1-31)<input id="bf-day" type="number" min="1" max="31" value="'+(bill&&bill.due_day?bill.due_day:'')+'" placeholder="13"></label>'+
+        '<label class="fld">Due on the<input id="bf-day" type="number" min="1" max="31" value="'+(bill&&bill.due_day?bill.due_day:'')+'" placeholder="13"></label>'+
       '</div>'+
       '<label class="fld">Category<select id="bf-cat">'+opts+'</select></label>'+
       '<label class="fld">Type<select id="bf-kind">'+
@@ -2673,7 +2681,7 @@ async function renderSnapBills(){
   const list = next.map(r=>{
     const col = r.status==='overdue'||r.status==='missed' ? 'over' : 'warn';
     return `<div class="hb-row"><span class="hb-name">${esc(r.name)}</span>` +
-      `<span class="hb-badge ${col}">${esc(r.status)}${r.due_day?' · d'+r.due_day:''}</span></div>`;
+      `<span class="hb-badge ${col}">${esc(r.status)}${r.due_day?' · due '+ordinal(r.due_day):''}</span></div>`;
   }).join('') || '<div class="snap-sub">All bills paid this month 🎉</div>';
   box.innerHTML = strip + list;
 }
