@@ -509,6 +509,18 @@
   .chip{background:var(--panel2);border:1px solid var(--line);border-radius:20px;padding:3px 11px;
     font-size:12px;font-weight:600}
   .legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--mut)}
+  #h-tot-chart{position:relative}
+  .ht-tip{position:absolute;z-index:5;pointer-events:none;opacity:0;transition:opacity .1s;
+    background:rgba(18,24,36,.96);border:1px solid var(--bd);border-radius:9px;
+    padding:8px 10px;min-width:120px;max-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.45);
+    font-size:12px;line-height:1.35;backdrop-filter:blur(4px)}
+  .ht-tip .ht-hd{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    color:var(--mut);font-size:11px;letter-spacing:.02em;text-transform:uppercase}
+  .ht-tip .ht-d{font-variant-numeric:tabular-nums;text-transform:none;letter-spacing:0;font-weight:600}
+  .ht-tip .ht-val{font-size:18px;font-weight:700;margin:2px 0 4px;font-variant-numeric:tabular-nums}
+  .ht-tip .ht-row{display:flex;align-items:center;justify-content:space-between;gap:12px;color:var(--mut)}
+  .ht-tip .ht-row b{color:var(--txt);font-variant-numeric:tabular-nums;font-weight:600}
+  .ht-tip .ht-sw{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:6px;vertical-align:middle}
   .legend span{display:flex;align-items:center;gap:6px}
   .dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 auto}
   /* segmented quick-view control (income/expense range) */
@@ -3214,6 +3226,15 @@ async function renderHomeSavings(){
   box.innerHTML = homeTotChart(vals, labels, _homeTot.type) +
     `<div class="legend"><span><span class="dot" style="background:${view==='savings'?'#22c55e':view==='crypto'?'#f7931a':'#4f8cff'}"></span>${
       view==='savings'?'Savings balance':view==='crypto'?'Crypto value':'Total (savings + crypto)'}</span></div>`;
+  // stash point data for the hover layer
+  _homeTotPts = {
+    view, type:_homeTot.type,
+    vals,
+    labels: labels.length ? labels : (s.history||cx.series||[]).map(m=>m.month),
+    sVals: svSeries, cxVals: cxSeries,
+    cryptoHoldings: cx.holdCount || 0,
+  };
+  attachHomeTotHover();
 }
 
 function monthsBuckets(n){
@@ -3228,26 +3249,37 @@ function monthsBuckets(n){
   return out;
 }
 
-function homeTotChart(vals, labels, type){
-  type = type || 'area';
-  vals = (vals||[]).map(v=>v==null?null:Number(v));
-  if(!vals.some(v=>v!=null)) return '<div class="empty" style="padding:12px 0">No history yet.</div>';
+function homeTotGeom(vals){
   const W=560, H=140, padL=6, padR=6, padT=10, padB=18;
+  vals = (vals||[]).map(v=>v==null?null:Number(v));
   const known = vals.filter(v=>v!=null);
-  let min = Math.min(...known), max = Math.max(...known);
+  let min = known.length?Math.min(...known):0, max = known.length?Math.max(...known):1;
   if(min===max){ min-=1; max+=1; }
   const pad = (max-min)*0.12; min-=pad; max+=pad;
   const n = vals.length;
   const x = i => padL + (n<=1?0:(i/(n-1))*(W-padL-padR));
   const y = v => (H-padB) - ((v-min)/(max-min))*(H-padT-padB);
+  return {W,H,padL,padR,padT,padB,min,max,n,x,y};
+}
+
+function homeTotChart(vals, labels, type){
+  type = type || 'area';
+  vals = (vals||[]).map(v=>v==null?null:Number(v));
+  if(!vals.some(v=>v!=null)) return '<div class="empty" style="padding:12px 0">No history yet.</div>';
+  const G = homeTotGeom(vals);
+  const {W,H,padL,padR,padT,padB,min,max,n,x,y} = G;
   // build contiguous segments (skip nulls)
   let segs = [], cur = [];
   vals.forEach((v,i)=>{ if(v==null){ if(cur.length){segs.push(cur);cur=[];} } else cur.push([i,v]); });
   if(cur.length) segs.push(cur);
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f8cff';
-  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
+  let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible">`;
   // gridlines
   [0,0.5,1].forEach(f=>{ const yy=y(min+f*(max-min)); svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 4" opacity="0.6"/>`; });
+  // hover crosshair + dot (populated by attachHomeTotHover)
+  svg += `<g class="ht-hover" style="opacity:0;pointer-events:none">`
+      + `<line class="ht-cross" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="${accent}" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>`
+      + `<circle class="ht-dot" r="4" fill="${accent}" stroke="var(--panel)" stroke-width="2"/></g>`;
   if(type==='bars'){
     const bw = Math.max(3, (W-padL-padR)/n * 0.62);
     vals.forEach((v,i)=>{
@@ -3274,6 +3306,93 @@ function homeTotChart(vals, labels, type){
   });
   svg += '</svg>';
   return svg;
+}
+
+// ---- hover layer: crosshair + tooltip over the savings chart ----
+let _homeTotPts = null;
+function attachHomeTotHover(){
+  const box = $('#h-tot-chart');
+  if(!box || !_homeTotPts) return;
+  const svg = box.querySelector('svg');
+  if(!svg) return;
+  const pts = _homeTotPts;
+  const G = homeTotGeom(pts.vals);
+  const hoverG = svg.querySelector('.ht-hover');
+  const cross = svg.querySelector('.ht-cross');
+  const dot = svg.querySelector('.ht-dot');
+
+  // tooltip element (shared)
+  let tip = document.getElementById('h-tot-tip');
+  if(!tip){
+    tip = document.createElement('div');
+    tip.id = 'h-tot-tip'; tip.className = 'ht-tip';
+    box.appendChild(tip);
+  }
+
+  const monNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monLabel = ym => {
+    if(!ym || ym.length<7) return ym||'—';
+    const [y,m] = ym.split('-');
+    return `${monNames[parseInt(m,10)-1]||m} ${y.slice(2)}`;
+  };
+
+  function idxFromClientX(clientX){
+    const rect = svg.getBoundingClientRect();
+    const relX = (clientX - rect.left) / rect.width * G.W; // into viewBox units
+    let best = 0, bd = Infinity;
+    for(let i=0;i<G.n;i++){
+      if(pts.vals[i]==null) continue;
+      const d = Math.abs(G.x(i) - relX);
+      if(d < bd){ bd = d; best = i; }
+    }
+    return best;
+  }
+
+  function show(i){
+    const v = pts.vals[i];
+    if(v==null){ hide(); return; }
+    const vx = G.x(i), vy = G.y(v);
+    cross.setAttribute('x1', vx.toFixed(1)); cross.setAttribute('x2', vx.toFixed(1));
+    dot.setAttribute('cx', vx.toFixed(1)); dot.setAttribute('cy', vy.toFixed(1));
+    hoverG.style.opacity = '1';
+    const lbl = (pts.labels||[])[i] || '';
+    // delta vs previous available point
+    let prev = null;
+    for(let k=i-1;k>=0;k--){ if(pts.vals[k]!=null){ prev = pts.vals[k]; break; } }
+    let delta = '';
+    if(prev!=null){ const d = v - prev; const sign = d>=0?'+':'-';
+      delta = `<span class="ht-d ${d>=0?'pos':'neg'}">${sign}${fmt(Math.abs(d))}</span>`; }
+    // breakdown rows depending on view
+    let rows = '';
+    if(pts.view==='all'){
+      const sv = pts.sVals[i], cv = pts.cxVals[i];
+      if(sv!=null) rows += `<div class="ht-row"><span><i class="ht-sw" style="background:#22c55e"></i>Savings</span><b>${fmt(sv)}</b></div>`;
+      if(cv!=null) rows += `<div class="ht-row"><span><i class="ht-sw" style="background:#f7931a"></i>Crypto</span><b>${fmt(cv)}</b></div>`;
+    }
+    tip.innerHTML = `<div class="ht-hd"><span>${monLabel(lbl)}</span>${delta}</div>`
+      + `<div class="ht-val">${fmt(v)}</div>` + rows;
+    tip.style.opacity = '1';
+    // position tooltip within box
+    const rect = svg.getBoundingClientRect();
+    const pct = vx / G.W;
+    const leftPx = pct * rect.width;
+    const tw = tip.offsetWidth || 150;
+    let lx = leftPx + 12;
+    if(lx + tw > rect.width) lx = leftPx - tw - 12;
+    tip.style.left = Math.max(4, lx) + 'px';
+    const th = tip.offsetHeight || 60;
+    let ty = (vy / G.H) * rect.height - th/2;
+    ty = Math.max(2, Math.min(rect.height - th - 2, ty));
+    tip.style.top = ty + 'px';
+  }
+  function hide(){ hoverG.style.opacity='0'; if(tip) tip.style.opacity='0'; }
+
+  svg.style.cursor = 'crosshair';
+  svg.addEventListener('mousemove', e=>show(idxFromClientX(e.clientX)));
+  svg.addEventListener('mouseleave', hide);
+  svg.addEventListener('touchstart', e=>{ if(e.touches[0]) show(idxFromClientX(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchmove', e=>{ if(e.touches[0]) show(idxFromClientX(e.touches[0].clientX)); }, {passive:true});
+  svg.addEventListener('touchend', hide);
 }
 
 // ---------- Home snapshot renderers ----------
