@@ -114,6 +114,11 @@ def is_transfer(desc: str, raw_type: str = "", amount: float = 0.0) -> bool:
             return True
         if t == "TRANSFER":
             return True
+    # Incoming Zelle "PAYMENT RECEIVED" is real money-in (e.g. the renter), NOT an
+    # internal move — let it fall through to income detection. Outgoing Zelle
+    # (payments SENT) and self-credits ("ZELLE CREDIT") stay transfers.
+    if re.search(r"ZELLE", desc or "", re.I) and re.search(r"RECEIVED", desc or "", re.I):
+        return False
     return bool(_TRANSFER_RE.search(desc or ""))
 
 
