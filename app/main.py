@@ -1819,7 +1819,25 @@ _NEWS_FEEDS = {
         ("CoinDesk Policy", "https://www.coindesk.com/policy/arc/outboundfeeds/rss/"),
         ("The Block", "https://www.theblock.co/rss.xml"),
     ],
+    # Economy: debt, bonds, the Federal Reserve, rates, macro
+    "economy": [
+        ("Federal Reserve", "https://www.federalreserve.gov/feeds/press_all.xml"),
+        ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories"),
+        ("CNBC Economy", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=20910258"),
+        ("Reuters Bonds", "https://www.reutersagency.com/feed/?best-topics=bonds&post_type=best"),
+        ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex"),
+    ],
+    "bonds": [
+        ("Reuters Bonds", "https://www.reutersagency.com/feed/?best-topics=bonds&post_type=best"),
+        ("MarketWatch Bonds", "https://feeds.content.dowjones.io/public/rss/mw_marketpulse"),
+    ],
 }
+
+# Economy: keywords used to keep the feed on-topic (debt / bonds / Fed / rates)
+_ECON_KEYWORDS = ("debt", "deficit", "treasury", "yield", "bond", "bonds", "fed",
+                  "federal reserve", "interest rate", "rate cut", "rate hike", "inflation",
+                  "cpi", "gdp", "recession", "fomc", "powell", "central bank", "stimulus",
+                  "auction", "10-year", "2-year", "curve", "macro", "tariff", "monetary")
 
 _GOV_KEYWORDS = ("sec", "cftc", "regulat", "senate", "congress", "white house",
                  "treasury", "federal reserve", "fed ", "law", "bill", "policy",
@@ -1877,6 +1895,77 @@ def crypto_news(category: str = "crypto", limit: int = 12):
         return dedup[:limit]
     return {"category": category, "items": _cached(f"news:{category}:{limit}", 600, fetch),
             "fetched_at": int(time.time())}
+
+
+@app.get("/api/economy/news")
+def economy_news(category: str = "economy", limit: int = 14):
+    """Economy headlines: debt, treasuries/bonds, the Federal Reserve, rates, macro.
+
+    category: economy|bonds|all. Falls back gracefully if a feed is unreachable.
+    """
+    cats = ["economy", "bonds"] if category == "all" else [category if category in _NEWS_FEEDS else "economy"]
+
+    def fetch():
+        items: list[dict] = []
+        for c in cats:
+            for source, url in _NEWS_FEEDS[c]:
+                items += _parse_feed(source, url, limit=10)
+        seen, dedup = set(), []
+        for it in items:
+            k = it["title"].lower()[:80]
+            if k in seen:
+                continue
+            seen.add(k)
+            dedup.append(it)
+        # prefer on-topic macro headlines, but don't return empty if none match
+        on = [i for i in dedup if any(w in i["title"].lower() for w in _ECON_KEYWORDS)]
+        ordered = on + [i for i in dedup if i not in on]
+        return ordered[:limit]
+    return {"category": category, "items": _cached(f"econnews:{category}:{limit}", 600, fetch),
+            "fetched_at": int(time.time())}
+
+
+# Treasury yields via Yahoo Finance chart endpoint (no API key). Maps index
+# symbols to friendly labels. Values are the latest close, in percent.
+_ECON_SYMBOLS = [
+    ("10y", "^TNX", "10-Yr Treasury"),
+    ("5y", "^FVX", "5-Yr Treasury"),
+    ("2y", "2YY=F", "2-Yr Treasury"),
+    ("13w", "^IRX", "13-Wk T-Bill"),
+    ("10y2y", "^TNX-^UST2YR", "10Y – 2Y Spread"),
+]
+
+
+def _yahoo_last(symbol: str) -> float | None:
+    try:
+        url = f"https://query1.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(symbol)}?range=5d&interval=1d"
+        data = json.loads(_http_get(url, timeout=8))
+        res = (data.get("chart") or {}).get("result") or []
+        if not res:
+            return None
+        closes = ((res[0].get("indicators") or {}).get("quote") or [{}])[0].get("close") or []
+        vals = [c for c in closes if c is not None]
+        return float(vals[-1]) if vals else None
+    except Exception:
+        return None
+
+
+@app.get("/api/economy/markets")
+def economy_markets():
+    """Reference market rates: treasury yields + derived 10Y/2Y spread."""
+    def fetch():
+        out = {}
+        raw = {k: _yahoo_last(sym) for k, sym, _ in _ECON_SYMBOLS if "-" not in sym}
+        for k, sym, label in _ECON_SYMBOLS:
+            if k == "10y2y":
+                a, b = raw.get("10y"), raw.get("2y")
+                v = round(a - b, 3) if (a is not None and b is not None) else None
+            else:
+                v = raw.get(k)
+            out[k] = {"label": label, "value": v}
+        return out
+    data = _cached("econmarkets", 900, fetch)
+    return {"rates": data, "fetched_at": int(time.time())}
 
 
 # ---------- crypto portfolio (manual holdings, stored in DB) ----------

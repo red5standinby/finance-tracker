@@ -5746,5 +5746,107 @@
 "deepseek-flash",
 "deepseek-pro"
 ]
+},
+"economyNews": {
+"economy": [
+{
+"title": "Fed minutes show no appetite for a series of interest-rate hikes",
+"url": "https://example.com/1",
+"source": "MarketWatch",
+"published": "Thu, 08 Oct 2026 00:53:07 GMT"
+},
+{
+"title": "Rising Treasury yields quietly pressure the market's 2026 winners",
+"url": "https://example.com/2",
+"source": "MarketWatch",
+"published": "Wed, 07 Oct 2026 22:53:07 GMT"
+},
+{
+"title": "10-year Treasury yield holds near 5.3% as investors weigh debt supply",
+"url": "https://example.com/3",
+"source": "Reuters",
+"published": "Wed, 07 Oct 2026 20:53:07 GMT"
+},
+{
+"title": "Federal Reserve finalizes framework changes on transparency and accountability",
+"url": "https://example.com/4",
+"source": "Federal Reserve",
+"published": "Wed, 07 Oct 2026 17:53:07 GMT"
+},
+{
+"title": "Options traders bet on a dramatic drop in interest rates by year-end",
+"url": "https://example.com/5",
+"source": "MarketWatch",
+"published": "Wed, 07 Oct 2026 12:53:07 GMT"
+},
+{
+"title": "Deficit concerns push long-bond auctions to softer demand",
+"url": "https://example.com/6",
+"source": "Reuters",
+"published": "Wed, 07 Oct 2026 06:53:07 GMT"
+},
+{
+"title": "Inflation cools as CPI comes in below forecasts",
+"url": "https://example.com/7",
+"source": "CNBC",
+"published": "Wed, 07 Oct 2026 00:53:07 GMT"
+},
+{
+"title": "Yield curve steepens as short-end rates fall on rate-cut hopes",
+"url": "https://example.com/8",
+"source": "Yahoo Finance",
+"published": "Tue, 06 Oct 2026 20:53:07 GMT"
+}
+],
+"bonds": [
+{
+"title": "Treasury 30-year auction draws highest yield since 2007",
+"url": "https://example.com/b1",
+"source": "Reuters Bonds",
+"published": "Wed, 07 Oct 2026 23:53:07 GMT"
+},
+{
+"title": "Corporate credit spreads tighten as risk appetite returns",
+"url": "https://example.com/b2",
+"source": "MarketWatch",
+"published": "Wed, 07 Oct 2026 18:53:07 GMT"
+},
+{
+"title": "Municipal bond supply hits record as issuers rush to market",
+"url": "https://example.com/b3",
+"source": "Reuters Bonds",
+"published": "Wed, 07 Oct 2026 11:53:07 GMT"
+},
+{
+"title": "Global bond funds see largest inflows in two years",
+"url": "https://example.com/b4",
+"source": "Yahoo Finance",
+"published": "Wed, 07 Oct 2026 04:53:07 GMT"
+}
+]
+},
+"economyMarkets": {
+"rates": {
+"10y": {
+"label": "10-Yr Treasury",
+"value": 5.277
+},
+"5y": {
+"label": "5-Yr Treasury",
+"value": 5.021
+},
+"2y": {
+"label": "2-Yr Treasury",
+"value": 4.647
+},
+"13w": {
+"label": "13-Wk T-Bill",
+"value": 4.037
+},
+"10y2y": {
+"label": "10Y \u2013 2Y Spread",
+"value": 0.63
+}
+}
 }
 }
