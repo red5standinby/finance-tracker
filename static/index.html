@@ -289,7 +289,7 @@
   .home-hero{grid-template-columns:repeat(2,1fr)}
   #hero-savings{grid-column:1/-1}
   @media(max-width:760px){
-    .home-hero{grid-template-columns:1fr 1fr;gap:12px}
+    .home-hero{grid-template-columns:1fr;gap:12px}
     #hero-savings{grid-column:1/-1}
     .home-hero .hero-card{padding:14px}
     .hero-card .val{font-size:26px}
@@ -818,6 +818,10 @@
     .sb-toggle{display:none}
     main{padding:14px}
     .cards{grid-template-columns:1fr 1fr;gap:14px}
+    .avg-cards{grid-template-columns:1fr 1fr;gap:10px}
+    .avg-cards .card{padding:12px}
+    .avg-cards .card .lbl{font-size:11px;line-height:1.25}
+    .avg-cards .card .val{font-size:20px}
     .inline-pair{grid-template-columns:1fr}
     .grade-card{grid-column:1 / -1}
     .grade-letter{font-size:46px}
@@ -885,6 +889,11 @@
     .pd-out{grid-template-columns:1fr 1fr}
     /* keep 2-up card grids from overflowing narrow phones */
     .cards{grid-template-columns:1fr}
+    /* trends avg-month cards stay 2-up, compact */
+    .avg-cards{grid-template-columns:1fr 1fr!important;gap:10px}
+    .avg-cards .card{padding:11px}
+    .avg-cards .card .lbl{font-size:10.5px;line-height:1.25}
+    .avg-cards .card .val{font-size:19px}
   }
   /* keep long tables scrollable rather than stretching the page */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}  img,svg{max-width:100%}
@@ -1531,7 +1540,7 @@
     <button class="btn ghost" onclick="loadTrends()">Apply</button>
   </div>
 
-  <div class="grid cards">
+  <div class="grid cards avg-cards">
     <div class="card"><div class="lbl">Avg monthly income (3mo)</div><div class="val pos" id="t-avg-inc">$0</div></div>
     <div class="card"><div class="lbl">Avg monthly spend, net</div><div class="val neg" id="t-avg-exp">$0</div></div>
     <div class="card"><div class="lbl">Avg monthly net (3mo)</div><div class="val" id="t-avg-net">$0</div></div>
