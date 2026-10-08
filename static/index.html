@@ -211,6 +211,17 @@
     .cx-stat{padding-left:0;border-left:0}
   }
   .cx-chart-controls{margin-bottom:14px}
+  /* favorites tucked into the graph card as a pull-down */
+  .cx-fav-toggle{display:inline-flex;align-items:center;gap:5px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:8px;padding:5px 10px;font-size:12.5px;font-weight:600;color:var(--txt);cursor:pointer;
+    transition:border-color .12s,color .12s}
+  .cx-fav-toggle:hover{border-color:var(--accent);color:var(--accent)}
+  .cx-fav-toggle.open{border-color:var(--accent);color:var(--accent)}
+  .cx-fav-toggle .cx-caret{font-size:10px;transition:transform .15s;display:inline-block}
+  .cx-fav-toggle .cx-fav-count{font-size:11px;color:var(--mut);font-weight:700}
+  .cx-fav-toggle.open .cx-caret{transform:rotate(180deg)}
+  .cx-fav-drawer{margin:2px 0 14px;padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+  .cx-fav-drawer.hidden{display:none}
   /* favorites as quick-filter pills */
   .cx-pills{display:flex;flex-wrap:wrap;gap:8px}
   .cx-pill{display:inline-flex;align-items:baseline;gap:8px;background:var(--panel2);border:1px solid var(--line);
@@ -1944,15 +1955,9 @@
 
   <div class="panel">
     <div class="panel-head">
-      <h2>★ Favorites <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· tap to chart</span></h2>
-    </div>
-    <div class="cx-pills" id="cx-quick"><div class="muted" style="font-size:13px">Star coins in the Top 10 to pin them here.</div></div>
-  </div>
-
-  <div class="panel">
-    <div class="panel-head">
       <h2 id="cx-chart-title">Bitcoin — 7d</h2>
       <div class="cx-tools">
+        <button class="cx-fav-toggle" id="cx-fav-toggle" onclick="cxToggleFavDrawer()" title="Favorites">★ Favorites<span class="cx-fav-count" id="cx-fav-count"></span> <span class="cx-caret">▾</span></button>
         <div class="cx-seg" id="cx-type">
           <button data-type="area" class="active" onclick="cxSetType('area')">Area</button>
           <button data-type="line" onclick="cxSetType('line')">Line</button>
@@ -1961,6 +1966,9 @@
         <div class="cx-toggle" id="cx-log" onclick="cxToggleLog()" title="Logarithmic price scale">Log</div>
         <div class="cx-toggle" id="cx-vol" onclick="cxToggleVol()" title="Volume bars">Vol</div>
       </div>
+    </div>
+    <div class="cx-fav-drawer hidden" id="cx-fav-drawer">
+      <div class="cx-pills" id="cx-quick"><div class="muted" style="font-size:13px">Star coins in the Top 10 to pin them here.</div></div>
     </div>
     <div class="filters cx-chart-controls">
       <label class="f-half cx-search-wrap">Coin
@@ -2211,14 +2219,30 @@ function cxRenderSummary(){
   $('#cx-count').textContent = CX.holdings.length;
 }
 
+function cxToggleFavDrawer(){
+  const d = $('#cx-fav-drawer'), b = $('#cx-fav-toggle');
+  if(!d) return;
+  const open = d.classList.toggle('hidden') === false;
+  if(b) b.classList.toggle('open', open);
+}
+
+function cxCloseFavDrawer(){
+  const d = $('#cx-fav-drawer'), b = $('#cx-fav-toggle');
+  if(d){ d.classList.add('hidden'); }
+  if(b){ b.classList.remove('open'); }
+}
+
 function cxRenderQuick(){
+  if(!$('#cx-quick')) return;
   const el = $('#cx-quick');
   const all = CX.markets.concat(CX.favCoins || []);
   const favs = CX.favorites.map(id => all.find(c=>c.id===id)).filter(Boolean);
+  const cnt = $('#cx-fav-count');
+  if(cnt) cnt.textContent = favs.length ? ' ('+favs.length+')' : '';
   if(!favs.length){ el.innerHTML = '<div class="muted" style="font-size:13px">Star coins to pin them here.</div>'; return; }
   const active = $('#cx-coin').value;
   el.innerHTML = favs.map(c=>`
-    <button class="cx-pill ${c.id===active?'active':''}" onclick="cxPickChart('${c.id}')" title="Chart ${c.name}">
+    <button class="cx-pill ${c.id===active?'active':''}" onclick="cxPickChart('${c.id}');cxCloseFavDrawer()" title="Chart ${c.name}">
       <span class="sym">${c.symbol}</span>
       <span class="px">${cxFmt(c.price)}</span>
       <span class="ch ${c.chg_24h>=0?'cx-pos':'cx-neg'}">${c.chg_24h>=0?'+':''}${(c.chg_24h||0).toFixed(2)}%</span>
