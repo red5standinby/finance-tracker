@@ -387,6 +387,7 @@ def dashboard(start: str | None = None, end: str | None = None,
         """, params).fetchall()
 
     income = expense = 0.0
+    savings = 0.0
     by_cat = defaultdict(lambda: {"name": "", "color": "", "kind": "", "total": 0.0, "count": 0})
     by_month = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
     by_account = defaultdict(lambda: {"income": 0.0, "expense": 0.0})
@@ -402,6 +403,11 @@ def dashboard(start: str | None = None, end: str | None = None,
             income += amt
             by_month[m]["income"] += amt
             by_account[r["account"]]["income"] += amt
+        elif r["ckey"] in SAVINGS_KEYS:
+            # savings/investing moves are not consumption: exclude from expense
+            # and track separately so the grade rewards putting money aside
+            savings += -amt
+            by_account[r["account"]]["expense"] += -amt
         else:
             expense += -amt
             by_month[m]["expense"] += -amt
@@ -422,10 +428,10 @@ def dashboard(start: str | None = None, end: str | None = None,
               for k, v in sorted(by_month.items(), key=lambda x: x[0])]
 
     # ---- grading ----
-    grade = compute_grade(income, expense)
+    grade = compute_grade(income, expense, savings)
     with db() as con:
-        all_income, all_expense = _totals_for(con)
-        grade["all_time"] = compute_grade(all_income, all_expense)
+        all_income, all_expense, all_savings = _totals_for(con)
+        grade["all_time"] = compute_grade(all_income, all_expense, all_savings)
         # trend: compare this window to the immediately preceding equal-length window
         trend = None
         if start and end:
@@ -434,8 +440,8 @@ def dashboard(start: str | None = None, end: str | None = None,
                 span = (de - ds).days + 1
                 prev_end = (ds - timedelta(days=1))
                 prev_start = prev_end - timedelta(days=span - 1)
-                pi, pe = _totals_for(con, prev_start.isoformat(), prev_end.isoformat())
-                pg = compute_grade(pi, pe)
+                pi, pe, ps = _totals_for(con, prev_start.isoformat(), prev_end.isoformat())
+                pg = compute_grade(pi, pe, ps)
                 if grade["rate"] is not None and pg["rate"] is not None:
                     diff = round(grade["rate"] - pg["rate"], 1)
                     # Clamp the displayed delta so extreme base rates don't produce absurd figures.
@@ -448,6 +454,7 @@ def dashboard(start: str | None = None, end: str | None = None,
 
     return {
         "totals": {"income": round(income, 2), "expense": round(expense, 2),
+                   "savings": round(savings, 2),
                    "net": round(income - expense, 2)},
         "grade": grade,
         "categories": cats_out,
@@ -1655,35 +1662,51 @@ GRADE_SCALE = [
 ]
 GRADE_F = ("F", "#ef4444")
 
+# Categories that represent deliberate saving/investing, not consumption.
+# Money moved here is pulled out of "expense" and counted as a positive
+# savings contribution instead (option B), so the grade rewards putting
+# money aside rather than penalizing it.
+SAVINGS_KEYS = {"bitcoin", "savings_deposit", "savings_interest", "college_savings"}
 
-def compute_grade(income: float, expense: float) -> dict:
-    """Grade a period by savings rate = (income - expense) / income.
+
+def compute_grade(income: float, expense: float, savings: float = 0.0) -> dict:
+    """Grade a period by savings rate.
+
+    Savings/investing categories (see SAVINGS_KEYS) are NOT consumption: money
+    moved into the War Chest or Bitcoin is excluded from `expense` and counted
+    as a positive contribution. So:
+
+        effective_spend = expense - savings      (true consumption)
+        rate = (income - effective_spend) / income
 
     - No income AND no expense -> None/N/A (empty period)
     - No income but there IS spending -> F (you spent with nothing coming in)
     - Negative savings rate -> F
     """
+    effective_spend = expense - savings
     if income <= 0:
         if expense <= 0:
             return {"grade": "N/A", "color": "#64748b", "rate": None,
-                    "net": 0.0, "income": 0.0, "expense": 0.0}
+                    "net": 0.0, "income": 0.0, "expense": 0.0, "savings": round(savings, 2)}
         return {"grade": GRADE_F[0], "color": GRADE_F[1], "rate": None,
-                "net": round(income - expense, 2), "income": round(income, 2),
-                "expense": round(expense, 2)}
-    rate = (income - expense) / income
+                "net": round(income - effective_spend, 2), "income": round(income, 2),
+                "expense": round(effective_spend, 2), "savings": round(savings, 2)}
+    rate = (income - effective_spend) / income
     for threshold, letter, color in GRADE_SCALE:
         if rate >= threshold:
             return {"grade": letter, "color": color, "rate": round(rate * 100, 1),
-                    "net": round(income - expense, 2), "income": round(income, 2),
-                    "expense": round(expense, 2)}
+                    "net": round(income - effective_spend, 2), "income": round(income, 2),
+                    "expense": round(effective_spend, 2), "savings": round(savings, 2)}
     return {"grade": GRADE_F[0], "color": GRADE_F[1], "rate": round(rate * 100, 1),
-            "net": round(income - expense, 2), "income": round(income, 2),
-            "expense": round(expense, 2)}
+            "net": round(income - effective_spend, 2), "income": round(income, 2),
+            "expense": round(effective_spend, 2), "savings": round(savings, 2)}
 
 
-def _totals_for(con, start=None, end=None, exclude_zero_income=True) -> tuple[float, float]:
-    """Return (income, expense) for a date window, excluding transfers,
-    hidden categories, and excluded accounts."""
+def _totals_for(con, start=None, end=None, exclude_zero_income=True) -> tuple[float, float, float]:
+    """Return (income, expense, savings) for a date window, excluding
+    transfers, hidden categories, and excluded accounts. `expense` EXCLUDES
+    savings/investing categories (see SAVINGS_KEYS); those are returned
+    separately in `savings` so callers can grade on true consumption."""
     where, params = ["ac.exclude = 0", "c.kind != 'transfer'", "c.hidden = 0"], []
     if start:
         where.append("t.date >= ?"); params.append(start)
@@ -1691,14 +1714,22 @@ def _totals_for(con, start=None, end=None, exclude_zero_income=True) -> tuple[fl
         where.append("t.date <= ?"); params.append(end)
     w = " AND ".join(where)
     rows = con.execute(f"""
-        SELECT t.amount, c.kind FROM transactions t
+        SELECT t.amount, c.kind, c.key FROM transactions t
         JOIN categories c ON c.id = t.category_id
         JOIN accounts ac ON ac.id = t.account_id
         WHERE {w}
     """, params).fetchall()
     income = sum(r["amount"] for r in rows if r["amount"] > 0)
-    expense = sum(-r["amount"] for r in rows if r["amount"] < 0)
-    return round(income, 2), round(expense, 2)
+    expense = 0.0
+    savings = 0.0
+    for r in rows:
+        if r["amount"] >= 0:
+            continue
+        if r["key"] in SAVINGS_KEYS:
+            savings += -r["amount"]
+        else:
+            expense += -r["amount"]
+    return round(income, 2), round(expense, 2), round(savings, 2)
 
 
 # ---------- crypto ----------

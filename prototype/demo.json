@@ -24,8 +24,10 @@
 "rate": 29.6,
 "net": 43500.0,
 "income": 147000.0,
-"expense": 103500.0
-}
+"expense": 103500.0,
+"savings": 0.0
+},
+"savings": 0.0
 },
 "categories": [
 {

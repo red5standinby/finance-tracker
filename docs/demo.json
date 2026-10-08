@@ -3,7 +3,8 @@
     "totals": {
       "income": 21361.43,
       "expense": 15380.23,
-      "net": 5981.2
+      "net": 5981.2,
+      "savings": 0.0
     },
     "grade": {
       "grade": "A",
@@ -24,8 +25,10 @@
         "rate": 28.0,
         "net": 5981.2,
         "income": 21361.43,
-        "expense": 15380.23
-      }
+        "expense": 15380.23,
+        "savings": 0.0
+      },
+      "savings": 0.0
     },
     "categories": [
       {

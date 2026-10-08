@@ -4105,8 +4105,10 @@ async function renderHomeGrade(){
   // --- Savings rate ---
   if(rate != null){
     const col = rate>=20?'var(--good)':(rate>=0?'#eab308':'var(--bad)');
+    const sav = (_gradeWin === 'all') ? ((g.all_time||{}).savings) : g.savings;
+    const savTxt = (sav!=null && sav>0) ? (' · saves '+fmt(sav)) : '';
     html += `<div class="hb-grid"><div><div class="hb-name">Savings rate</div>
-      <div class="hb-sub">${winLabel} · net ÷ income</div></div>
+      <div class="hb-sub">${winLabel} · net ÷ income${savTxt}</div></div>
       <div class="hb-amt" style="color:${col};font-size:18px">${rate>=0?'+':''}${rate.toFixed(1)}%</div></div>`;
   } else {
     html += `<div class="hb-grid"><div><div class="hb-name">Savings rate</div>
@@ -4116,8 +4118,10 @@ async function renderHomeGrade(){
 
   // --- Financial grade ---
   if(g.grade){
+    const gsav = (_gradeWin === 'all') ? ((g.all_time||{}).savings) : g.savings;
+    const gsavTxt = (gsav!=null && gsav>0) ? (' · +'+fmt(gsav)+' saved') : '';
     html += `<div class="hb-grid"><div><div class="hb-name">Financial grade</div>
-      <div class="hb-sub">${winLabel} · net ${g.net!=null?(g.net<0?'-':'')+fmt(Math.abs(g.net)):'–'}</div></div>
+      <div class="hb-sub">${winLabel} · net ${g.net!=null?(g.net<0?'-':'')+fmt(Math.abs(g.net)):'–'}${gsavTxt}</div></div>
       <div class="hb-amt" style="color:${g.color||'var(--txt)'};font-size:20px">${esc(g.grade)}</div></div>`;
   }
 
