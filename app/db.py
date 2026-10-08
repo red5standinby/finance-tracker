@@ -106,6 +106,20 @@ CREATE TABLE IF NOT EXISTS imports (
     skipped INTEGER DEFAULT 0,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS ai_costs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    provider_user TEXT NOT NULL,     -- e.g. 'Google-aa4d11bf-...'
+    date TEXT NOT NULL,              -- start_time date (YYYY-MM-DD)
+    end_date TEXT DEFAULT NULL,      -- end_time date
+    model TEXT NOT NULL DEFAULT '',  -- e.g. 'deepseek-flash'
+    wallet_type TEXT DEFAULT '',     -- Paid | Free | ...
+    cost REAL NOT NULL DEFAULT 0,    -- USD
+    currency TEXT DEFAULT 'USD',
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(provider_user, date, end_date, model, wallet_type)
+);
+CREATE INDEX IF NOT EXISTS idx_ai_cost_date ON ai_costs(date);
 """
 
 

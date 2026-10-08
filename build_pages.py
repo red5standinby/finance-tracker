@@ -98,6 +98,28 @@ window.DEMO = true;
     else if(path.startsWith('/transactions')) body = (function(t){ t = t || {total:0, items:[]}; if(t.sum === undefined){ t = Object.assign({}, t, {sum: (t.items||[]).reduce((a,x)=>a+(x.amount||0),0)}); } return t; })(d.transactions);
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
+    else if(path.startsWith('/ai-costs')) body = (function(t, qs){
+      t = t || {total:0,count:0,daily:[],monthly:[],by_model:[],by_wallet:[],models:[]};
+      const model = qs.get('model');
+      if(!model || !t.daily) return t;
+      // demo mode: filter the fabricated series to one model client-side
+      const src = (t.daily_by_model || t.daily);   // rows with model info when available
+      const daily = src.filter(r=>!r.model || r.model === model);
+      const by_day = {};
+      daily.forEach(r=>{ by_day[r.date] = (by_day[r.date]||0) + (r.cost||0); });
+      const by_month = {};
+      Object.keys(by_day).forEach(d=>{ const k=d.slice(0,7); by_month[k]=(by_month[k]||0)+by_day[d]; });
+      const total = Object.values(by_day).reduce((a,b)=>a+b,0);
+      const r6 = n => Math.round(n*1e6)/1e6;
+      return Object.assign({}, t, {
+        total: r6(total),
+        count: Object.keys(by_day).length,
+        daily: Object.keys(by_day).sort().map(d=>({date:d,cost:r6(by_day[d]),n:1})),
+        monthly: Object.keys(by_month).sort().map(m=>({month:m,cost:r6(by_month[m]),n:1})),
+        by_model: [{model:model, cost:r6(total), n:Object.keys(by_day).length}],
+        by_wallet: [{wallet_type:'Paid', cost:r6(total), n:Object.keys(by_day).length}],
+      });
+    })(d.aiCosts, qs);
     else if(path.startsWith('/crypto')) body = demoCrypto(path, qs, d);
     else body = {};
     return new Response(JSON.stringify(body), {status:200, headers:{'Content-Type':'application/json'}});

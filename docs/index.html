@@ -907,6 +907,31 @@
     font-size:14px;font-weight:700;padding:11px 16px;border-radius:8px}
   .ms-panel .ms-actions .ms-apply:hover{filter:brightness(1.12);background:var(--accent)}
 
+  /* ============ AI Costs ============ */
+  .ai-hero{margin-bottom:16px}
+  .ai-hero .val{font-size:34px;line-height:1.1}
+  .ai-hero-stats{display:flex;gap:28px;margin-top:16px;flex-wrap:wrap}
+  .ai-stat .lbl{margin-bottom:2px}
+  .ai-stat-v{font-size:19px;font-weight:600;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .ai-chart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+  .ai-chart-head h2{margin:0}
+  .ai-sel{background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;
+    padding:6px 10px;font-size:13px;font-family:inherit}
+  .ai-sel:focus{outline:none;border-color:var(--accent)}
+  .ai-chart{width:100%;overflow:hidden}
+  .ai-bar-rect{fill:var(--accent);opacity:.85}
+  .ai-bar-rect:hover{opacity:1}
+  .ai-axis{fill:var(--mut);font-size:10px}
+  .ai-grid-line{stroke:var(--line);stroke-width:1;stroke-dasharray:3 3}
+  .ai-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .ai-rows{display:flex;flex-direction:column;gap:12px}
+  .ai-row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:5px}
+  .ai-row-lb{font-size:13px;color:var(--txt);font-weight:500}
+  .ai-row-v{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ai-bar{height:7px;background:var(--panel2);border-radius:5px;overflow:hidden;border:1px solid var(--line)}
+  .ai-bar-fill{height:100%;background:var(--accent);border-radius:5px;transition:width .3s ease}
+  @media (max-width:720px){ .ai-grid{grid-template-columns:1fr} .ai-hero .val{font-size:28px} }
+
   /* ============ THEME: High-end fintech treatments (scoped) ============ */
   html[data-theme="fintech"] body{
     font-family:var(--font-ui);font-size:var(--fs-base);
@@ -1098,6 +1123,28 @@ window.DEMO = true;
     else if(path.startsWith('/transactions')) body = (function(t){ t = t || {total:0, items:[]}; if(t.sum === undefined){ t = Object.assign({}, t, {sum: (t.items||[]).reduce((a,x)=>a+(x.amount||0),0)}); } return t; })(d.transactions);
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
+    else if(path.startsWith('/ai-costs')) body = (function(t, qs){
+      t = t || {total:0,count:0,daily:[],monthly:[],by_model:[],by_wallet:[],models:[]};
+      const model = qs.get('model');
+      if(!model || !t.daily) return t;
+      // demo mode: filter the fabricated series to one model client-side
+      const src = (t.daily_by_model || t.daily);   // rows with model info when available
+      const daily = src.filter(r=>!r.model || r.model === model);
+      const by_day = {};
+      daily.forEach(r=>{ by_day[r.date] = (by_day[r.date]||0) + (r.cost||0); });
+      const by_month = {};
+      Object.keys(by_day).forEach(d=>{ const k=d.slice(0,7); by_month[k]=(by_month[k]||0)+by_day[d]; });
+      const total = Object.values(by_day).reduce((a,b)=>a+b,0);
+      const r6 = n => Math.round(n*1e6)/1e6;
+      return Object.assign({}, t, {
+        total: r6(total),
+        count: Object.keys(by_day).length,
+        daily: Object.keys(by_day).sort().map(d=>({date:d,cost:r6(by_day[d]),n:1})),
+        monthly: Object.keys(by_month).sort().map(m=>({month:m,cost:r6(by_month[m]),n:1})),
+        by_model: [{model:model, cost:r6(total), n:Object.keys(by_day).length}],
+        by_wallet: [{wallet_type:'Paid', cost:r6(total), n:Object.keys(by_day).length}],
+      });
+    })(d.aiCosts, qs);
     else if(path.startsWith('/crypto')) body = demoCrypto(path, qs, d);
     else body = {};
     return new Response(JSON.stringify(body), {status:200, headers:{'Content-Type':'application/json'}});
@@ -1145,6 +1192,7 @@ window.DEMO = true;
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
       <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
+      <button data-tab="ai"><span class="ic">✦</span><span class="lb">AI Costs</span></button>
       <button data-tab="txns"><span class="ic">≡</span><span class="lb">Transactions</span></button>
       <button data-tab="rules"><span class="ic">⚙</span><span class="lb">Rules</span></button>
     </nav>
@@ -1738,6 +1786,66 @@ window.DEMO = true;
       <th class="no-sort">Type</th><th class="no-sort">Txns</th><th class="no-sort">Range</th>
       <th class="no-sort">Include</th></tr></thead>
       <tbody id="acct-list"></tbody></table>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CRYPTO ============ -->
+<section id="tab-ai" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">AI Costs</h2>
+      <div class="page-sub">API usage spend (per model) imported from cost CSVs</div>
+    </div>
+    <div class="ph-right">
+      <button class="btn ghost sm" onclick="aiCostsUpload()">⬆ Import CSV</button>
+    </div>
+  </div>
+
+  <input type="file" id="ai-file" accept=".csv,text/csv" style="display:none" onchange="aiCostsDoImport(this)">
+
+  <div class="card ai-hero">
+    <div class="lbl">Total AI spend</div>
+    <div class="val" id="ai-total">$0.00</div>
+    <div class="muted" style="font-size:12px" id="ai-sub">no data yet</div>
+    <div class="ai-hero-stats">
+      <div class="ai-stat"><div class="lbl">This month</div><div class="ai-stat-v" id="ai-month">$0.00</div></div>
+      <div class="ai-stat"><div class="lbl">Avg / day</div><div class="ai-stat-v" id="ai-avgday">$0.00</div></div>
+      <div class="ai-stat"><div class="lbl">Active days</div><div class="ai-stat-v" id="ai-days">0</div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="ai-chart-head">
+      <h2>Daily spend</h2>
+      <select id="ai-model" class="ai-sel" onchange="loadAiCosts()">
+        <option value="">All models</option>
+      </select>
+    </div>
+    <div class="ai-chart" id="ai-chart"></div>
+  </div>
+
+  <div class="ai-grid">
+    <div class="panel">
+      <h2>By model</h2>
+      <div class="ai-rows" id="ai-models"></div>
+    </div>
+    <div class="panel">
+      <h2>Monthly</h2>
+      <div class="ai-rows" id="ai-months"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Daily detail</h2>
+    <div class="table-wrap">
+    <table><thead><tr><th class="no-sort">Date</th><th class="no-sort">Model</th>
+      <th class="no-sort" style="text-align:right">Cost</th></tr></thead>
+      <tbody id="ai-detail"></tbody></table>
+    </div>
+    <div class="muted" style="margin-top:10px;font-size:12px">
+      AI/API spend is tracked separately from bank transactions and is not counted in budget totals.
+      <button class="btn ghost sm" style="margin-left:8px" onclick="aiCostsClear()">Clear all AI cost data</button>
     </div>
   </div>
 </section>
@@ -2585,7 +2693,7 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget','ai'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='dashboard') loadHome();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
@@ -2595,6 +2703,7 @@ function showTab(name){
   if(name==='rules'){ loadCats(); loadRules(); }
   if(name==='bills') loadBills();
   if(name==='budget') loadBudgetTab();
+  if(name==='ai') loadAiCosts();
   if(name==='import'){ loadImports(); loadAcctList(); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{ showTab(b.dataset.tab); if(window.innerWidth<=820){ const s=$('#sidebar'); if(s && !s.classList.contains('collapsed')){ s.classList.add('collapsed'); try{ localStorage.setItem('lffd-sidebar','1'); }catch(e){} } } });
@@ -4991,6 +5100,130 @@ async function loadImports(){
     <td class="pos">+${r.inserted}</td><td class="muted">${r.skipped}</td></tr>`).join('')
     : '<tr><td colspan=6 class="empty">No imports yet</td></tr>';
 }
+
+// ---------- AI / API costs ----------
+function aiCostsUpload(){ $('#ai-file').click(); }
+
+async function aiCostsDoImport(input){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const fd = new FormData(); fd.append('file', f);
+  try{
+    const r = await api('/ai-costs/import', {method:'POST', body:fd, raw:true});
+    toast(`Imported ${r.inserted} row${r.inserted===1?'':'s'}${r.skipped?` · ${r.skipped} skipped`:''}`);
+    if(typeof loadAiCosts==='function') await loadAiCosts();
+  }catch(e){ toast('Import failed: '+e.message); }
+  input.value = '';   // allow re-selecting the same file
+}
+
+async function aiCostsClear(){
+  if(!confirm('Clear ALL imported AI cost data? This cannot be undone.')) return;
+  try{
+    const r = await api('/ai-costs?confirm=yes', {method:'DELETE', raw:true});
+    toast(`Cleared ${r.deleted} row${r.deleted===1?'':'s'}`);
+    await loadAiCosts();
+  }catch(e){ toast('Clear failed: '+e.message); }
+}
+
+const aiMoney = v => '$' + (Number(v)||0).toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:2});
+const aiMoney4 = v => { const n=Number(v)||0; return '$' + (n===0?'0.00':n.toLocaleString('en-US',{minimumFractionDigits:2, maximumFractionDigits:n<0.01?4:2})); };
+
+let _aiData = null;
+
+async function loadAiCosts(){
+  const sel = $('#ai-model');
+  const model = sel ? sel.value : '';
+  const q = new URLSearchParams();
+  if(model) q.set('model', model);
+  let d;
+  try{ d = await api('/ai-costs' + (q.toString()?'?'+q.toString():'')); }
+  catch(e){ d = {total:0,count:0,daily:[],monthly:[],by_model:[],by_wallet:[],models:[]}; }
+  _aiData = d;
+
+  // model dropdown (keep current selection)
+  if(sel){
+    const keep = sel.value;
+    sel.innerHTML = '<option value="">All models</option>' +
+      (d.models||[]).map(m=>`<option value="${esc(m)}">${esc(m)}</option>`).join('');
+    if([...sel.options].some(o=>o.value===keep)) sel.value = keep;
+  }
+
+  $('#ai-total').textContent = aiMoney(d.total);
+  const span = (d.first_date && d.last_date) ? `${d.first_date} → ${d.last_date}` : 'no data yet';
+  $('#ai-sub').textContent = d.count ? `${d.count} entr${d.count===1?'y':'ies'} · ${span}` : 'no data yet';
+
+  // this month
+  const now = new Date();
+  const ym = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const mrow = (d.monthly||[]).find(m=>m.month===ym);
+  $('#ai-month').textContent = aiMoney(mrow ? mrow.cost : 0);
+
+  const activeDays = d.count || 0;
+  $('#ai-days').textContent = activeDays;
+  $('#ai-avgday').textContent = activeDays ? aiMoney(d.total/activeDays) : aiMoney(0);
+
+  renderAiChart(d.daily||[]);
+
+  // by model
+  const models = d.by_model||[];
+  const mmax = Math.max(1, ...models.map(m=>m.cost));
+  $('#ai-models').innerHTML = models.length ? models.map(m=>`
+    <div class="ai-row">
+      <div class="ai-row-top"><span class="ai-row-lb">${esc(m.model||'—')}</span><span class="ai-row-v">${aiMoney4(m.cost)}</span></div>
+      <div class="ai-bar"><div class="ai-bar-fill" style="width:${Math.max(2,(m.cost/mmax)*100)}%"></div></div>
+    </div>`).join('') : '<div class="muted">No data</div>';
+
+  // monthly
+  const mo = (d.monthly||[]).slice().reverse();
+  const momax = Math.max(1, ...mo.map(m=>m.cost));
+  $('#ai-months').innerHTML = mo.length ? mo.map(m=>`
+    <div class="ai-row">
+      <div class="ai-row-top"><span class="ai-row-lb">${esc(aiMonthLabel(m.month))}</span><span class="ai-row-v">${aiMoney4(m.cost)}</span></div>
+      <div class="ai-bar"><div class="ai-bar-fill" style="width:${Math.max(2,(m.cost/momax)*100)}%"></div></div>
+    </div>`).join('') : '<div class="muted">No data</div>';
+
+  // detail rows (newest first)
+  const det = (d.daily||[]).slice().reverse();
+  $('#ai-detail').innerHTML = det.length ? det.map(r=>`
+    <tr><td>${esc(r.date)}</td><td class="muted">${esc((d.models&&d.models.length===1)?d.models[0]:'—')}</td>
+    <td style="text-align:right">${aiMoney4(r.cost)}</td></tr>`).join('')
+    : '<tr><td colspan=3 class="empty">No AI cost data yet — use “Import CSV” above.</td></tr>';
+}
+
+function aiMonthLabel(ym){
+  if(!ym) return '—';
+  const [y,m] = ym.split('-');
+  const names=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${names[(+m)-1]||m} ${y}`;
+}
+
+function renderAiChart(daily){
+  const host = $('#ai-chart'); if(!host) return;
+  if(!daily.length){ host.innerHTML = '<div class="empty" style="padding:40px 0">No data</div>'; return; }
+  const W = host.clientWidth || 900, H = 200, pad = 30;
+  const max = Math.max(0.0001, ...daily.map(d=>d.cost));
+  const bw = Math.max(4, Math.min(40, (W-pad*2)/daily.length - 6));
+  const step = daily.length>1 ? (W-pad*2-bw)/(daily.length-1) : 0;
+  let bars='', labels='';
+  daily.forEach((d,i)=>{
+    const h = Math.max(2, (d.cost/max)*(H-pad*1.6));
+    const x = pad + i*step;
+    const y = H - pad - h;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" class="ai-bar-rect"><title>${esc(d.date)}: ${aiMoney4(d.cost)}</title></rect>`;
+    // sparse x labels: first, mid, last, or when few points
+    if(daily.length<=8 || i===0 || i===daily.length-1 || i===Math.floor(daily.length/2)){
+      labels += `<text x="${(x+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle" class="ai-axis">${esc(d.date.slice(5))}</text>`;
+    }
+  });
+  // y gridlines
+  let grid='';
+  [0,0.5,1].forEach(f=>{
+    const y = H-pad - f*(H-pad*1.6);
+    grid += `<line x1="${pad}" y1="${y.toFixed(1)}" x2="${W-pad}" y2="${y.toFixed(1)}" class="ai-grid-line"/>`;
+  });
+  host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">${grid}${bars}${labels}</svg>`;
+}
+window.addEventListener('resize', ()=>{ if(_aiData && !$('#tab-ai').classList.contains('hidden')) renderAiChart(_aiData.daily||[]); });
 async function loadAcctList(){
   const rows = await api('/accounts');
   const KIND_OPTS = [['checking','Checking'],['savings','Savings'],['credit','Credit card']];
@@ -5019,7 +5252,7 @@ async function toggleAcct(id, include){
   await loadMeta();
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget'].includes(h)) showTab(h);
+  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget','ai'].includes(h)) showTab(h);
   else showTab('dashboard');
 })();
 </script>

@@ -1490,6 +1490,114 @@ def get_imports():
     return [dict(r) for r in rows]
 
 
+# ---------- AI / API costs ----------
+# Usage-cost CSVs (e.g. DeepSeek per-day spend). Kept separate from bank
+# transactions so operating cost is tracked without distorting budget totals.
+# CSV columns: user_id, start_time_iso, end_time_iso, model, wallet_type, cost, currency
+
+@app.post("/api/ai-costs/import")
+async def ai_costs_import(file: UploadFile = File(...)):
+    import csv as _csv
+    from io import StringIO
+    raw = (await file.read()).decode("utf-8-sig", errors="replace")
+    reader = _csv.DictReader(StringIO(raw))
+    if not reader.fieldnames:
+        raise HTTPException(400, "Empty CSV")
+    rows, inserted, skipped = [], 0, 0
+    for r in reader:
+        def g(*names):
+            for n in names:
+                for k in r.keys():
+                    if k and k.strip().lower() == n:
+                        return (r[k] or "").strip()
+            return ""
+        uid = g("user_id")
+        start = g("start_time_iso", "start_time")
+        end = g("end_time_iso", "end_time")
+        model = g("model")
+        wallet = g("wallet_type")
+        cost_s = g("cost", "amount")
+        cur = g("currency") or "USD"
+        if not start and not model and not cost_s:
+            continue
+        try:
+            cost = float(cost_s or 0)
+        except ValueError:
+            skipped += 1
+            continue
+        d = start[:10] if start else ""
+        ed = end[:10] if end else None
+        if not d:
+            skipped += 1
+            continue
+        rows.append((uid, d, ed, model, wallet, round(cost, 8), cur))
+    with db() as con:
+        for row in rows:
+            cur = con.execute("""INSERT OR IGNORE INTO ai_costs
+                (provider_user,date,end_date,model,wallet_type,cost,currency)
+                VALUES(?,?,?,?,?,?,?)""", row)
+            if cur.rowcount:
+                inserted += 1
+            else:
+                skipped += 1
+    return {"inserted": inserted, "skipped": skipped, "total": len(rows)}
+
+
+@app.get("/api/ai-costs")
+def ai_costs(start: str | None = None, end: str | None = None,
+             model: str | None = None, months: int = 12):
+    """Daily AI cost series + rollups (total, by day, by month, by model).
+
+    `months` limits the monthly rollup window (most recent N). Totals are
+    all-time unless start/end given.
+    """
+    where, params = [], []
+    if start:
+        where.append("date >= ?"); params.append(start)
+    if end:
+        where.append("date <= ?"); params.append(end)
+    if model:
+        where.append("model = ?"); params.append(model)
+    wsql = (" WHERE " + " AND ".join(where)) if where else ""
+    with db() as con:
+        daily = con.execute(f"""SELECT date, ROUND(SUM(cost),6) cost, COUNT(*) n
+            FROM ai_costs{wsql} GROUP BY date ORDER BY date""", params).fetchall()
+        monthly = con.execute(f"""SELECT substr(date,1,7) month, ROUND(SUM(cost),6) cost, COUNT(*) n
+            FROM ai_costs{wsql} GROUP BY substr(date,1,7) ORDER BY month""", params).fetchall()
+        bymodel = con.execute(f"""SELECT model, ROUND(SUM(cost),6) cost, COUNT(*) n
+            FROM ai_costs{wsql} GROUP BY model ORDER BY cost DESC""", params).fetchall()
+        bywallet = con.execute(f"""SELECT wallet_type, ROUND(SUM(cost),6) cost, COUNT(*) n
+            FROM ai_costs{wsql} GROUP BY wallet_type ORDER BY cost DESC""", params).fetchall()
+        grand = con.execute(f"SELECT ROUND(COALESCE(SUM(cost),0),6) c FROM ai_costs{wsql}", params).fetchone()
+        spans = con.execute(f"SELECT MIN(date) a, MAX(date) b, COUNT(*) n FROM ai_costs{wsql}", params).fetchone()
+        # model list for the filter dropdown (unfiltered)
+        models = con.execute("SELECT DISTINCT model FROM ai_costs WHERE model<>'' ORDER BY model").fetchall()
+    daily = [dict(r) for r in daily]
+    monthly = [dict(r) for r in monthly]
+    if months and len(monthly) > months:
+        monthly = monthly[-months:]
+    return {
+        "total": grand["c"] if grand else 0,
+        "count": spans["n"] if spans else 0,
+        "first_date": spans["a"] if spans else None,
+        "last_date": spans["b"] if spans else None,
+        "daily": daily,
+        "monthly": monthly,
+        "by_model": [dict(r) for r in bymodel],
+        "by_wallet": [dict(r) for r in bywallet],
+        "models": [r["model"] for r in models],
+    }
+
+
+@app.delete("/api/ai-costs")
+def ai_costs_clear(confirm: str = ""):
+    if confirm != "yes":
+        raise HTTPException(400, "Pass confirm=yes to clear all AI cost rows")
+    with db() as con:
+        n = con.execute("DELETE FROM ai_costs").rowcount
+    return {"deleted": n}
+
+
 @app.post("/api/recategorize")
 def recategorize():
     """Re-run the rules engine over non-manual transactions."""
