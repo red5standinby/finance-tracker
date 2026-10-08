@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Nest Worth</title>
+<title>Nestworth</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="alternate icon" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -86,7 +86,7 @@
   .brand-mark .bm-arc{fill:none;stroke:var(--accent);stroke-width:1.2;stroke-linecap:round;opacity:.7}
   .brand-mark .bm-nest{fill:none;stroke:var(--brand-ink,#f4efe2);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .brand-mark .bm-dot{fill:var(--accent)}
-  header h1.brand-word{display:inline-flex;align-items:baseline;gap:5px;text-transform:none}
+  header h1.brand-word{display:inline-flex;align-items:baseline;gap:0;text-transform:none}
   header h1.brand-word .bw-nest{font-weight:600}
   header h1.brand-word .bw-worth{font-weight:600;font-style:italic;color:var(--accent);letter-spacing:.02em}
   .brand-tag{font-size:9.5px;letter-spacing:3px;text-transform:uppercase;color:var(--mut);
@@ -288,7 +288,14 @@
   }
   .home-hero{grid-template-columns:repeat(2,1fr)}
   #hero-savings{grid-column:1/-1}
-  @media(max-width:760px){.home-hero{grid-template-columns:1fr}#hero-savings{grid-column:auto}}
+  @media(max-width:760px){
+    .home-hero{grid-template-columns:1fr 1fr;gap:12px}
+    #hero-savings{grid-column:1/-1}
+    .home-hero .hero-card{padding:14px}
+    .hero-card .val{font-size:26px}
+    .hero-spotlight .val{font-size:32px}
+    .he-list{max-height:150px}
+  }
   /* Total savings hero — headline + inline toggle graph + split */
   .hs-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
   .hs-seg .seg-btn{padding:3px 9px;font-size:11.5px}
@@ -392,7 +399,7 @@
     background:linear-gradient(135deg,rgba(var(--tint),.10),transparent 70%)}
   .hero-spotlight .val{font-size:40px;letter-spacing:-1px;font-weight:600}
   .hero-spotlight .lbl{color:var(--txt);opacity:.9}
-  @media(max-width:760px){.hero-spotlight{grid-column:span 1}}
+  @media(max-width:760px){.hero-spotlight{grid-column:1/-1}}
   .hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px solid rgba(36,48,68,.5)}
   .hb-row:last-child{border-bottom:none}
   .hb-sep{background:rgba(var(--tint),.08);border-radius:8px;padding:8px 10px;margin:2px -2px}\n  .hb-name{font-weight:600;font-size:14px}
@@ -1297,7 +1304,7 @@ window.DEMO = true;
     <path class="bm-arc" d="M11.6 27.6 C14 30 26 30 28.4 27.6" opacity=".85"/>
     <circle class="bm-dot" cx="27.4" cy="14.6" r="1.6"/>
   </svg></button>
-  <h1 class="brand-word"><span class="bw-nest">Nest</span><span class="bw-worth">Worth</span></h1>
+  <h1 class="brand-word"><span class="bw-nest">Nest</span><span class="bw-worth">worth</span></h1>
   <span class="brand-tag">Family Finance</span>
   <div class="spacer"></div>
   <div class="pal-wrap">
@@ -1648,9 +1655,9 @@ window.DEMO = true;
 
   <div class="grid cards">
     <div class="card"><div class="lbl">Avg monthly income (3mo)</div><div class="val pos" id="t-avg-inc">$0</div></div>
-    <div class="card"><div class="lbl">Avg monthly spend (3mo)</div><div class="val neg" id="t-avg-exp">$0</div></div>
+    <div class="card"><div class="lbl">Avg monthly spend, net</div><div class="val neg" id="t-avg-exp">$0</div></div>
     <div class="card"><div class="lbl">Avg monthly net (3mo)</div><div class="val" id="t-avg-net">$0</div></div>
-    <div class="card"><div class="lbl">Months shown</div><div class="val" id="t-nmonths">0</div></div>
+    <div class="card"><div class="lbl">Months @</div><div class="val" id="t-nmonths">0</div></div>
   </div>
 
   <div class="panel" id="t-panel-pie">
