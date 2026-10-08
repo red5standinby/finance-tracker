@@ -121,8 +121,9 @@
   .sb-toggle .lb{transition:opacity .1s}
   .sidebar.collapsed .sb-toggle .lb{opacity:0;width:0}
   .sb-toggle:hover{color:var(--txt);border-color:var(--accent);background:var(--panel2)}
-  .sb-burger{display:none;align-items:center;justify-content:center;background:none;border:1px solid var(--line);
-    color:var(--txt);border-radius:9px;width:38px;height:38px;font-size:17px;cursor:pointer;flex:0 0 38px}
+  .sb-burger{display:flex;align-items:center;justify-content:center;background:none;border:1px solid var(--line);
+    color:var(--txt);border-radius:9px;width:38px;height:38px;font-size:17px;cursor:pointer;flex:0 0 38px;padding:0}
+  .sb-burger .brand-mark{width:24px;height:24px;margin:0}
   .sb-burger:hover{background:var(--panel2);border-color:var(--accent)}
   /* by-account + budgets side by side */
   .inline-pair{grid-template-columns:1fr 1fr;align-items:stretch;margin-top:16px}
@@ -784,7 +785,6 @@
   @media (max-width: 820px){
     header{flex-wrap:nowrap;gap:10px;padding:12px 14px}
     header h1{font-size:15px}
-    .sb-burger{display:flex}
     .layout{min-height:calc(100vh - var(--hdr))}
     .sidebar{position:fixed;top:var(--hdr);left:0;z-index:30;height:calc(100vh - var(--hdr));width:240px;flex-basis:240px;
       transform:translateX(0);transition:transform .2s ease;box-shadow:6px 0 22px rgba(0,0,0,.45)}
@@ -1198,15 +1198,14 @@ window.DEMO = true;
 </head>
 <body>
 <header>
-  <button class="sb-burger" id="sb-burger" title="Toggle menu" aria-label="Toggle menu">☰</button>
-  <span class="logo" id="brand-logo"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
+  <button class="sb-burger" id="sb-burger" title="Toggle menu" aria-label="Toggle menu"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
     <circle class="bm-ring" cx="20" cy="20" r="17.2"/>
     <circle class="bm-ring2" cx="20" cy="20" r="14"/>
     <path class="bm-arc" d="M20 3.4 A16.6 16.6 0 0 1 36.6 20"/>
     <path class="bm-nest" d="M13.2 25.6 L13.2 14.4 L21.4 23.2 L21.4 14.4"/>
     <path class="bm-arc" d="M11.6 27.6 C14 30 26 30 28.4 27.6" opacity=".85"/>
     <circle class="bm-dot" cx="27.4" cy="14.6" r="1.6"/>
-  </svg></span>
+  </svg></button>
   <h1 class="brand-word"><span class="bw-nest">Nest</span><span class="bw-worth">Worth</span></h1>
   <span class="brand-tag">Family Finance</span>
   <div class="spacer"></div>
