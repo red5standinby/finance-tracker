@@ -8,7 +8,7 @@
 <link rel="alternate icon" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600&family=Manrope:wght@100;200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@100;200;300;400;500;600&family=Manrope:wght@100;200;300;400;500;600;700;800&family=Inter:wght@100;200;300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0b0f17; --panel:#131a26; --panel2:#1a2333; --line:#243044;
@@ -36,6 +36,22 @@
     --glow:0 0 0 1px rgba(74,168,255,.18),0 14px 40px -18px rgba(74,168,255,.45);
     --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 18px 40px -24px rgba(0,0,0,.8);
     --accent-grad:linear-gradient(135deg,#4aa8ff,#2fb8e6 55%,#2fd6a0);
+  }
+  /* ------- Glass: bright frosted-glass, soft blue tint, clean sans ------- */
+  html[data-theme="glass"]{
+    --bg:#eef2f8; --panel:rgba(255,255,255,.62); --panel2:rgba(255,255,255,.44);
+    --line:rgba(255,255,255,.7); --txt:#1b2433; --mut:#64748b;
+    --accent:#3b82f6; --good:#10b981; --bad:#f43f5e; --tint:59,130,246;
+    --radius:18px; --hdr:62px;
+    --font-ui:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,ui-sans-serif,sans-serif;
+    --font-title:"Space Grotesk","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --fs-base:15.5px; --track-tight:-.01em;
+    --panel-grad:linear-gradient(160deg,rgba(255,255,255,.75) 0%,rgba(255,255,255,.5) 100%);
+    --hair:rgba(255,255,255,.55);
+    --glow:0 0 0 1px rgba(255,255,255,.6),0 20px 50px -22px rgba(59,130,246,.4);
+    --shadow-card:0 1px 0 rgba(255,255,255,.7) inset,0 18px 44px -26px rgba(31,58,110,.45);
+    --accent-grad:linear-gradient(135deg,#60a5fa,#3b82f6 55%,#818cf8);
+    --glass-blur:blur(22px) saturate(160%);
   }
   /* ------- Apiary: near-black + gold "digital stewardship" ops console ------- */
   html[data-theme="apiary"]{
@@ -1072,6 +1088,81 @@
   html[data-theme="apiary"] .hb-bar>span{background:var(--accent-grad)}
   /* seg controls / pills */
   html[data-theme="apiary"] .seg button.active{background:var(--accent);color:#141008}
+
+  /* ============ THEME: Glass (frosted, bright, clean sans) ============ */
+  html[data-theme="glass"] body{
+    background:
+      radial-gradient(1100px 700px at 12% -8%, #dfe9ff 0%, transparent 60%),
+      radial-gradient(1000px 640px at 100% 0%, #eafaf4 0%, transparent 55%),
+      radial-gradient(900px 700px at 50% 120%, #e8ecff 0%, transparent 60%),
+      #eef2f8;
+    background-attachment:fixed;color:var(--txt)}
+  html[data-theme="glass"] header{
+    background:rgba(255,255,255,.55);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border-bottom:1px solid rgba(255,255,255,.7);box-shadow:0 8px 30px -20px rgba(31,58,110,.5)}
+  html[data-theme="glass"] header h1{font-weight:600;letter-spacing:.01em}
+  html[data-theme="glass"] header h1.brand-word .bw-worth{
+    background:var(--accent-grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  html[data-theme="glass"] .brand-tag{color:var(--mut)}
+  /* sidebar: frosted rail */
+  html[data-theme="glass"] .sidebar{
+    background:rgba(255,255,255,.5);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    border-right:1px solid rgba(255,255,255,.7)}
+  html[data-theme="glass"] nav button{color:#4b5b73;border-radius:12px;font-weight:500}
+  html[data-theme="glass"] nav button:hover{background:rgba(255,255,255,.6);color:var(--txt)}
+  html[data-theme="glass"] nav button.active{
+    background:var(--accent-grad);color:#fff;box-shadow:0 10px 24px -12px rgba(59,130,246,.8)}
+  /* panels / cards: frosted glass */
+  html[data-theme="glass"] .panel,
+  html[data-theme="glass"] .snap,
+  html[data-theme="glass"] .card,
+  html[data-theme="glass"] .hero-card,
+  html[data-theme="glass"] .hero-spotlight,
+  html[data-theme="glass"] .bgroup,
+  html[data-theme="glass"] .pd-card{
+    background:var(--panel-grad);border:1px solid var(--hair);border-radius:var(--radius);
+    backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+    box-shadow:var(--shadow-card)}
+  html[data-theme="glass"] .panel:hover,
+  html[data-theme="glass"] .snap:hover{border-color:rgba(255,255,255,.85);box-shadow:var(--glow)}
+  /* titles: clean geometric sans */
+  html[data-theme="glass"] .home-title,
+  html[data-theme="glass"] .page-title{font-family:var(--font-title);font-weight:600;letter-spacing:.005em;color:#131c2b}
+  html[data-theme="glass"] .panel h2,
+  html[data-theme="glass"] .panel-head h2,
+  html[data-theme="glass"] .snap .panel-head h2{
+    font-family:var(--font-title);font-weight:600;letter-spacing:.01em;color:#1b2433}
+  html[data-theme="glass"] .card .lbl,
+  html[data-theme="glass"] .lbl{color:var(--mut);letter-spacing:.06em;font-weight:600}
+  html[data-theme="glass"] .card .val,
+  html[data-theme="glass"] .hero-card .val,
+  html[data-theme="glass"] .hero-spotlight .val,
+  html[data-theme="glass"] .snap .snap-big{
+    font-family:var(--font-title);font-weight:500;letter-spacing:-.015em;font-variant-numeric:tabular-nums;color:#0f1826}
+  /* inputs + controls */
+  html[data-theme="glass"] input,html[data-theme="glass"] select,html[data-theme="glass"] textarea{
+    background:rgba(255,255,255,.7);border:1px solid rgba(203,214,230,.9);color:var(--txt)}
+  html[data-theme="glass"] input:focus,html[data-theme="glass"] select:focus{
+    border-color:var(--accent);box-shadow:0 0 0 3px rgba(59,130,246,.18)}
+  html[data-theme="glass"] .seg{background:rgba(255,255,255,.55);border-color:rgba(255,255,255,.7)}
+  html[data-theme="glass"] .seg button.active{background:var(--accent-grad);color:#fff;box-shadow:0 6px 16px -8px rgba(59,130,246,.8)}
+  html[data-theme="glass"] .btn,html[data-theme="glass"] button.ghost{
+    background:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.7);color:#334155}
+  html[data-theme="glass"] .btn:hover,html[data-theme="glass"] button.ghost:hover{background:rgba(255,255,255,.85)}
+  html[data-theme="glass"] .btn.primary,html[data-theme="glass"] .primary{
+    background:var(--accent-grad);color:#fff;border-color:transparent;box-shadow:0 10px 24px -12px rgba(59,130,246,.8)}
+  /* tables */
+  html[data-theme="glass"] table td{border-color:rgba(226,232,240,.7);font-variant-numeric:tabular-nums}
+  html[data-theme="glass"] table th{color:var(--mut)}
+  html[data-theme="glass"] .hb-row{border-bottom-color:rgba(226,232,240,.7)}
+  /* progress fills */
+  html[data-theme="glass"] .bud-fill.ok,html[data-theme="glass"] .hb-bar>span{background:var(--accent-grad)}
+  /* palette menu */
+  html[data-theme="glass"] .pal-menu{background:rgba(255,255,255,.85);backdrop-filter:var(--glass-blur);
+    -webkit-backdrop-filter:var(--glass-blur);border:1px solid rgba(255,255,255,.8);box-shadow:0 24px 50px -20px rgba(31,58,110,.5)}
+  html[data-theme="glass"] .pal-menu button{color:#334155}
+  html[data-theme="glass"] .pal-menu button:hover{background:rgba(59,130,246,.1)}
+  html[data-theme="glass"] .pal-menu button.active{background:rgba(59,130,246,.14);color:#1d4ed8}
 </style>
 
 <!-- ===== GitHub Pages demo bootstrap (injected by build_pages.py) ===== -->
@@ -2789,6 +2880,7 @@ $('#nav-import').onclick = ()=>showTab('import');
 (function(){
   const THEMES = [
     ['fintech', 'Fintech (Pro)', '#4aa8ff'],
+    ['glass',   'Glass',        '#3b82f6'],
     ['apiary',  'Apiary (Gold)', '#c2a378'],
     ['midnight','Midnight',   '#4f8cff'],
     ['rosegold','Rose Gold',  '#e8a0a8'],
