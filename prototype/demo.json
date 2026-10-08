@@ -1014,6 +1014,12 @@
 "income": 5340.36,
 "expense": 3845.06,
 "net": 1495.3
+},
+"avg_all": {
+"income": 5340.36,
+"expense": 3845.06,
+"net": 1495.3,
+"months": 4
 }
 },
 "transactions": {

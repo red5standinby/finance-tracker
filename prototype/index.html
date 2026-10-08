@@ -271,6 +271,7 @@
   main{padding:26px;flex:1 1 auto;min-width:0;width:100%;max-width:1440px;margin:0 auto}
   .grid{display:grid;gap:16px}
   .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  .avg-sub{font-size:11px;margin-top:3px;line-height:1.2}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
   .card .lbl{color:var(--mut);font-size:15px;text-transform:uppercase;letter-spacing:.9px}
   .card .val{font-size:28px;font-weight:600;margin-top:6px;font-variant-numeric:tabular-nums}
@@ -894,6 +895,7 @@
     .avg-cards .card{padding:11px}
     .avg-cards .card .lbl{font-size:10.5px;line-height:1.25}
     .avg-cards .card .val{font-size:19px}
+    .avg-sub{font-size:10px;margin-top:2px;line-height:1.2}
   }
   /* keep long tables scrollable rather than stretching the page */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}  img,svg{max-width:100%}
@@ -1246,7 +1248,11 @@ window.DEMO = true;
       const recent = (t.months||[]).slice(-3);
       let exp = 0; recent.forEach(m=>cats.forEach(c=>{ exp += (c.series&&c.series[m])||0; }));
       const inc = t.avg_3mo ? t.avg_3mo.income : 0;
-      return Object.assign({}, t, { categories: cats, avg_3mo: { income: inc, expense: Math.round(exp*100)/100, net: Math.round((inc-exp)*100)/100 } });
+      const avg3 = { income: inc, expense: Math.round(exp*100)/100, net: Math.round((inc-exp)*100)/100 };
+      let expAll = 0; (t.months||[]).forEach(m=>cats.forEach(c=>{ expAll += (c.series&&c.series[m])||0; }));
+      const incAll = t.avg_all ? t.avg_all.income : inc;
+      const avgAll = { income: incAll, expense: Math.round(expAll*100)/100, net: Math.round((incAll-expAll)*100)/100, months: (t.months||[]).length };
+      return Object.assign({}, t, { categories: cats, avg_3mo: avg3, avg_all: avgAll });
     })(d.trends, qs);
     else if(path.startsWith('/savings/history')) body = d.savingsHistory || {months:[], current:null, current_month:null};
     else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
@@ -1663,10 +1669,10 @@ window.DEMO = true;
   </div>
 
   <div class="grid cards avg-cards">
-    <div class="card"><div class="lbl">Avg income</div><div class="val pos" id="t-avg-inc">$0</div></div>
-    <div class="card"><div class="lbl">Avg spend, net</div><div class="val neg" id="t-avg-exp">$0</div></div>
-    <div class="card"><div class="lbl">Avg net</div><div class="val" id="t-avg-net">$0</div></div>
-    <div class="card"><div class="lbl">Months @</div><div class="val" id="t-nmonths">0</div></div>
+    <div class="card"><div class="lbl">Avg income</div><div class="val pos" id="t-avg-inc">$0</div><div class="avg-sub muted" id="t-avg-inc-sub"></div></div>
+    <div class="card"><div class="lbl">Avg spend, net</div><div class="val neg" id="t-avg-exp">$0</div><div class="avg-sub muted" id="t-avg-exp-sub"></div></div>
+    <div class="card"><div class="lbl">Avg net</div><div class="val" id="t-avg-net">$0</div><div class="avg-sub muted" id="t-avg-net-sub"></div></div>
+    <div class="card"><div class="lbl">Months @</div><div class="val" id="t-nmonths">0</div><div class="avg-sub muted" id="t-nmonths-sub"></div></div>
   </div>
 
   <div class="panel" id="t-panel-pie">
@@ -4475,12 +4481,23 @@ async function loadTrends(){
   if($('#t-cat-ms') && msValues('t-cat-ms').length) q.set('categories', msValues('t-cat-ms').map(n=>(CATS.find(x=>x.name===n)||{}).key).filter(Boolean).join(','));
   q.set('months', $('#t-months').value);
   const d = await api('/trends?'+q);
-  $('#t-avg-inc').textContent = fmt(d.avg_3mo.income);
-  $('#t-avg-exp').textContent = fmt(d.avg_3mo.expense);
-  const net = d.avg_3mo.net;
+  const aa = d.avg_all || d.avg_3mo || {};
+  const a3 = d.avg_3mo || {};
+  $('#t-avg-inc').textContent = fmt(aa.income||0);
+  $('#t-avg-exp').textContent = fmt(aa.expense||0);
+  const net = aa.net||0;
   const ne = $('#t-avg-net'); ne.textContent = (net<0?'-':'')+fmt(net);
   ne.className = 'val ' + (net>=0?'pos':'neg');
-  $('#t-nmonths').textContent = d.months.length;
+  $('#t-nmonths').textContent = (aa.months||d.months.length);
+  // sublines: per-card trailing 3-month avg + window note
+  const mo = (aa.months||d.months.length);
+  const win = d.months.length;
+  $('#t-avg-inc-sub').textContent = 'trailing 3mo: '+fmt(a3.income||0);
+  $('#t-avg-exp-sub').textContent = 'trailing 3mo: '+fmt(a3.expense||0);
+  const n3 = a3.net||0;
+  $('#t-avg-net-sub').textContent = 'trailing 3mo: '+(n3<0?'-':'')+fmt(Math.abs(n3));
+  $('#t-nmonths-sub').textContent = 'avg over '+mo+' full mo';
+  _lastTrends = d;
   _lastTrends = d;
   // month selector for the pie (one month at a time)
   tMonthSeries = d.month_series || [];

@@ -541,10 +541,30 @@ def trends(start: str | None = None, end: str | None = None,
         "net": round(month_income.get(m, 0.0) - month_expense.get(m, 0.0), 2),
     } for m in all_months]
 
-    # 3-month averages of overall income/expense
+    # 3-month averages of overall income/expense (trailing)
     recent3 = all_months[-3:]
     avg_inc = round(sum(month_income.get(m, 0.0) for m in recent3) / max(len(recent3), 1), 2)
     avg_exp = round(sum(month_expense.get(m, 0.0) for m in recent3) / max(len(recent3), 1), 2)
+
+    # complete-month averages: only months with real income activity.
+    # Partial-history months (no/negligible income recorded, e.g. credit-card
+    # or savings-only imports) would otherwise count as $0 income and drag the
+    # average down. A month is "complete" when its income is at least 25% of
+    # the median income across income-bearing months (adaptive threshold).
+    inc_months = [m for m in all_months if month_income.get(m, 0.0) > 0]
+    if inc_months:
+        vals = sorted(month_income[m] for m in inc_months)
+        mid = len(vals) // 2
+        median_inc = vals[mid] if len(vals) % 2 else (vals[mid - 1] + vals[mid]) / 2
+        thr = median_inc * 0.25
+        complete = [m for m in inc_months if month_income.get(m, 0.0) >= thr]
+    else:
+        complete = []
+    if not complete:
+        complete = all_months
+    n_c = max(len(complete), 1)
+    avg_inc_all = round(sum(month_income.get(m, 0.0) for m in complete) / n_c, 2)
+    avg_exp_all = round(sum(month_expense.get(m, 0.0) for m in complete) / n_c, 2)
 
     return {
         "months": all_months,
@@ -552,6 +572,9 @@ def trends(start: str | None = None, end: str | None = None,
         "month_series": month_series,
         "avg_3mo": {"income": avg_inc, "expense": avg_exp,
                      "net": round(avg_inc - avg_exp, 2)},
+        "avg_all": {"income": avg_inc_all, "expense": avg_exp_all,
+                     "net": round(avg_inc_all - avg_exp_all, 2),
+                     "months": len(complete)},
     }
 
 
