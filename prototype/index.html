@@ -750,9 +750,12 @@
   .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
 
   /* ---- dedicated Budget tab ---- */
-  .b-filter-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;width:100%}
+  .b-filter-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%}
   .bg-monthnav{display:flex;align-items:center;gap:8px}
   .bg-monthlbl{font-size:19px;font-weight:700;min-width:150px;text-align:center}
+  .bg-monthsel{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);
+    font-size:13px;font-weight:600;padding:7px 10px;font-family:inherit;cursor:pointer}
+  .bg-addbtn{margin-left:auto}
   .bg-addwrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .bg-addwrap select,.bg-addinp{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;
     color:var(--txt);font-size:13px;padding:7px 10px;font-family:inherit}
@@ -1611,18 +1614,9 @@ window.DEMO = true;
   </div>
   <div class="filters">
     <div class="b-filter-row">
-      <div class="bg-monthnav">
-        <button class="btn ghost sm" onclick="budgetNav(-1)" title="Previous month">‹</button>
-        <span id="bud-month" class="bg-monthlbl">–</span>
-        <button class="btn ghost sm" onclick="budgetNav(1)" title="Next month">›</button>
-        <button class="btn ghost sm" onclick="budgetNav(0)">This month</button>
-      </div>
+      <select id="bud-month-sel" class="bg-monthsel" onchange="budgetSetMonth(this.value)" title="Month"></select>
       <div class="multiselect" id="bud-account-ms"></div>
-      <div class="bg-addwrap">
-        <select id="bud-add-cat"><option value="">Add a category…</option></select>
-        <input id="bud-add-amt" class="bg-addinp" type="number" min="0" step="10" placeholder="$ / month">
-        <button class="btn sm" onclick="budgetAddCategory()">Add</button>
-      </div>
+      <button class="btn sm bg-addbtn" onclick="openBudgetForm()">+ Add budget</button>
     </div>
   </div>
 
@@ -1640,6 +1634,8 @@ window.DEMO = true;
     <div id="bud-list" class="bud-list"><div class="empty">No budgets set</div></div>
   </div>
 </section>
+
+<div class="modal" id="bud-modal" onclick="closeBudgetForm()"></div>
 
 <!-- ============ TRENDS ============ -->
 <section id="tab-trends" class="hidden">
@@ -4290,6 +4286,7 @@ let _budT = null;            // last /budgets response
 let _budMonth = null;        // 'YYYY-MM' currently shown
 let _budSort = 'all';        // all | over | unset
 let _budAcctInit = false;
+let _budAvailCats = [];      // categories without a budget (for the add modal)
 
 function budThisMonth(){ const n=new Date(); return n.getFullYear()+'-'+String(n.getMonth()+1).padStart(2,'0'); }
 function budShift(ym, delta){
@@ -4317,9 +4314,22 @@ async function loadBudgetTab(){
 }
 
 function budgetNav(delta){
+  // kept for compatibility
   if(delta === 0) _budMonth = budThisMonth();
   else _budMonth = budShift(_budMonth || budThisMonth(), delta);
   loadBudgetTab();
+}
+function budgetSetMonth(ym){
+  _budMonth = ym || budThisMonth();
+  loadBudgetTab();
+}
+function budMonthOptions(selected){
+  // 12 months back from this month, plus the selected month if it's outside
+  const cur = budThisMonth();
+  const list = [];
+  for(let i=11;i>=0;i--) list.push(budShift(cur, -i));
+  if(selected && !list.includes(selected)){ list.unshift(selected); list.sort(); }
+  return list.map(ym=>`<option value="${ym}"${ym===selected?' selected':''}>${budMonthLabel(ym)}</option>`).join('');
 }
 function budgetSort(s){
   _budSort = s;
@@ -4329,15 +4339,14 @@ function budgetSort(s){
 
 function renderBudgetTab(){
   const d = _budT;
-  $('#bud-month').textContent = d ? budMonthLabel(d.month) : budMonthLabel(_budMonth);
+  const shownMonth = d ? d.month : _budMonth;
+  const msel = $('#bud-month-sel');
+  if(msel) msel.innerHTML = budMonthOptions(shownMonth);
   if(!d){ $('#bud-hero').innerHTML = '<div class="empty">Could not load budgets</div>'; $('#bud-list').innerHTML=''; return; }
 
-  // populate add-category dropdown with unbudgeted categories
-  const sel = $('#bud-add-cat');
+  // category options for the add modal (unbudgeted categories)
   const haveBudget = new Set(d.rows.filter(r=>r.budget>0).map(r=>r.key));
-  const opts = (d.categories||[]).filter(c=>!haveBudget.has(c.key));
-  sel.innerHTML = '<option value="">Add a category…</option>' +
-    opts.map(c=>`<option value="${esc(c.key)}">${esc(c.name)}</option>`).join('');
+  _budAvailCats = (d.categories||[]).filter(c=>!haveBudget.has(c.key));
 
   const t = d.totals || {};
   const bud = t.budget||0, spent = t.spent||0, spentAll = t.spent_all||0, unbud = t.spent_unbudgeted||0;
@@ -4414,18 +4423,42 @@ function budgetRowSet(key, raw){
     .catch(() => alert('Could not save budget'));
 }
 
-function budgetAddCategory(){
-  const key = $('#bud-add-cat').value;
-  const amt = $('#bud-add-amt').value;
+function openBudgetForm(){
+  const d = document.getElementById('bud-modal');
+  const cats = _budAvailCats || [];
+  const catOpts = cats.length
+    ? '<option value="">Pick a category…</option>' + cats.map(c=>`<option value="${esc(c.key)}">${esc(c.name)}</option>`).join('')
+    : '<option value="">All categories already have budgets</option>';
+  d.innerHTML =
+    '<div class="modal-card" onclick="event.stopPropagation()">'+
+      '<h3 style="margin:0 0 14px">Add a budget</h3>'+
+      '<label class="fld">Category<select id="bf-bud-cat">'+catOpts+'</select></label>'+
+      '<label class="fld">Monthly amount<input id="bf-bud-amt" type="number" min="0" step="10" placeholder="$ / month"></label>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">'+
+        '<button class="btn ghost" onclick="closeBudgetForm()">Cancel</button>'+
+        '<button class="btn" id="bf-bud-save" onclick="submitBudgetForm()"'+(cats.length?'':' disabled')+'>Add budget</button>'+
+      '</div>'+
+    '</div>';
+  d.classList.add('open');
+  setTimeout(()=>{const el=document.getElementById('bf-bud-cat');if(el)el.focus();},30);
+}
+
+function closeBudgetForm(){ const d=document.getElementById('bud-modal'); if(d) d.classList.remove('open'); }
+
+function submitBudgetForm(){
+  const key = ($('#bf-bud-cat')||{}).value;
+  const amt = ($('#bf-bud-amt')||{}).value;
   if(!key){ alert('Pick a category first'); return; }
   const val = parseFloat(String(amt).replace(/[$,]/g,''));
   if(isNaN(val) || val<=0){ alert('Enter a monthly amount'); return; }
   fetch('/api/budgets', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({category_key: key, amount: val})})
-    .then(r => { if(r.ok){ $('#bud-add-amt').value=''; loadBudgetTab(); } else alert('Could not save budget'); })
+    .then(r => { if(r.ok){ closeBudgetForm(); loadBudgetTab(); } else alert('Could not save budget'); })
     .catch(() => alert('Could not save budget'));
 }
+
+function budgetAddCategory(){ submitBudgetForm(); }
 
 // Jump from a dashboard category bar into filtered Transactions.
 let _lastTrends = null;
