@@ -329,6 +329,11 @@
   .hero-expense{display:flex;flex-direction:column}
   .he-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:6px}
   .he-top.clickable{cursor:pointer}
+  .he-top-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .he-monthsel{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:8px;
+    font-size:12px;font-weight:600;padding:4px 8px;cursor:pointer;letter-spacing:.2px}
+  .he-monthsel:hover{border-color:var(--accent)}
+  .he-monthsel:focus{outline:none;border-color:var(--accent)}
   /* budget mini-bar inside the expenses card */
   .he-budget{margin-top:10px;padding-top:0}
   .he-bar{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden}
@@ -1300,7 +1305,10 @@
     <div class="card hero-card hero-expense" id="hero-expense">
       <div class="he-top">
         <div class="lbl" style="margin:0">Budget outlook</div>
-        <button class="btn ghost sm" onclick="showTab('budget')">Open ↗</button>
+        <div class="he-top-tools">
+          <select id="h-month-sel" class="he-monthsel" onchange="homeSetMonth(this.value)" title="Select month"></select>
+          <button class="btn ghost sm" onclick="showTab('budget')">Open ↗</button>
+        </div>
       </div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
@@ -3470,6 +3478,41 @@ async function editBill(id){
   openBillForm(bill);
 }
 
+let _homeMonth = null;   // 'YYYY-MM' selected for the Budget outlook card; null = current month
+let _homeMonthsLoaded = false;
+
+function homeMonthList(){
+  // build the last 24 months up to the current one
+  const out = [];
+  const d = new Date();
+  d.setDate(1);
+  for(let i=0;i<24;i++){
+    out.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+    d.setMonth(d.getMonth()-1);
+  }
+  return out;
+}
+
+function homeInitMonthSelect(){
+  const sel = $('#h-month-sel');
+  if(!sel || _homeMonthsLoaded) return;
+  const cur = new Date();
+  const curYm = cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0');
+  sel.innerHTML = homeMonthList().map(ym=>{
+    const [y,m] = ym.split('-');
+    const label = new Date(+y, +m-1, 1).toLocaleDateString('en-US',{month:'short', year:'numeric'});
+    const isCur = ym === curYm;
+    return `<option value="${ym}"${isCur?' selected':''}>${label}${isCur?' · this month':''}</option>`;
+  }).join('');
+  sel.value = _homeMonth || curYm;
+  _homeMonthsLoaded = true;
+}
+
+async function homeSetMonth(ym){
+  _homeMonth = ym;
+  await renderHomeExpenseHero();
+}
+
 async function loadHome(){
   // ---- context ----
   const now = new Date();
@@ -3502,30 +3545,7 @@ async function loadHome(){
   await renderHomeSavings();
 
   // ---- HERO 2: total monthly expenses (merged with budget) ----
-  {
-    const he = $('#h-monthly-exp');
-    he.textContent = fmt(expense);
-    he.className = 'val ' + (expense > 0 ? 'neg' : '');
-    const budTot = (B.totals && B.totals.budget) || 0;
-    const budSpent = (B.totals && B.totals.spent) || 0;      // spend in budgeted cats
-    const spentAll = (B.totals && B.totals.spent_all) || budSpent;
-    const spentUnbud = Math.max(0, spentAll - budSpent);
-    const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left');
-    if (budTot > 0) {
-      const pct = Math.min(100, Math.round(budSpent / budTot * 100));
-      const remaining = budTot - budSpent;
-      bar.style.width = pct + '%';
-      bar.style.background = budSpent >= budTot ? 'var(--bad)' : (pct >= 80 ? '#eab308' : 'var(--good)');
-      lbl.textContent = fmt(budSpent) + ' of ' + fmt(budTot) + ' budget' + (spentUnbud > 0.01 ? ' · ' + fmt(spentUnbud) + ' outside' : '');
-      left.textContent = (remaining < 0 ? '-' : '') + fmt(remaining) + (remaining < 0 ? ' over' : ' left');
-      left.style.color = remaining < 0 ? 'var(--bad)' : 'var(--good)';
-    } else {
-      bar.style.width = '0';
-      lbl.textContent = 'No budget set · ' + ym.slice(5) + '/01→today';
-      left.textContent = '—'; left.style.color = '';
-    }
-    $('#h-monthly-exp-sub').textContent = 'spent so far in ' + ym;
-  }
+  await renderHomeExpenseHero();
 
   // ---- HERO 3: bills hub (left to pay) -> Bills page ----
   try {
@@ -3544,12 +3564,59 @@ async function loadHome(){
 
   // ---- Rich home cards (original home content, bold layout) ----
   renderHomeBills(D);      // recurring bills checklist
-  renderHomeBudgets(B);    // budget health bars
+  // (budget health bars are rendered by renderHomeExpenseHero for the selected month)
   renderHomeTopCats(D);    // top spending this month
   renderHomeCredit(D, PD, SV, CX);  // credit & savings
   renderSnapTxns();        // recent activity rail
   initHomeChartAccts().then(()=>renderHomeChart());   // income vs expenses (quick-view + account scope)
   homeNews('crypto');      // news feed (default: crypto)
+}
+
+// ---- Budget outlook card: month-scoped spending + budget health ----
+// Reads the month selected in #h-month-sel (default: current month). Fetches
+// DASHBOARD+TOTALS and BUDGETS for THAT month only, so the figure is always
+// "spent in <month>", never all-time. Existing/current month is the default.
+async function renderHomeExpenseHero(){
+  homeInitMonthSelect();
+  const now = new Date();
+  const curYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const ym = _homeMonth || curYm;
+  const isCurrent = ym === curYm;
+  const mStart = ym + '-01';
+  const mEnd = ym + '-31';
+  let D = {}, B = {};
+  try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
+  try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
+
+  const expense = (D.totals && D.totals.expense) || 0;
+  const he = $('#h-monthly-exp');
+  if(he){ he.textContent = fmt(expense); he.className = 'val ' + (expense > 0 ? 'neg' : ''); }
+
+  const budTot = (B.totals && B.totals.budget) || 0;
+  const budSpent = (B.totals && B.totals.spent) || 0;
+  const spentAll = (B.totals && B.totals.spent_all) || budSpent;
+  const spentUnbud = Math.max(0, spentAll - budSpent);
+  const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left');
+  if(bar && lbl && left){
+    if (budTot > 0) {
+      const pct = Math.min(100, Math.round(budSpent / budTot * 100));
+      const remaining = budTot - budSpent;
+      bar.style.width = pct + '%';
+      bar.style.background = budSpent >= budTot ? 'var(--bad)' : (pct >= 80 ? '#eab308' : 'var(--good)');
+      lbl.textContent = fmt(budSpent) + ' of ' + fmt(budTot) + ' budget' + (spentUnbud > 0.01 ? ' · ' + fmt(spentUnbud) + ' outside' : '');
+      left.textContent = (remaining < 0 ? '-' : '') + fmt(remaining) + (remaining < 0 ? ' over' : ' left');
+      left.style.color = remaining < 0 ? 'var(--bad)' : 'var(--good)';
+    } else {
+      bar.style.width = '0';
+      lbl.textContent = 'No budget set for ' + ym;
+      left.textContent = '—'; left.style.color = '';
+    }
+  }
+  const sub = $('#h-monthly-exp-sub');
+  if(sub) sub.textContent = isCurrent ? ('spent so far in ' + ym) : ('spent in ' + ym);
+
+  // budget health mini-list for the selected month
+  renderHomeBudgets(B);
 }
 
 // ---------- Home news feed (reuses /crypto/news) ----------
