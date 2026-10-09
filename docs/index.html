@@ -364,6 +364,13 @@
   .span-txns-wide{grid-column:span 6}
   .span-topspend{grid-column:span 3}
   .span-recent{grid-column:span 3}
+  /* cap the recent-activity list so it never stretches the dashboard row */
+  #h-snap-txns{max-height:300px;overflow-y:auto;scrollbar-width:thin}
+  #h-snap-txns::-webkit-scrollbar{width:8px}
+  #h-snap-txns::-webkit-scrollbar-thumb{background:rgba(120,140,170,.35);border-radius:4px}
+  #h-snap-txns::-webkit-scrollbar-track{background:transparent}
+  .snap-more{position:sticky;bottom:0;margin-top:6px;padding:8px 2px;text-align:center;font-size:12px;font-weight:600;color:var(--accent);cursor:pointer;background:linear-gradient(to bottom,transparent,var(--panel) 40%)}
+  .snap-more:hover{text-decoration:underline}
   .span-credit{grid-column:span 3}
   .span-news{grid-column:span 3}
   .span-chart{grid-column:span 6}
@@ -1299,7 +1306,18 @@ window.DEMO = true;
     else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
     else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
-    else if(path.startsWith('/transactions')) body = (function(t){ t = t || {total:0, items:[]}; if(t.sum === undefined){ t = Object.assign({}, t, {sum: (t.items||[]).reduce((a,x)=>a+(x.amount||0),0)}); } return t; })(d.transactions);
+    else if(path.startsWith('/transactions')) body = (function(t, qs){
+      t = t || {total:0, items:[]};
+      const all = t.items || [];
+      const lim = parseInt(qs.get('limit'), 10);
+      const off = parseInt(qs.get('offset'), 10) || 0;
+      let items = all;
+      if(!isNaN(lim)) items = all.slice(off, off + lim);
+      else if(off) items = all.slice(off);
+      const total = (t.total != null) ? t.total : all.length;
+      const sum = (t.sum != null) ? t.sum : all.reduce((a,x)=>a+(x.amount||0),0);
+      return Object.assign({}, t, {items: items, total: total, sum: sum, count: items.length});
+    })(d.transactions, qs);
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
     else if(path.startsWith('/economy/news')) body = (function(e, qs){
@@ -4271,10 +4289,13 @@ async function renderSnapCrypto(){
 async function renderSnapTxns(){
   const box = $('#h-snap-txns');
   if(!box) return;
+  const LIMIT = 6;
   let d = {};
-  try { d = await api('/transactions?limit=9&sort=date&order=desc'); } catch(e){ d = {}; }
-  const items = d.items || [];
+  try { d = await api('/transactions?limit='+LIMIT+'&sort=date&order=desc'); } catch(e){ d = {}; }
+  const items = (d.items || []).slice(0, LIMIT);   // defensive: never render more than LIMIT here
   if(!items.length){ box.innerHTML = '<div class="empty">No transactions.</div>'; return; }
+  const total = (d.total != null) ? d.total : items.length;
+  const more = Math.max(0, total - items.length);
   box.innerHTML = items.map(t=>{
     const col = t.amount>=0 ? 'pos' : 'neg';
     const cat = catByKey(t.ckey);
@@ -4288,7 +4309,8 @@ async function renderSnapTxns(){
         `<span class="d">${esc(short)}</span>` +
         `<span class="cat" style="color:${cat.color||'var(--mut)'}">${esc(cat.name)}</span>` +
       `</div></div>`;
-  }).join('');
+  }).join('') +
+  `<div class="snap-more" onclick="showTab('txns')">View all transactions${more>0?(' · '+more+' more'):''} ↗</div>`;
 }
 
 async function renderHomeBills(D){

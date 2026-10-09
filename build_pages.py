@@ -99,7 +99,18 @@ window.DEMO = true;
     else if(path.startsWith('/paydown')) body = d.paydown || {cards:[], totals:{}};
     else if(path.startsWith('/savings')) body = d.savings || {accounts:[], totals:{}};
     else if(path.startsWith('/bills')) body = d.bills || {month:'', rows:[], counts:{}};
-    else if(path.startsWith('/transactions')) body = (function(t){ t = t || {total:0, items:[]}; if(t.sum === undefined){ t = Object.assign({}, t, {sum: (t.items||[]).reduce((a,x)=>a+(x.amount||0),0)}); } return t; })(d.transactions);
+    else if(path.startsWith('/transactions')) body = (function(t, qs){
+      t = t || {total:0, items:[]};
+      const all = t.items || [];
+      const lim = parseInt(qs.get('limit'), 10);
+      const off = parseInt(qs.get('offset'), 10) || 0;
+      let items = all;
+      if(!isNaN(lim)) items = all.slice(off, off + lim);
+      else if(off) items = all.slice(off);
+      const total = (t.total != null) ? t.total : all.length;
+      const sum = (t.sum != null) ? t.sum : all.reduce((a,x)=>a+(x.amount||0),0);
+      return Object.assign({}, t, {items: items, total: total, sum: sum, count: items.length});
+    })(d.transactions, qs);
     else if(path.startsWith('/rules')) body = d.rules;
     else if(path.startsWith('/imports')) body = d.imports;
     else if(path.startsWith('/economy/news')) body = (function(e, qs){
