@@ -1529,38 +1529,77 @@ def get_imports():
 async def ai_costs_import(file: UploadFile = File(...)):
     import csv as _csv
     from io import StringIO
+    from collections import defaultdict
     raw = (await file.read()).decode("utf-8-sig", errors="replace")
     reader = _csv.DictReader(StringIO(raw))
     if not reader.fieldnames:
         raise HTTPException(400, "Empty CSV")
+
+    def norm(k):
+        return (k or "").strip().lower()
+    fset = {norm(k) for k in reader.fieldnames}
+    # DeepSeek usage export: metric lines with a per-token price and a
+    # token/request count in `amount`. Cost = price * amount, summed per day.
+    is_usage_format = ({"type", "price", "amount"} <= fset) and ("cost" not in fset)
+
     rows, inserted, skipped = [], 0, 0
-    for r in reader:
-        def g(*names):
-            for n in names:
-                for k in r.keys():
-                    if k and k.strip().lower() == n:
-                        return (r[k] or "").strip()
-            return ""
-        uid = g("user_id")
-        start = g("start_time_iso", "start_time")
-        end = g("end_time_iso", "end_time")
-        model = g("model")
-        wallet = g("wallet_type")
-        cost_s = g("cost", "amount")
-        cur = g("currency") or "USD"
-        if not start and not model and not cost_s:
-            continue
-        try:
-            cost = float(cost_s or 0)
-        except ValueError:
-            skipped += 1
-            continue
-        d = start[:10] if start else ""
-        ed = end[:10] if end else None
-        if not d:
-            skipped += 1
-            continue
-        rows.append((uid, d, ed, model, wallet, round(cost, 8), cur))
+
+    if is_usage_format:
+        agg = defaultdict(lambda: {"cost": 0.0, "uid": "", "model": "",
+                                   "wallet": "", "end": None, "cur": "USD"})
+        for r in reader:
+            rr = {norm(k): (v or "").strip() for k, v in r.items()}
+            typ = (rr.get("type") or "").lower()
+            start = rr.get("start_time_iso") or rr.get("start_time") or ""
+            d = start[:10]
+            if not d:
+                skipped += 1
+                continue
+            if typ == "request_count":
+                continue  # counts only, no cost
+            try:
+                price = float(rr.get("price") or 0)
+                amt = float(rr.get("amount") or 0)
+            except ValueError:
+                skipped += 1
+                continue
+            a = agg[d]
+            a["cost"] += price * amt
+            a["uid"] = a["uid"] or rr.get("user_id", "")
+            a["model"] = a["model"] or rr.get("model", "")
+            a["wallet"] = a["wallet"] or rr.get("api_key_name", "")
+            a["end"] = a["end"] or (rr.get("end_time_iso") or rr.get("end_time") or None)
+        for d, a in agg.items():
+            rows.append((a["uid"], d, a["end"], a["model"], a["wallet"],
+                         round(a["cost"], 8), a["cur"]))
+    else:
+        for r in reader:
+            def g(*names):
+                for n in names:
+                    for k in r.keys():
+                        if k and k.strip().lower() == n:
+                            return (r[k] or "").strip()
+                return ""
+            uid = g("user_id")
+            start = g("start_time_iso", "start_time")
+            end = g("end_time_iso", "end_time")
+            model = g("model")
+            wallet = g("wallet_type")
+            cost_s = g("cost", "amount")
+            cur = g("currency") or "USD"
+            if not start and not model and not cost_s:
+                continue
+            try:
+                cost = float(cost_s or 0)
+            except ValueError:
+                skipped += 1
+                continue
+            d = start[:10] if start else ""
+            ed = end[:10] if end else None
+            if not d:
+                skipped += 1
+                continue
+            rows.append((uid, d, ed, model, wallet, round(cost, 8), cur))
     with db() as con:
         for row in rows:
             cur = con.execute("""INSERT OR IGNORE INTO ai_costs
