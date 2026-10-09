@@ -4583,7 +4583,6 @@ async function loadSavings(){
   const hasBal = d.accounts.some(a=>a.balance!=null);
   const subs = [
     ['Reserve', String(t.count||0) + (t.count===1?' acct':' accts')],
-    ['Total deposits', fmt(t.deposits||0)],
     ['Interest', fmt(t.interest||0)],
   ];
   $('#sav-cards').innerHTML =
