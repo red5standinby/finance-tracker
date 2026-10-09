@@ -334,12 +334,19 @@
     font-size:12px;font-weight:600;padding:4px 8px;cursor:pointer;letter-spacing:.2px}
   .he-monthsel:hover{border-color:var(--accent)}
   .he-monthsel:focus{outline:none;border-color:var(--accent)}
+  /* caption above the big spending number */
+  .he-cap{font-size:11px;font-weight:600;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin-bottom:2px}
   /* budget mini-bar inside the expenses card */
-  .he-budget{margin-top:10px;padding-top:0}
+  .he-budget{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+  .he-bud-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:7px}
+  .he-bud-title{font-size:11.5px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;color:var(--mut)}
+  .he-bud-head b{font-size:13px}
   .he-bar{height:7px;border-radius:5px;background:var(--panel2);overflow:hidden}
   .he-bar>span{display:block;height:100%;border-radius:5px;width:0;background:var(--good);transition:width .3s ease}
   .he-bud-figs{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px;font-size:11.5px}
   .he-bud-figs b{font-size:13px}
+  .he-bud-note{margin-top:8px;font-size:11px;line-height:1.4;color:var(--mut)}
+  .he-bud-note b{color:var(--warn,#eab308)}
   /* embedded list inside the big hero cards (budget health / recurring bills) */
   .he-list{margin-top:12px;padding-top:10px;border-top:1px solid var(--line);overflow-y:auto;max-height:190px;flex:1}
   .he-list::-webkit-scrollbar{width:6px}
@@ -1304,20 +1311,26 @@
     <!-- Total monthly expenses + budget health -->
     <div class="card hero-card hero-expense" id="hero-expense">
       <div class="he-top">
-        <div class="lbl" style="margin:0">Budget outlook</div>
+        <div class="lbl" style="margin:0">Spending &amp; budget</div>
         <div class="he-top-tools">
           <select id="h-month-sel" class="he-monthsel" onchange="homeSetMonth(this.value)" title="Select month"></select>
           <button class="btn ghost sm" onclick="showTab('budget')">Open ↗</button>
         </div>
       </div>
+      <div class="he-cap">Total spent</div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
       <div class="he-budget">
+        <div class="he-bud-head">
+          <span class="he-bud-title">Budgeted categories</span>
+          <b id="h-bud-pct" style="font-variant-numeric:tabular-nums">—</b>
+        </div>
         <div class="he-bar"><span id="h-bud-bar"></span></div>
         <div class="he-bud-figs">
           <span id="h-bud-label" class="muted">No budget set</span>
           <b id="h-bud-left" style="font-variant-numeric:tabular-nums">—</b>
         </div>
+        <div class="he-bud-note" id="h-bud-note"></div>
       </div>
       <div id="h-budgets" class="he-list"><div class="empty">No budgets set</div></div>
     </div>
@@ -3588,32 +3601,55 @@ async function renderHomeExpenseHero(){
   try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
   try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
 
-  const expense = (D.totals && D.totals.expense) || 0;
+  const expense = (D.totals && D.totals.expense) || 0;   // all categories, savings excluded (matches dashboard)
   const he = $('#h-monthly-exp');
   if(he){ he.textContent = fmt(expense); he.className = 'val ' + (expense > 0 ? 'neg' : ''); }
 
+  const SAVINGS_KEYS = new Set(['bitcoin','savings_deposit','savings_interest','college_savings']);
   const budTot = (B.totals && B.totals.budget) || 0;
-  const budSpent = (B.totals && B.totals.spent) || 0;
-  const spentAll = (B.totals && B.totals.spent_all) || budSpent;
-  const spentUnbud = Math.max(0, spentAll - budSpent);
-  const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left');
+  // Budget rows use kind='expense', which includes savings/investing categories.
+  // The dashboard's "expense" excludes those. To keep the card internally
+  // consistent, count only non-savings budgeted spend against the bar, and
+  // reconcile the remainder to the total shown.
+  const budgetRows = (B.rows || []);
+  const budSpentRaw = (B.totals && B.totals.spent) || 0;
+  const savingsBudgetSpend = budgetRows.filter(r=>SAVINGS_KEYS.has(r.key)).reduce((a,r)=>a+(r.spent||0),0);
+  const savingsBudgetTotal = budgetRows.filter(r=>SAVINGS_KEYS.has(r.key)).reduce((a,r)=>a+(r.budget||0),0);
+  const budSpent = Math.max(0, budSpentRaw - savingsBudgetSpend);
+  const budTotView = Math.max(0, budTot - savingsBudgetTotal);
+  const spentUnbud = Math.max(0, expense - budSpent);
+  const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left'), pctEl = $('#h-bud-pct'), noteEl = $('#h-bud-note');
   if(bar && lbl && left){
-    if (budTot > 0) {
-      const pct = Math.min(100, Math.round(budSpent / budTot * 100));
-      const remaining = budTot - budSpent;
-      bar.style.width = pct + '%';
-      bar.style.background = budSpent >= budTot ? 'var(--bad)' : (pct >= 80 ? '#eab308' : 'var(--good)');
-      lbl.textContent = fmt(budSpent) + ' of ' + fmt(budTot) + ' budget' + (spentUnbud > 0.01 ? ' · ' + fmt(spentUnbud) + ' outside' : '');
+    if (budTotView > 0) {
+      const pct = Math.round(budSpent / budTotView * 100);
+      const remaining = budTotView - budSpent;
+      bar.style.width = Math.min(100, pct) + '%';
+      bar.style.background = budSpent >= budTotView ? 'var(--bad)' : (pct >= 80 ? '#eab308' : 'var(--good)');
+      lbl.textContent = fmt(budSpent) + ' of ' + fmt(budTotView) + ' used';
       left.textContent = (remaining < 0 ? '-' : '') + fmt(remaining) + (remaining < 0 ? ' over' : ' left');
       left.style.color = remaining < 0 ? 'var(--bad)' : 'var(--good)';
+      if(pctEl){ pctEl.textContent = pct + '%'; pctEl.style.color = budSpent >= budTotView ? 'var(--bad)' : (pct >= 80 ? '#eab308' : ''); }
     } else {
       bar.style.width = '0';
-      lbl.textContent = 'No budget set for ' + ym;
+      lbl.textContent = 'No category budgets set';
       left.textContent = '—'; left.style.color = '';
+      if(pctEl){ pctEl.textContent = '—'; pctEl.style.color = ''; }
+    }
+    if(noteEl){
+      let note = '';
+      if(budTotView > 0 && spentUnbud > 0.01){
+        note = fmt(spentUnbud) + ' of this month\u2019s spend is in categories with <b>no budget set</b> (mortgage, loans, utilities, daycare\u2026).';
+      } else if(budTotView > 0){
+        note = 'All spending this month falls inside budgeted categories.';
+      }
+      if(savingsBudgetTotal > 0){
+        note += (note ? ' ' : '') + 'Plus ' + fmt(savingsBudgetTotal) + ' in savings/investing budgets (tracked as savings, e.g. Bitcoin).';
+      }
+      noteEl.innerHTML = note;
     }
   }
   const sub = $('#h-monthly-exp-sub');
-  if(sub) sub.textContent = isCurrent ? ('spent so far in ' + ym) : ('spent in ' + ym);
+  if(sub) sub.textContent = (isCurrent ? 'spent so far in ' : 'spent in ') + ym + ' \u00b7 across all categories';
 
   // budget health mini-list for the selected month
   renderHomeBudgets(B);
@@ -4405,26 +4441,36 @@ function renderBudgetTab(){
 
   const t = d.totals || {};
   const bud = t.budget||0, spent = t.spent||0, spentAll = t.spent_all||0, unbud = t.spent_unbudgeted||0;
-  const left = bud - spent;
-  const pct = bud>0 ? Math.min(999, Math.round(spent/bud*100)) : 0;
+  // Split savings/investing category budgets out of the spending budget view, so
+  // the budget page and the Home card agree (dashboard counts those as savings).
+  const SAV = new Set(['bitcoin','savings_deposit','savings_interest','college_savings']);
+  const savRows = d.rows.filter(r=>SAV.has(r.key));
+  const savBud = savRows.reduce((a,r)=>a+(r.budget||0),0);
+  const savSpent = savRows.reduce((a,r)=>a+(r.spent||0),0);
+  const spendBud = Math.max(0, bud - savBud);
+  const spendSpent = Math.max(0, spent - savSpent);
+  const left = spendBud - spendSpent;
+  const pct = spendBud>0 ? Math.min(999, Math.round(spendSpent/spendBud*100)) : 0;
   const barCls = pct>=100?'over':(pct>=80?'warn':'ok');
-  const barW = Math.min(100, bud>0 ? spent/bud*100 : 0).toFixed(1);
+  const barW = Math.min(100, spendBud>0 ? spendSpent/spendBud*100 : 0).toFixed(1);
 
   // only meaningful when there's spending logged this month
   const hasSpend = spentAll > 0.005;
+  const savLine = savBud>0 ? `<div class="bud-subline" style="margin-top:6px"><span>Savings / investing<span class="sv">${fmt(savSpent)} of ${fmt(savBud)}</span></span><span class="muted">tracked as savings, not spending</span></div>` : '';
   $('#bud-hero').innerHTML = `
     <div class="bud-hero-top">
-      <div class="bud-kpi"><div class="k">Budgeted</div><div class="v">${fmt(bud)}</div></div>
+      <div class="bud-kpi"><div class="k">Spending budget</div><div class="v">${fmt(spendBud)}</div></div>
       <div class="bud-kpi"><div class="k">${left<0?'Over budget':'Left'}</div><div class="v ${left<0?'neg':'pos'}">${left<0?'-':''}${fmt(Math.abs(left))}</div></div>
     </div>
     <div class="bud-barwrap">
       <div class="bud-track"><div class="bud-fill ${barCls}" style="width:${barW}%"></div></div>
     </div>
     <div class="bud-subline">
-      <span>Spent budgeted<span class="sv ${spent>bud?'neg':''}">${fmt(spent)}</span></span>
-      <span>${bud>0?pct+'% of budget used':'No budget set'}</span>
-      ${unbud>0.005?'<span>'+fmt(unbud)+' outside budgets</span>':''}
-    </div>`;
+      <span>Spent budgeted<span class="sv ${spendSpent>spendBud?'neg':''}">${fmt(spendSpent)}</span></span>
+      <span>${spendBud>0?pct+'% of spending budget used':'No budget set'}</span>
+      ${(spentAll-savSpent)>0.005?'<span>'+fmt(spentAll-savSpent)+' total spend this month</span>':''}
+    </div>
+    ${savLine}`;
 
   // category list — "Active" (default) shows only categories with a budget set
   let rows = d.rows.slice();
