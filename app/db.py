@@ -115,6 +115,7 @@ CREATE TABLE IF NOT EXISTS ai_costs (
     model TEXT NOT NULL DEFAULT '',  -- e.g. 'deepseek-flash'
     wallet_type TEXT DEFAULT '',     -- Paid | Free | ...
     cost REAL NOT NULL DEFAULT 0,    -- USD
+    requests INTEGER DEFAULT 0,      -- request_count (0 if unknown)
     currency TEXT DEFAULT 'USD',
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(provider_user, date, end_date, model, wallet_type)
@@ -193,6 +194,10 @@ def init_db(seed_categories: Iterable[dict]):
             con.execute("ALTER TABLE bills ADD COLUMN manual_paid_month TEXT DEFAULT NULL")
         if bcols and "payments_per_month" not in bcols:
             con.execute("ALTER TABLE bills ADD COLUMN payments_per_month INTEGER DEFAULT 1")
+        # migration: add requests column to older ai_costs tables
+        acols = {r[1] for r in con.execute("PRAGMA table_info(ai_costs)")}
+        if acols and "requests" not in acols:
+            con.execute("ALTER TABLE ai_costs ADD COLUMN requests INTEGER DEFAULT 0")
         # seed built-in categories (INSERT OR IGNORE keeps any user edits/creations)
         for c in seed_categories:
             con.execute(

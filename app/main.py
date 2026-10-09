@@ -1546,7 +1546,8 @@ async def ai_costs_import(file: UploadFile = File(...)):
 
     if is_usage_format:
         agg = defaultdict(lambda: {"cost": 0.0, "uid": "", "model": "",
-                                   "wallet": "", "end": None, "cur": "USD"})
+                                   "wallet": "", "end": None, "cur": "USD",
+                                   "requests": 0})
         for r in reader:
             rr = {norm(k): (v or "").strip() for k, v in r.items()}
             typ = (rr.get("type") or "").lower()
@@ -1555,7 +1556,16 @@ async def ai_costs_import(file: UploadFile = File(...)):
             if not d:
                 skipped += 1
                 continue
+            a = agg[d]
+            a["uid"] = a["uid"] or rr.get("user_id", "")
+            a["model"] = a["model"] or rr.get("model", "")
+            a["wallet"] = a["wallet"] or rr.get("api_key_name", "")
+            a["end"] = a["end"] or (rr.get("end_time_iso") or rr.get("end_time") or None)
             if typ == "request_count":
+                try:
+                    a["requests"] += int(float(rr.get("amount") or 0))
+                except ValueError:
+                    pass
                 continue  # counts only, no cost
             try:
                 price = float(rr.get("price") or 0)
@@ -1563,15 +1573,10 @@ async def ai_costs_import(file: UploadFile = File(...)):
             except ValueError:
                 skipped += 1
                 continue
-            a = agg[d]
             a["cost"] += price * amt
-            a["uid"] = a["uid"] or rr.get("user_id", "")
-            a["model"] = a["model"] or rr.get("model", "")
-            a["wallet"] = a["wallet"] or rr.get("api_key_name", "")
-            a["end"] = a["end"] or (rr.get("end_time_iso") or rr.get("end_time") or None)
         for d, a in agg.items():
             rows.append((a["uid"], d, a["end"], a["model"], a["wallet"],
-                         round(a["cost"], 8), a["cur"]))
+                         round(a["cost"], 8), a["requests"], a["cur"]))
     else:
         for r in reader:
             def g(*names):
@@ -1586,6 +1591,7 @@ async def ai_costs_import(file: UploadFile = File(...)):
             model = g("model")
             wallet = g("wallet_type")
             cost_s = g("cost", "amount")
+            req_s = g("request_count", "requests")
             cur = g("currency") or "USD"
             if not start and not model and not cost_s:
                 continue
@@ -1594,17 +1600,21 @@ async def ai_costs_import(file: UploadFile = File(...)):
             except ValueError:
                 skipped += 1
                 continue
+            try:
+                reqs = int(float(req_s)) if req_s else 0
+            except ValueError:
+                reqs = 0
             d = start[:10] if start else ""
             ed = end[:10] if end else None
             if not d:
                 skipped += 1
                 continue
-            rows.append((uid, d, ed, model, wallet, round(cost, 8), cur))
+            rows.append((uid, d, ed, model, wallet, round(cost, 8), reqs, cur))
     with db() as con:
         for row in rows:
             cur = con.execute("""INSERT OR IGNORE INTO ai_costs
-                (provider_user,date,end_date,model,wallet_type,cost,currency)
-                VALUES(?,?,?,?,?,?,?)""", row)
+                (provider_user,date,end_date,model,wallet_type,cost,requests,currency)
+                VALUES(?,?,?,?,?,?,?,?)""", row)
             if cur.rowcount:
                 inserted += 1
             else:
@@ -1629,15 +1639,20 @@ def ai_costs(start: str | None = None, end: str | None = None,
         where.append("model = ?"); params.append(model)
     wsql = (" WHERE " + " AND ".join(where)) if where else ""
     with db() as con:
-        daily = con.execute(f"""SELECT date, ROUND(SUM(cost),6) cost, COUNT(*) n
+        daily = con.execute(f"""SELECT date, ROUND(SUM(cost),6) cost, COUNT(*) n,
+            COALESCE(SUM(requests),0) requests
             FROM ai_costs{wsql} GROUP BY date ORDER BY date""", params).fetchall()
-        monthly = con.execute(f"""SELECT substr(date,1,7) month, ROUND(SUM(cost),6) cost, COUNT(*) n
+        monthly = con.execute(f"""SELECT substr(date,1,7) month, ROUND(SUM(cost),6) cost, COUNT(*) n,
+            COALESCE(SUM(requests),0) requests
             FROM ai_costs{wsql} GROUP BY substr(date,1,7) ORDER BY month""", params).fetchall()
-        bymodel = con.execute(f"""SELECT model, ROUND(SUM(cost),6) cost, COUNT(*) n
+        bymodel = con.execute(f"""SELECT model, ROUND(SUM(cost),6) cost, COUNT(*) n,
+            COALESCE(SUM(requests),0) requests
             FROM ai_costs{wsql} GROUP BY model ORDER BY cost DESC""", params).fetchall()
-        bywallet = con.execute(f"""SELECT wallet_type, ROUND(SUM(cost),6) cost, COUNT(*) n
+        bywallet = con.execute(f"""SELECT wallet_type, ROUND(SUM(cost),6) cost, COUNT(*) n,
+            COALESCE(SUM(requests),0) requests
             FROM ai_costs{wsql} GROUP BY wallet_type ORDER BY cost DESC""", params).fetchall()
-        grand = con.execute(f"SELECT ROUND(COALESCE(SUM(cost),0),6) c FROM ai_costs{wsql}", params).fetchone()
+        grand = con.execute(f"""SELECT ROUND(COALESCE(SUM(cost),0),6) c,
+            COALESCE(SUM(requests),0) requests FROM ai_costs{wsql}""", params).fetchone()
         spans = con.execute(f"SELECT MIN(date) a, MAX(date) b, COUNT(*) n FROM ai_costs{wsql}", params).fetchone()
         # model list for the filter dropdown (unfiltered)
         models = con.execute("SELECT DISTINCT model FROM ai_costs WHERE model<>'' ORDER BY model").fetchall()
@@ -1647,6 +1662,7 @@ def ai_costs(start: str | None = None, end: str | None = None,
         monthly = monthly[-months:]
     return {
         "total": grand["c"] if grand else 0,
+        "requests": grand["requests"] if grand else 0,
         "count": spans["n"] if spans else 0,
         "first_date": spans["a"] if spans else None,
         "last_date": spans["b"] if spans else None,

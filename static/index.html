@@ -1852,6 +1852,8 @@
       <div class="ai-stat"><div class="lbl">This month</div><div class="ai-stat-v" id="ai-month">$0.00</div></div>
       <div class="ai-stat"><div class="lbl">Avg / day</div><div class="ai-stat-v" id="ai-avgday">$0.00</div></div>
       <div class="ai-stat"><div class="lbl">Active days</div><div class="ai-stat-v" id="ai-days">0</div></div>
+      <div class="ai-stat"><div class="lbl">Requests</div><div class="ai-stat-v" id="ai-reqs">0</div></div>
+      <div class="ai-stat"><div class="lbl">Cost / request</div><div class="ai-stat-v" id="ai-cpr">$0.00</div></div>
     </div>
   </div>
 
@@ -1880,7 +1882,9 @@
     <h2>Daily detail</h2>
     <div class="table-wrap">
     <table><thead><tr><th class="no-sort">Date</th><th class="no-sort">Model</th>
-      <th class="no-sort" style="text-align:right">Cost</th></tr></thead>
+      <th class="no-sort" style="text-align:right">Requests</th>
+      <th class="no-sort" style="text-align:right">Cost</th>
+      <th class="no-sort" style="text-align:right">$/req</th></tr></thead>
       <tbody id="ai-detail"></tbody></table>
     </div>
     <div class="muted" style="margin-top:10px;font-size:12px">
@@ -5309,6 +5313,10 @@ async function loadAiCosts(){
   const activeDays = d.count || 0;
   $('#ai-days').textContent = activeDays;
   $('#ai-avgday').textContent = activeDays ? aiMoney(d.total/activeDays) : aiMoney(0);
+  const reqs = d.requests || 0;
+  const reqEl = $('#ai-reqs'), cprEl = $('#ai-cpr');
+  if(reqEl) reqEl.textContent = reqs ? reqs.toLocaleString('en-US') : '—';
+  if(cprEl) cprEl.textContent = (reqs && d.total) ? aiMoney4(d.total/reqs) : '—';
 
   renderAiChart(d.daily||[]);
 
@@ -5334,8 +5342,10 @@ async function loadAiCosts(){
   const det = (d.daily||[]).slice().reverse();
   $('#ai-detail').innerHTML = det.length ? det.map(r=>`
     <tr><td>${esc(r.date)}</td><td class="muted">${esc((d.models&&d.models.length===1)?d.models[0]:'—')}</td>
-    <td style="text-align:right">${aiMoney4(r.cost)}</td></tr>`).join('')
-    : '<tr><td colspan=3 class="empty">No AI cost data yet — use “Import CSV” above.</td></tr>';
+    <td style="text-align:right">${(r.requests||0)?Number(r.requests).toLocaleString('en-US'):'—'}</td>
+    <td style="text-align:right">${aiMoney4(r.cost)}</td>
+    <td style="text-align:right" class="muted">${(r.requests&&r.cost)?aiMoney4(r.cost/r.requests):'—'}</td></tr>`).join('')
+    : '<tr><td colspan=5 class="empty">No AI cost data yet — use “Import CSV” above.</td></tr>';
 }
 
 function aiMonthLabel(ym){
@@ -5357,7 +5367,7 @@ function renderAiChart(daily){
     const h = Math.max(2, (d.cost/max)*(H-pad*1.6));
     const x = pad + i*step;
     const y = H - pad - h;
-    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" class="ai-bar-rect"><title>${esc(d.date)}: ${aiMoney4(d.cost)}</title></rect>`;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" class="ai-bar-rect"><title>${esc(d.date)}: ${aiMoney4(d.cost)}${(d.requests)?' · '+Number(d.requests).toLocaleString('en-US')+' reqs':''}</title></rect>`;
     // sparse x labels: first, mid, last, or when few points
     if(daily.length<=8 || i===0 || i===daily.length-1 || i===Math.floor(daily.length/2)){
       labels += `<text x="${(x+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle" class="ai-axis">${esc(d.date.slice(5))}</text>`;
