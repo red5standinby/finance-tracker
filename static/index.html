@@ -151,6 +151,12 @@
   /* unified vertical rhythm between stacked panels/cards */
   .panel + .panel,.panel + .card,.card + .panel{margin-top:16px}
   .grid.cards{margin-top:16px}
+  /* Savings hero: one compact card with small inline sub-stats */
+  .sav-hero{grid-column:1/-1}
+  .sav-substats{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+  .sav-stat{display:inline-flex;align-items:baseline;gap:5px;font-size:12.5px;color:var(--mut)}
+  .sav-stat i{font-style:normal;letter-spacing:.2px}
+  .sav-stat b{color:var(--txt);font-weight:600;font-variant-numeric:tabular-nums;font-size:13px}
   .head-tools .multiselect{min-width:150px}
   .head-tools .multiselect .ms-btn{padding:5px 10px;font-size:12px}
   .panel-head h2{margin:0}
@@ -1642,8 +1648,7 @@
     </div>
   </div>
   <div class="panel">
-    <div class="grid cards" id="sav-cards"></div>
-  </div>
+    <div class="grid cards" id="sav-cards"></div>  </div>
   <div id="sav-panels"></div>
 </section>
 
@@ -4576,14 +4581,17 @@ async function loadSavings(){
   const d = await api('/savings');
   const t = d.totals || {};
   const hasBal = d.accounts.some(a=>a.balance!=null);
-  const cards = [
-    ...(hasBal ? [['Total balance', fmt(t.balance||0), '']] : []),
-    ['Reserve accounts', String(t.count||0), ''],
-    ['Total deposits', fmt(t.deposits||0), 'pos'],
-    ['Interest earned', fmt(t.interest||0), 'pos'],
+  const subs = [
+    ['Reserve', String(t.count||0) + (t.count===1?' acct':' accts')],
+    ['Total deposits', fmt(t.deposits||0)],
+    ['Interest', fmt(t.interest||0)],
   ];
-  $('#sav-cards').innerHTML = cards.map(([lbl,val,cls])=>
-    `<div class="card"><div class="lbl">${lbl}</div><div class="val ${cls}">${val}</div></div>`).join('');
+  $('#sav-cards').innerHTML =
+    `<div class="card sav-hero">
+      <div class="lbl">${hasBal ? 'Total balance' : 'Total deposits'}</div>
+      <div class="val pos">${fmt(hasBal ? (t.balance||0) : (t.deposits||0))}</div>
+      <div class="sav-substats">${subs.map(([l,v])=>`<span class="sav-stat"><i>${l}</i><b>${v}</b></span>`).join('')}</div>
+    </div>`;
   if(!d.accounts.length){
     $('#sav-panels').innerHTML = '<div class="panel"><div class="empty">No savings accounts</div></div>';
     return;
