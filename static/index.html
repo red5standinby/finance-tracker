@@ -293,6 +293,7 @@
   .home-title,.page-title{font-size:23px;font-weight:600;letter-spacing:.04em;margin:0;line-height:1.15;font-family:var(--font-title)}
   .page-head .page-sub{color:var(--mut);font-size:13px;font-weight:400;margin-top:3px}
   .page-head .ph-left{display:flex;flex-direction:column;min-width:0}
+  .page-head .ph-right{display:flex;align-items:center;gap:8px}
   .home-when{color:var(--mut);font-size:13px;font-variant-numeric:tabular-nums}
   @media(max-width:560px){
     .home-title,.page-title{font-size:20px}
@@ -750,12 +751,13 @@
   .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
 
   /* ---- dedicated Budget tab ---- */
-  .b-filter-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;width:100%}
+  .b-filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+  .b-filter-row .multiselect{width:auto;flex:0 0 auto}
   .bg-monthnav{display:flex;align-items:center;gap:8px}
   .bg-monthlbl{font-size:19px;font-weight:700;min-width:150px;text-align:center}
   .bg-monthsel{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);
     font-size:13px;font-weight:600;padding:7px 10px;font-family:inherit;cursor:pointer}
-  .bg-addbtn{margin-left:auto}
+  .bg-addbtn{white-space:nowrap}
   .bg-addwrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .bg-addwrap select,.bg-addinp{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;
     color:var(--txt);font-size:13px;padding:7px 10px;font-family:inherit}
@@ -1485,16 +1487,19 @@
       <h2 class="page-title">Budget</h2>
       <div class="page-sub">Plan monthly spending by category and track what's left</div>
     </div>
-  </div>
-  <div class="filters">
-    <div class="b-filter-row">
-      <select id="bud-month-sel" class="bg-monthsel" onchange="budgetSetMonth(this.value)" title="Month"></select>
-      <div class="multiselect" id="bud-account-ms"></div>
+    <div class="ph-right">
       <button class="btn sm bg-addbtn" onclick="openBudgetForm()">+ Add budget</button>
     </div>
   </div>
 
   <div class="card budget-hero" id="bud-hero"></div>
+
+  <div class="filters">
+    <div class="b-filter-row">
+      <select id="bud-month-sel" class="bg-monthsel" onchange="budgetSetMonth(this.value)" title="Month"></select>
+      <div class="multiselect" id="bud-account-ms"></div>
+    </div>
+  </div>
 
   <div class="card">
     <div class="bud-seghead">
