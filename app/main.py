@@ -107,6 +107,54 @@ def pdf_to_text(raw_bytes: bytes) -> str:
         raise HTTPException(400, f"Could not read PDF: {e}")
 
 
+def reconcile_zelle_transfers(con, lookback_days: int = 3) -> int:
+    """Reclassify inbound Zelle 'payment received' credits that are actually
+    internal self-moves as transfers.
+
+    A credit is an internal move when a matching-magnitude OUTFLOW leg (a Zelle
+    'payment sent' or a Jaime-Luna 'ZELLE CREDIT') exists on another row within
+    `lookback_days` of the credit's date. Genuine income (e.g. the renter) has no
+    such offsetting leg and is left as income.
+
+    Only rows still tagged as income/income-source are touched, so manual
+    overrides and prior reconciliations are never clobbered. Returns the number
+    of rows reclassified. Idempotent.
+    """
+    rows = con.execute(
+        """SELECT t.id, t.date, t.amount, t.description
+           FROM transactions t
+           WHERE t.amount > 0 AND t.category_source = 'income'
+           ORDER BY t.date""").fetchall()
+    out_rows = con.execute(
+        """SELECT t.id, t.date, t.amount, t.description
+           FROM transactions t
+           WHERE t.amount < 0 ORDER BY t.date""").fetchall()
+    outs = [r for r in out_rows if cat.is_zelle_out(r["description"])]
+    moved = 0
+    for r in rows:
+        if not cat.is_zelle_in(r["description"]):
+            continue
+        try:
+            d0 = date.fromisoformat(r["date"])
+        except (ValueError, TypeError):
+            continue
+        amt = r["amount"]
+        for o in outs:
+            if abs(abs(o["amount"]) - amt) > 0.01:
+                continue
+            try:
+                d1 = date.fromisoformat(o["date"])
+            except (ValueError, TypeError):
+                continue
+            if abs((d1 - d0).days) <= lookback_days:
+                con.execute(
+                    "UPDATE transactions SET category_id=?, category_source='manual' WHERE id=?",
+                    (cat_by_key(con)["transfer"]["id"], r["id"]))
+                moved += 1
+                break
+    return moved
+
+
 @app.post("/api/import")
 async def import_csv(file: UploadFile = File(...), account: str = Form(...),
                      bank: str = Form(""), kind: str = Form("checking"),
@@ -166,6 +214,7 @@ async def import_csv(file: UploadFile = File(...), account: str = Form(...),
                                      "same_batch_identity": bool(occ_dupe)})
         con.execute("INSERT INTO imports(id,filename,account,bank,inserted,skipped) VALUES(?,?,?,?,?,?)",
                     (batch, file.filename, account, bank or detected, inserted, skipped))
+        reconcile_zelle_transfers(con)
 
     # Count identity groups that appear >1x in the source (the "looks like a dupe"
     # case). If any of those got skipped, it's worth flagging loudly.
@@ -267,9 +316,12 @@ def import_statement(body: StatementImport):
                         "skipped_detail": skipped_rows, "repeated_identities": multi,
                         "warning": (f"{len(flagged)} skipped row(s) have identical rows in this file" if flagged
                                     else (f"{multi} identity group(s) repeat within this file" if multi else None))})
+    with db() as con:
+        zelle_moved = reconcile_zelle_transfers(con)
     total_in = sum(r["inserted"] for r in results)
     return {"ok": True, "total_inserted": total_in,
-            "total_skipped": sum(r["skipped_duplicates"] for r in results), "results": results}
+            "total_skipped": sum(r["skipped_duplicates"] for r in results),
+            "zelle_transfers_reconciled": zelle_moved, "results": results}
 
 
 @app.post("/api/import/preview")
@@ -1704,6 +1756,16 @@ def recategorize():
                 if ck != r["ckey"]:
                     n += 1
     return {"ok": True, "updated": n}
+
+
+@app.post("/api/reconcile-transfers")
+def reconcile_transfers_endpoint():
+    """Reclassify inbound Zelle 'payment received' credits that are actually
+    internal self-moves (matched by an offsetting outgoing Zelle leg) as
+    transfers. Idempotent; safe to run any time."""
+    with db() as con:
+        moved = reconcile_zelle_transfers(con)
+    return {"ok": True, "reclassified": moved}
 
 
 # ---------- grading ----------

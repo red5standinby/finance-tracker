@@ -122,6 +122,35 @@ def is_transfer(desc: str, raw_type: str = "", amount: float = 0.0) -> bool:
     return bool(_TRANSFER_RE.search(desc or ""))
 
 
+# ---- Zelle pairing: detect internal self-transfers ----
+# Incoming Zelle "PAYMENT RECEIVED" is ambiguous: it can be a genuine external
+# credit (e.g. the renter paying rent) OR an internal move where Jaime sends
+# money from one of his own accounts (Cap One, etc.) into the tracked account.
+# The M&T "PAYMENT RECEIVED" description carries no payer identity, so the
+# deterministic signal is the PAIRED OUTFLOW: an internal move shows up as a
+# same-amount "ZELLE P2P PAYMENT SENT" (or JAIME-LUNA "ZELLE CREDIT") out of
+# another tracked account on/around the same day. Genuine income has no such
+# offsetting legs.
+#
+# We expose helpers here so both the importer (post-pass) and the API can
+# reconcile without re-deriving the patterns.
+_ZELLE_IN_RE = re.compile(r"zelle.*payment received", re.I)
+_ZELLE_OUT_RE = re.compile(r"zelle.*payment sent", re.I)
+_ZELLE_SELF_RE = re.compile(r"zelle\s+jaime\s+luna.*zelle credit", re.I)
+
+
+def is_zelle_in(description: str) -> bool:
+    """True for an inbound Zelle 'payment received' credit row."""
+    return bool(_ZELLE_IN_RE.search(description or ""))
+
+
+def is_zelle_out(description: str) -> bool:
+    """True for an outgoing Zelle 'payment sent' debit, or a Jaime-Luna
+    self-credit, i.e. the kind of leg that offsets an inbound self-move."""
+    d = description or ""
+    return bool(_ZELLE_OUT_RE.search(d) or _ZELLE_SELF_RE.search(d))
+
+
 # ---- seed rules: regex -> category id (on cleaned merchant, lowercased) ----
 SEED_RULES: list[tuple[str, str]] = [
     # groceries
