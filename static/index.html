@@ -146,8 +146,11 @@
   .inline-pair > .panel{margin-top:0}
   .inline-pair > .card{margin-top:0}
   .inline-pair > .card,.inline-pair > .panel{display:flex;flex-direction:column;min-width:0}
-  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
   .head-tools{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  /* unified vertical rhythm between stacked panels/cards */
+  .panel + .panel,.panel + .card,.card + .panel{margin-top:16px}
+  .grid.cards{margin-top:16px}
   .head-tools .multiselect{min-width:150px}
   .head-tools .multiselect .ms-btn{padding:5px 10px;font-size:12px}
   .panel-head h2{margin:0}
@@ -624,6 +627,13 @@
   .seg-btn{background:transparent;border:0;color:var(--mut);font-size:12px;font-weight:600;padding:4px 11px;border-radius:7px;cursor:pointer;letter-spacing:.3px}
   .seg-btn:hover{color:var(--txt)}
   .seg-btn.active{background:var(--accent);color:#fff}
+  /* chart view control: identical across every chart */
+  .chart-view{display:inline-flex;background:rgba(var(--tint),.07);border:1px solid var(--line);border-radius:9px;padding:2px;gap:2px}
+  .chart-view .seg-btn{font-size:11.5px;padding:4px 10px}
+  /* unified chart cards: even vertical rhythm, charts never crammed */
+  .chart-box{margin-top:12px}
+  .chart-box svg{display:block;width:100%;height:auto}
+  .chart-head{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
   /* paydown planner controls */
   .pd-ctrl{display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;margin:6px 0 18px}
   .pd-ctrl label{color:var(--mut);font-size:13px;display:flex;flex-direction:column;gap:6px}
@@ -1342,6 +1352,10 @@
       <div class="panel-head">
         <h2><span class="ic-lg">◫</span> Income vs expenses</h2>
         <div class="head-tools">
+          <div class="seg chart-view" id="h-chart-view">
+            <button class="seg-btn active" data-mode="bars" onclick="setHomeChartView('bars')">Bars</button>
+            <button class="seg-btn" data-mode="line" onclick="setHomeChartView('line')">Lines</button>
+          </div>
           <div class="multiselect" id="h-chart-acct"></div>
           <div class="seg" id="h-chart-seg">
             <button class="seg-btn" data-m="6" onclick="setHomeChart(6)">6M</button>
@@ -1350,7 +1364,7 @@
           </div>
         </div>
       </div>
-      <div id="h-month-chart"><div class="empty">Loading…</div></div>
+      <div id="h-month-chart" class="chart-box"><div class="empty">Loading…</div></div>
     </div>
 
     <!-- Credit & savings (moved to bottom) -->
@@ -1580,9 +1594,15 @@
   </div>
 
   <div class="panel hidden" id="t-panel-trend">
-    <h2>Spend vs Income by Month</h2>
-    <div id="t-trend-chart"></div>
-    <div class="muted" id="t-trend-legend" style="font-size:12px;margin-top:6px"></div>
+    <div class="chart-head">
+      <h2 style="margin:0">Spend vs Income by Month</h2>
+      <div class="seg chart-view" id="t-trend-view">
+        <button class="seg-btn active" data-mode="bars" onclick="setTrendView('bars')">Bars</button>
+        <button class="seg-btn" data-mode="line" onclick="setTrendView('line')">Lines</button>
+      </div>
+    </div>
+    <div id="t-trend-chart" class="chart-box"></div>
+    <div class="muted" id="t-trend-legend" style="font-size:12px;margin-top:8px"></div>
   </div>
 </section>
 
@@ -2162,6 +2182,86 @@ function cxPct(n){
   const c = n >= 0 ? 'cx-pos' : 'cx-neg';
   return `<span class="${c}">${n>=0?'+':''}${n.toFixed(2)}%</span>`;
 }
+/* ============================================================================
+   SHARED CHART SYSTEM
+   One source of truth for the look of every chart in the app so they all read
+   as a family. Charts differ in what they *plot* (income vs expense, savings
+   balance, crypto OHLC, AI spend), but they share this geometry, palette,
+   grid, axis and stroke vocabulary.
+
+   Design rules:
+   - thin, clean strokes: line 1.6, gridlines 1 (dashed, faint), axis ticks 10px
+   - generous, consistent padding (PAD below) — nothing crammed to the edges
+   - muted axis text, one accent/good/bad colour per series, no heavy fills
+   - optional modes per chart: area | line | bars (+ candle where OHLC exists)
+   ========================================================================== */
+const CHART = {
+  // shared plot padding (viewBox units)
+  PAD: { L: 48, R: 16, T: 14, B: 28 },
+  // stroke widths
+  LW:  { line: 1.6, grid: 1, axis: 1, hair: 1 },
+  // font sizes
+  FS:  { axis: 10, tick: 10 },
+  // palette (falls back gracefully; resolved at draw time so themes work)
+  col: {
+    good: () => cssVar('--good', '#22c55e'),
+    bad:  () => cssVar('--bad',  '#ef4444'),
+    line: () => cssVar('--accent', '#4f8cff'),
+    grid: () => cssVar('--line', '#243044'),
+    mut:  () => cssVar('--mut',  '#8899b3'),
+    panel:() => cssVar('--panel','#131a26'),
+  },
+};
+function cssVar(name, fb){
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fb;
+}
+
+/* Renders the grid band + y-axis labels for a chart. Shared y-geometry in,
+   clean dashed lines out. Keeps every chart's background grid identical. */
+function chartGrid(opts){
+  const { W, H, padL, padR, padT, padB, yMin, yRange, yScale, yfmt, rows = 4 } = opts;
+  let s = '';
+  for(let g=0; g<=rows; g++){
+    const frac = g/rows;
+    const gv = yScale ? yScale(yMin + yRange*frac) : (yMin + yRange*frac);
+    const gy = padT + (H - padT - padB) * (1 - frac);
+    const dash = g ? 'stroke-dasharray="3 4" opacity="0.7"' : '';
+    s += `<line x1="${padL}" y1="${gy.toFixed(1)}" x2="${(W-padR)}" y2="${gy.toFixed(1)}" stroke="${CHART.col.grid()}" stroke-width="${CHART.LW.grid}" ${dash}/>`;
+    if(yfmt) s += `<text x="${(padL-8)}" y="${(gy+3).toFixed(1)}" fill="${CHART.col.mut()}" font-size="${CHART.FS.axis}" text-anchor="end">${yfmt(gv)}</text>`;
+  }
+  // baseline
+  s += `<line x1="${padL}" y1="${(H-padB).toFixed(1)}" x2="${(W-padR)}" y2="${(H-padB).toFixed(1)}" stroke="${CHART.col.grid()}" stroke-width="${CHART.LW.axis}"/>`;
+  return s;
+}
+
+/* Reusable segmented control markup for per-chart view modes. Callers wire the
+   onclick to their own setter (keeps each chart's functionality). */
+function chartViewControl(id, modes, active, fnName){
+  return `<div class="seg chart-view" id="${id}">` + modes.map(m=>
+    `<button class="seg-btn ${m===active?'active':''}" data-mode="${m}" onclick="${fnName}('${m}')">${m.charAt(0).toUpperCase()+m.slice(1)}</button>`
+  ).join('') + `</div>`;
+}
+
+/* Build a smooth polyline + optional soft area path from points. Thin stroke,
+   low-opacity fill — the shared "area/line" look. */
+function chartAreaLine(pts, col, { area = false, dot = false, lw = CHART.LW.line } = {}){
+  if(!pts || pts.length < 2) return '';
+  const poly = pts.map(p=>`${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+  let s = '';
+  if(area){
+    const gid = 'cgrad' + Math.random().toString(36).slice(2,8);
+    s += `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">`+
+         `<stop offset="0%" stop-color="${col}" stop-opacity="0.22"/>`+
+         `<stop offset="100%" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>`;
+    s += `<path d="M ${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L `+poly+
+         ` L ${pts[pts.length-1][0].toFixed(1)},${pts[pts.length-1][1].toFixed(1)} Z" fill="url(#${gid})"/>`;
+  }
+  s += `<polyline points="${poly}" fill="none" stroke="${col}" stroke-width="${lw}" stroke-linejoin="round" stroke-linecap="round"/>`;
+  if(dot){ const l = pts[pts.length-1]; s += `<circle cx="${l[0].toFixed(1)}" cy="${l[1].toFixed(1)}" r="3" fill="${col}"/>`; }
+  return s;
+}
+
 function cxSparkline(vals, w=110, h=28){
   if(!vals || vals.length < 2) return '';
   const min = Math.min(...vals), max = Math.max(...vals), rng = max-min || 1;
@@ -2169,7 +2269,7 @@ function cxSparkline(vals, w=110, h=28){
   const pts = vals.map((v,i)=>`${(i*step).toFixed(1)},${(h-((v-min)/rng)*h).toFixed(1)}`).join(' ');
   const up = vals[vals.length-1] >= vals[0];
   const col = up ? 'var(--good)' : 'var(--bad)';
-  return `<svg class="cx-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.6"/></svg>`;
+  return `<svg class="cx-spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="${CHART.LW.line}" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
 }
 
 async function loadCrypto(){
@@ -2531,16 +2631,8 @@ function cxDrawChart(){
   const up = bars[n-1].c >= (useCandles ? bars[n-1].o : bars[0].c);
   const mainCol = up ? 'var(--good)' : 'var(--bad)';
 
-  // gridlines + y labels
-  let grid = '';
-  for(let g=0; g<=4; g++){
-    const frac = g/4;
-    const sv = yMin + yRng*frac;
-    const gv = useLog ? Math.exp(sv) : sv;
-    const gy = PAD_T + plotH*(1-frac);
-    grid += `<line x1="${PAD_L}" y1="${gy.toFixed(1)}" x2="${W-PAD_R}" y2="${gy.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>`;
-    grid += `<text x="${PAD_L-8}" y="${(gy+4).toFixed(1)}" fill="var(--mut)" font-size="11" text-anchor="end">${cxFmt(gv,0)}</text>`;
-  }
+  // gridlines + y labels (shared chart system)
+  let grid = chartGrid({ W, H, padL: PAD_L, padR: PAD_R, padT: PAD_T, padB: PAD_B, yMin, yRange: yRng, yScale: useLog ? (v=>Math.exp(v)) : undefined, yfmt: v=>cxFmt(v,0), rows: 4 });
 
   // x labels
   let xlab = '';
@@ -2571,7 +2663,7 @@ function cxDrawChart(){
     const pts = bars.map((b,i)=>`${x(i).toFixed(1)},${yv(b.c).toFixed(1)}`).join(' ');
     const area = `M ${x(0).toFixed(1)},${(PAD_T+plotH).toFixed(1)} L ` + bars.map((b,i)=>`${x(i).toFixed(1)},${yv(b.c).toFixed(1)}`).join(' L ') + ` L ${x(n-1).toFixed(1)},${(PAD_T+plotH).toFixed(1)} Z`;
     plot = (CX.chartType === 'area' ? `<path d="${area}" fill="url(#cxg)"/>` : '') +
-           `<polyline points="${pts}" fill="none" stroke="${mainCol}" stroke-width="2"/>`;
+           `<polyline points="${pts}" fill="none" stroke="${mainCol}" stroke-width="${CHART.LW.line}" stroke-linejoin="round" stroke-linecap="round"/>`;
   }
 
   // volume bars (derived from |price change| as a proxy when no real volume data)
@@ -2591,7 +2683,7 @@ function cxDrawChart(){
 
   el.innerHTML = `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
     <defs><linearGradient id="cxg" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="${mainCol}" stop-opacity="0.28"/>
+      <stop offset="0%" stop-color="${mainCol}" stop-opacity="0.22"/>
       <stop offset="100%" stop-color="${mainCol}" stop-opacity="0"/>
     </linearGradient></defs>
     ${grid}
@@ -3507,6 +3599,12 @@ async function initHomeChartAccts(){
   msSetOptions('h-chart-acct', names);
   msSet('h-chart-acct', prev.length ? prev.filter(n=>names.includes(n)) : _homeChartAccts);
 }
+let _homeChartView = 'bars';
+function setHomeChartView(m){
+  _homeChartView = m;
+  document.querySelectorAll('#h-chart-view .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===m));
+  renderHomeChart();
+}
 async function renderHomeChart(){
   const box = $('#h-month-chart');
   if(!box) return;
@@ -3523,33 +3621,39 @@ async function renderHomeChart(){
   try { D = await api('/dashboard?start='+startStr+'&end='+endStr+acctQs); } catch(e){ D = {}; }
   let months = (D.months||[]).slice(-n);
   if(!months.length){ box.innerHTML = '<div class="empty">No data</div>'; return; }
-  const W=1160, H=250, padL=52, padR=14, padT=16, padB=30;
+  const W=1160, H=250, padL=CHART.PAD.L, padR=CHART.PAD.R, padT=CHART.PAD.T, padB=CHART.PAD.B;
   const bw = (W-padL-padR)/months.length;
   const max = Math.max(1, ...months.map(m=>Math.max(m.income||0,m.expense||0)));
   const yScale = v => (H-padB) - (v/max)*(H-padT-padB);
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
-  // gridlines + y labels
-  for(let g=0; g<=4; g++){
-    const val = max*g/4, y = yScale(val);
-    svg += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-dasharray="${g?'3 4':'0'}"/>`;
-    svg += `<text x="${padL-8}" y="${(y+3).toFixed(1)}" fill="var(--mut)" font-size="10" text-anchor="end">${fmtShort(val)}</text>`;
-  }
-  const ih = bw*0.30, gap = bw*0.06;
+  // gridlines + y labels (shared)
+  svg += chartGrid({ W, H, padL, padR, padT, padB, yMin:0, yRange:max, yfmt: v=>fmtShort(v), rows:4 });
+  const good = CHART.col.good(), bad = CHART.col.bad();
+  if(_homeChartView === 'line'){
+    const cxOf = i => padL + i*bw + bw/2;
+    svg += chartAreaLine(months.map((m,i)=>[cxOf(i), yScale(m.income||0)]), good, { dot:true });
+    svg += chartAreaLine(months.map((m,i)=>[cxOf(i), yScale(m.expense||0)]), bad, { dot:true });
+    months.forEach((m,i)=>{
+      const showLbl = months.length<=12 || i%2===0;
+      if(showLbl) svg += `<text x="${cxOf(i).toFixed(1)}" y="${H-padB+16}" fill="${CHART.col.mut()}" font-size="${CHART.FS.tick}" text-anchor="middle">${m.month.slice(2)}</text>`;
+    });
+  } else {
+  const ih = Math.max(3, bw*0.30), gap = bw*0.06;
   months.forEach((m,i)=>{
     const cx = padL + i*bw + bw/2;
     const inc = m.income||0, exp = m.expense||0;
     const ix = cx - ih - gap/2, ex = cx + gap/2;
-    svg += `<rect x="${ix.toFixed(1)}" y="${yScale(inc).toFixed(1)}" width="${ih.toFixed(1)}" height="${((H-padB)-yScale(inc)).toFixed(1)}" rx="2" fill="#22c55e"/>`;
-    svg += `<rect x="${ex.toFixed(1)}" y="${yScale(exp).toFixed(1)}" width="${ih.toFixed(1)}" height="${((H-padB)-yScale(exp)).toFixed(1)}" rx="2" fill="#ef4444"/>`;
+    svg += `<rect x="${ix.toFixed(1)}" y="${yScale(inc).toFixed(1)}" width="${ih.toFixed(1)}" height="${Math.max(0,((H-padB)-yScale(inc))).toFixed(1)}" rx="2" fill="${good}"/>`;
+    svg += `<rect x="${ex.toFixed(1)}" y="${yScale(exp).toFixed(1)}" width="${ih.toFixed(1)}" height="${Math.max(0,((H-padB)-yScale(exp))).toFixed(1)}" rx="2" fill="${bad}"/>`;
     // label: sparse when many months
     const showLbl = months.length<=12 || i%2===0;
-    if(showLbl) svg += `<text x="${cx.toFixed(1)}" y="${H-padB+15}" fill="var(--mut)" font-size="10" text-anchor="middle">${m.month.slice(2)}</text>`;
+    if(showLbl) svg += `<text x="${cx.toFixed(1)}" y="${H-padB+16}" fill="${CHART.col.mut()}" font-size="${CHART.FS.tick}" text-anchor="middle">${m.month.slice(2)}</text>`;
   });
-  svg += `<line x1="${padL}" y1="${H-padB}" x2="${W-padR}" y2="${H-padB}" stroke="var(--line)"/>`;
+  }
   svg += '</svg>';
   box.innerHTML = svg +
-    `<div class="legend"><span><span class="dot" style="background:#22c55e"></span>Income</span>`+
-    `<span><span class="dot" style="background:#ef4444"></span>Expenses</span></div>`;
+    `<div class="legend"><span><span class="dot" style="background:${good}"></span>Income</span>`+
+    `<span><span class="dot" style="background:${bad}"></span>Expenses</span></div>`;
 }
 function fmtShort(v){ v=Math.abs(v||0); if(v>=1000) return '$'+(v/1000).toFixed(v>=10000?0:1)+'k'; return '$'+Math.round(v); }
 
@@ -3738,8 +3842,8 @@ function homeTotChart(vals, labels, type){
   if(cur.length) segs.push(cur);
   const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#4f8cff';
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible">`;
-  // gridlines
-  [0,0.5,1].forEach(f=>{ const yy=y(min+f*(max-min)); svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="var(--line)" stroke-dasharray="3 4" opacity="0.6"/>`; });
+  // gridlines (shared faint dashed style)
+  [0,0.5,1].forEach(f=>{ const yy=y(min+f*(max-min)); svg += `<line x1="${padL}" y1="${yy.toFixed(1)}" x2="${W-padR}" y2="${yy.toFixed(1)}" stroke="${CHART.col.grid()}" stroke-width="${CHART.LW.grid}" stroke-dasharray="3 4" opacity="0.7"/>`; });
   // hover crosshair + dot (populated by attachHomeTotHover)
   svg += `<g class="ht-hover" style="opacity:0;pointer-events:none">`
       + `<line class="ht-cross" x1="0" y1="${padT}" x2="0" y2="${H-padB}" stroke="${accent}" stroke-width="1" stroke-dasharray="3 3" opacity="0.55"/>`
@@ -3758,7 +3862,7 @@ function homeTotChart(vals, labels, type){
         const area = `M ${x(seg[0][0]).toFixed(1)},${(H-padB).toFixed(1)} L ` + pts + ` L ${x(seg[seg.length-1][0]).toFixed(1)},${(H-padB).toFixed(1)} Z`;
         svg += `<path d="${area}" fill="${accent}" opacity="0.14"/>`;
       }
-      if(seg.length>1) svg += `<polyline points="${pts}" fill="none" stroke="${accent}" stroke-width="2"/>`;
+      if(seg.length>1) svg += `<polyline points="${pts}" fill="none" stroke="${accent}" stroke-width="${CHART.LW.line}" stroke-linejoin="round" stroke-linecap="round"/>`;
       const [li,lv] = seg[seg.length-1];
       svg += `<circle cx="${x(li).toFixed(1)}" cy="${y(lv).toFixed(1)}" r="3" fill="${accent}"/>`;
     });
@@ -4556,25 +4660,48 @@ function renderAvgTable(d){
     </tr>`).join('') || '<tr><td colspan=5 class="empty">No data</td></tr>';
 }
 
+let _trendData = null, _trendView = 'bars';
+function setTrendView(m){
+  _trendView = m;
+  document.querySelectorAll('#t-trend-view .seg-btn').forEach(b=>b.classList.toggle('active', b.dataset.mode===m));
+  if(_trendData) renderTrendChart(_trendData);
+}
+
 function renderTrendChart(d){
+  _trendData = d;
   const ms = d.month_series;
   if(!ms.length){ $('#t-trend-chart').innerHTML='<div class="empty">No data</div>'; return; }
-  const W=760,H=240,pad=36, bw=(W-pad*2)/ms.length;
+  const W=760, H=240, padL=CHART.PAD.L, padR=CHART.PAD.R, padT=CHART.PAD.T, padB=CHART.PAD.B;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const bw = plotW/ms.length;
   const max = Math.max(1, ...ms.map(m=>Math.max(m.income,m.expense)));
+  const y = v => (H-padB) - (v/max)*plotH;
+  const cxOf = i => padL + i*bw + bw/2;
+  const good = CHART.col.good(), bad = CHART.col.bad();
   let svg = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto">`;
-  svg += `<line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="var(--line)"/>`;
+  svg += chartGrid({ W, H, padL, padR, padT, padB, yMin:0, yRange:max, yfmt:v=>fmtShort(v), rows:4 });
+  if(_trendView === 'line'){
+    const incPts = ms.map((m,i)=>[cxOf(i), y(m.income)]);
+    const expPts = ms.map((m,i)=>[cxOf(i), y(m.expense)]);
+    svg += chartAreaLine(incPts, good, { dot:true });
+    svg += chartAreaLine(expPts, bad,  { dot:true });
+  } else {
+    const ih = Math.max(3, bw*0.30), gap = bw*0.06;
+    ms.forEach((m,i)=>{
+      const cx = cxOf(i);
+      const ix = cx - ih - gap/2, ex = cx + gap/2;
+      svg += `<rect x="${ix.toFixed(1)}" y="${y(m.income).toFixed(1)}" width="${ih.toFixed(1)}" height="${Math.max(0,(H-padB)-y(m.income)).toFixed(1)}" rx="2" fill="${good}"><title>${m.month} income ${fmt(m.income)}</title></rect>`;
+      svg += `<rect x="${ex.toFixed(1)}" y="${y(m.expense).toFixed(1)}" width="${ih.toFixed(1)}" height="${Math.max(0,(H-padB)-y(m.expense)).toFixed(1)}" rx="2" fill="${bad}"><title>${m.month} spend ${fmt(m.expense)}</title></rect>`;
+    });
+  }
   ms.forEach((m,i)=>{
-    const x = pad + i*bw;
-    const ih=(m.income/max)*(H-pad*2), eh=(m.expense/max)*(H-pad*2);
-    svg += `<rect x="${x+bw*0.16}" y="${H-pad-ih}" width="${bw*0.30}" height="${ih}" rx="3" fill="#22c55e"><title>${m.month} income ${fmt(m.income)}</title></rect>`;
-    svg += `<rect x="${x+bw*0.54}" y="${H-pad-eh}" width="${bw*0.30}" height="${eh}" rx="3" fill="#ef4444"><title>${m.month} spend ${fmt(m.expense)}</title></rect>`;
-    svg += `<text x="${x+bw/2}" y="${H-pad+16}" fill="var(--mut)" font-size="11" text-anchor="middle">${m.month.slice(2)}</text>`;
+    svg += `<text x="${cxOf(i).toFixed(1)}" y="${H-padB+16}" fill="${CHART.col.mut()}" font-size="${CHART.FS.tick}" text-anchor="middle">${m.month.slice(2)}</text>`;
   });
   svg += '</svg>';
   $('#t-trend-chart').innerHTML = svg;
   $('#t-trend-legend').innerHTML =
-    `<span><span class="dot" style="background:#22c55e"></span>Income</span>
-     <span><span class="dot" style="background:#ef4444"></span>Expenses</span>
+    `<span><span class="dot" style="background:${good}"></span>Income</span>
+     <span><span class="dot" style="background:${bad}"></span>Expenses</span>
      <span class="muted">· 3-mo avg income ${fmt(d.avg_3mo.income)}, spend ${fmt(d.avg_3mo.expense)}</span>`;
 }
 
@@ -5358,7 +5485,7 @@ function aiMonthLabel(ym){
 function renderAiChart(daily){
   const host = $('#ai-chart'); if(!host) return;
   if(!daily.length){ host.innerHTML = '<div class="empty" style="padding:40px 0">No data</div>'; return; }
-  const W = host.clientWidth || 900, H = 200, pad = 30;
+  const W = host.clientWidth || 900, H = 200, pad = CHART.PAD.L;
   const max = Math.max(0.0001, ...daily.map(d=>d.cost));
   const bw = Math.max(4, Math.min(40, (W-pad*2)/daily.length - 6));
   const step = daily.length>1 ? (W-pad*2-bw)/(daily.length-1) : 0;
@@ -5367,17 +5494,17 @@ function renderAiChart(daily){
     const h = Math.max(2, (d.cost/max)*(H-pad*1.6));
     const x = pad + i*step;
     const y = H - pad - h;
-    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" class="ai-bar-rect"><title>${esc(d.date)}: ${aiMoney4(d.cost)}${(d.requests)?' · '+Number(d.requests).toLocaleString('en-US')+' reqs':''}</title></rect>`;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="${CHART.col.line()}" opacity="0.85" class="ai-bar-rect"><title>${esc(d.date)}: ${aiMoney4(d.cost)}${(d.requests)?' · '+Number(d.requests).toLocaleString('en-US')+' reqs':''}</title></rect>`;
     // sparse x labels: first, mid, last, or when few points
     if(daily.length<=8 || i===0 || i===daily.length-1 || i===Math.floor(daily.length/2)){
-      labels += `<text x="${(x+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle" class="ai-axis">${esc(d.date.slice(5))}</text>`;
+      labels += `<text x="${(x+bw/2).toFixed(1)}" y="${H-8}" text-anchor="middle" fill="${CHART.col.mut()}" font-size="${CHART.FS.tick}">${esc(d.date.slice(5))}</text>`;
     }
   });
-  // y gridlines
+  // y gridlines (shared faint dashed)
   let grid='';
   [0,0.5,1].forEach(f=>{
     const y = H-pad - f*(H-pad*1.6);
-    grid += `<line x1="${pad}" y1="${y.toFixed(1)}" x2="${W-pad}" y2="${y.toFixed(1)}" class="ai-grid-line"/>`;
+    grid += `<line x1="${pad}" y1="${y.toFixed(1)}" x2="${W-pad}" y2="${y.toFixed(1)}" stroke="${CHART.col.grid()}" stroke-width="${CHART.LW.grid}" stroke-dasharray="3 4" opacity="0.7"/>`;
   });
   host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="100%" height="${H}" preserveAspectRatio="none">${grid}${bars}${labels}</svg>`;
 }
