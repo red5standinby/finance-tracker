@@ -1308,21 +1308,21 @@
       </div>
     </div>
 
-    <!-- Total monthly expenses + budget health -->
+    <!-- Budget card: budgeted categories only -->
     <div class="card hero-card hero-expense" id="hero-expense">
       <div class="he-top">
-        <div class="lbl" style="margin:0">Spending &amp; budget</div>
+        <div class="lbl" style="margin:0">Budget</div>
         <div class="he-top-tools">
           <select id="h-month-sel" class="he-monthsel" onchange="homeSetMonth(this.value)" title="Select month"></select>
           <button class="btn ghost sm" onclick="showTab('budget')">Open ↗</button>
         </div>
       </div>
-      <div class="he-cap">Total spent</div>
+      <div class="he-cap">Spent</div>
       <div class="val" id="h-monthly-exp">$0</div>
       <div class="muted" style="font-size:12px" id="h-monthly-exp-sub">—</div>
       <div class="he-budget">
         <div class="he-bud-head">
-          <span class="he-bud-title">Budgeted categories</span>
+          <span class="he-bud-title">Budget used</span>
           <b id="h-bud-pct" style="font-variant-numeric:tabular-nums">—</b>
         </div>
         <div class="he-bar"><span id="h-bud-bar"></span></div>
@@ -1330,7 +1330,6 @@
           <span id="h-bud-label" class="muted">No budget set</span>
           <b id="h-bud-left" style="font-variant-numeric:tabular-nums">—</b>
         </div>
-        <div class="he-bud-note" id="h-bud-note"></div>
       </div>
       <div id="h-budgets" class="he-list"><div class="empty">No budgets set</div></div>
     </div>
@@ -3585,40 +3584,38 @@ async function loadHome(){
   homeNews('crypto');      // news feed (default: crypto)
 }
 
-// ---- Budget outlook card: month-scoped spending + budget health ----
-// Reads the month selected in #h-month-sel (default: current month). Fetches
-// DASHBOARD+TOTALS and BUDGETS for THAT month only, so the figure is always
-// "spent in <month>", never all-time. Existing/current month is the default.
+// ---- Budget card: budgeted categories only, scoped to the selected month ----
+// Reads the month in #h-month-sel (default: current month) and shows how much of
+// the SET budget has been used. Savings/investing categories (bitcoin etc.) are
+// excluded — they're tracked as savings, not spending.
 async function renderHomeExpenseHero(){
   homeInitMonthSelect();
   const now = new Date();
   const curYm = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
   const ym = _homeMonth || curYm;
   const isCurrent = ym === curYm;
-  const mStart = ym + '-01';
-  const mEnd = ym + '-31';
-  let D = {}, B = {};
-  try { D = await api('/dashboard?start=' + mStart + '&end=' + mEnd); } catch(e){ D = {}; }
+  let B = {};
   try { B = await api('/budgets?month=' + ym); } catch(e){ B = {}; }
-
-  const expense = (D.totals && D.totals.expense) || 0;   // all categories, savings excluded (matches dashboard)
-  const he = $('#h-monthly-exp');
-  if(he){ he.textContent = fmt(expense); he.className = 'val ' + (expense > 0 ? 'neg' : ''); }
 
   const SAVINGS_KEYS = new Set(['bitcoin','savings_deposit','savings_interest','college_savings']);
   const budTot = (B.totals && B.totals.budget) || 0;
-  // Budget rows use kind='expense', which includes savings/investing categories.
-  // The dashboard's "expense" excludes those. To keep the card internally
-  // consistent, count only non-savings budgeted spend against the bar, and
-  // reconcile the remainder to the total shown.
-  const budgetRows = (B.rows || []);
   const budSpentRaw = (B.totals && B.totals.spent) || 0;
+  const budgetRows = (B.rows || []);
+  // budgeted spend, excluding savings/investing categories (tracked as savings)
   const savingsBudgetSpend = budgetRows.filter(r=>SAVINGS_KEYS.has(r.key)).reduce((a,r)=>a+(r.spent||0),0);
   const savingsBudgetTotal = budgetRows.filter(r=>SAVINGS_KEYS.has(r.key)).reduce((a,r)=>a+(r.budget||0),0);
   const budSpent = Math.max(0, budSpentRaw - savingsBudgetSpend);
   const budTotView = Math.max(0, budTot - savingsBudgetTotal);
-  const spentUnbud = Math.max(0, expense - budSpent);
-  const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left'), pctEl = $('#h-bud-pct'), noteEl = $('#h-bud-note');
+
+  // Big number = how much of the set budget has been used (budgeted cats only)
+  const he = $('#h-monthly-exp');
+  if(he){ he.textContent = fmt(budSpent); he.className = 'val ' + (budSpent > 0 ? 'neg' : ''); }
+  const sub = $('#h-monthly-exp-sub');
+  if(sub) sub.textContent = budTotView > 0
+    ? ('of ' + fmt(budTotView) + ' budgeted \u00b7 ' + (isCurrent ? 'this month so far' : ym))
+    : ('no budgets set for ' + ym);
+
+  const bar = $('#h-bud-bar'), lbl = $('#h-bud-label'), left = $('#h-bud-left'), pctEl = $('#h-bud-pct');
   if(bar && lbl && left){
     if (budTotView > 0) {
       const pct = Math.round(budSpent / budTotView * 100);
@@ -3635,21 +3632,7 @@ async function renderHomeExpenseHero(){
       left.textContent = '—'; left.style.color = '';
       if(pctEl){ pctEl.textContent = '—'; pctEl.style.color = ''; }
     }
-    if(noteEl){
-      let note = '';
-      if(budTotView > 0 && spentUnbud > 0.01){
-        note = fmt(spentUnbud) + ' of this month\u2019s spend is in categories with <b>no budget set</b> (mortgage, loans, utilities, daycare\u2026).';
-      } else if(budTotView > 0){
-        note = 'All spending this month falls inside budgeted categories.';
-      }
-      if(savingsBudgetTotal > 0){
-        note += (note ? ' ' : '') + 'Plus ' + fmt(savingsBudgetTotal) + ' in savings/investing budgets (tracked as savings, e.g. Bitcoin).';
-      }
-      noteEl.innerHTML = note;
-    }
   }
-  const sub = $('#h-monthly-exp-sub');
-  if(sub) sub.textContent = (isCurrent ? 'spent so far in ' : 'spent in ') + ym + ' \u00b7 across all categories';
 
   // budget health mini-list for the selected month
   renderHomeBudgets(B);
