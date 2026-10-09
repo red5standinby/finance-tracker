@@ -1506,7 +1506,7 @@
     <div class="bud-seghead">
       <h2 style="margin:0">Categories</h2>
       <div class="seg" id="bud-seg">
-        <button class="seg-btn active" data-s="all" onclick="budgetSort('all')">All</button>
+        <button class="seg-btn active" data-s="all" onclick="budgetSort('all')">Active</button>
         <button class="seg-btn" data-s="over" onclick="budgetSort('over')">Over</button>
         <button class="seg-btn" data-s="unset" onclick="budgetSort('unset')">Unbudgeted</button>
       </div>
@@ -4234,10 +4234,11 @@ function renderBudgetTab(){
       <div class="bud-barinfo">${bud>0?pct+'% of budget used':'No budget set'}${unbud>0.005?' · '+fmt(unbud)+' outside budgets':''}</div>
     </div>`;
 
-  // category list
+  // category list — "Active" (default) shows only categories with a budget set
   let rows = d.rows.slice();
   if(_budSort==='over') rows = rows.filter(r=>r.budget>0 && r.spent>r.budget);
   else if(_budSort==='unset') rows = rows.filter(r=>!(r.budget>0));
+  else rows = rows.filter(r=>r.budget>0);
   // order: budgeted by pct desc, then unbudgeted by spend desc
   rows.sort((a,b)=>{
     const ab=a.budget>0, bb=b.budget>0;
@@ -4247,7 +4248,10 @@ function renderBudgetTab(){
   });
 
   if(!rows.length){
-    $('#bud-list').innerHTML = '<div class="empty">'+(d.rows.length?'Nothing in this view':'No budgets yet — add a category above')+'</div>';
+    const msg = _budSort==='all'
+      ? 'No active budgets yet — add a category above'
+      : (_budSort==='over' ? 'Nothing over budget this month' : 'Every category has a budget set');
+    $('#bud-list').innerHTML = '<div class="empty">'+msg+'</div>';
     return;
   }
   $('#bud-list').innerHTML = rows.map(r=>{
