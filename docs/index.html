@@ -751,8 +751,9 @@
   .bg-none .bg-track{background:repeating-linear-gradient(45deg,var(--panel2),var(--panel2) 6px,transparent 6px,transparent 12px)}
 
   /* ---- dedicated Budget tab ---- */
-  .b-filter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+  .b-filter-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%}
   .b-filter-row .multiselect{width:auto;flex:0 0 auto}
+  .b-filter-row > *{flex:0 0 auto}
   .bg-monthnav{display:flex;align-items:center;gap:8px}
   .bg-monthlbl{font-size:19px;font-weight:700;min-width:150px;text-align:center}
   .bg-monthsel{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;color:var(--txt);
@@ -1613,9 +1614,6 @@ window.DEMO = true;
       <h2 class="page-title">Budget</h2>
       <div class="page-sub">Plan monthly spending by category and track what's left</div>
     </div>
-    <div class="ph-right">
-      <button class="btn sm bg-addbtn" onclick="openBudgetForm()">+ Add budget</button>
-    </div>
   </div>
 
   <div class="card budget-hero" id="bud-hero"></div>
@@ -1624,6 +1622,7 @@ window.DEMO = true;
     <div class="b-filter-row">
       <select id="bud-month-sel" class="bg-monthsel" onchange="budgetSetMonth(this.value)" title="Month"></select>
       <div class="multiselect" id="bud-account-ms"></div>
+      <button class="btn sm bg-addbtn" onclick="openBudgetForm()">+ Add budget</button>
     </div>
   </div>
 
