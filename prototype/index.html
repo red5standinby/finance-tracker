@@ -384,6 +384,11 @@
   .snap-grid > .snap{height:100%}
   /* news feed: keep the bottom row compact */
   #h-news{overflow-y:auto;max-height:280px;padding-right:4px}
+  .econ-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+  .econ-chip{background:var(--panel2,var(--bg2,rgba(255,255,255,.04)));border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-align:center}
+  .econ-chip .lb{font-size:11px;color:var(--mut);letter-spacing:.3px}
+  .econ-chip .vv{font-size:15px;font-weight:600;margin-top:2px;color:var(--txt)}
+  @media (max-width:560px){ .econ-strip{grid-template-columns:repeat(2,1fr)} }
   .snap{display:flex;flex-direction:column}
   .snap>.empty,.snap>div[id^="h-snap"]{flex:1}
   .snap .panel-head{margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(36,48,68,.6)}
@@ -1601,6 +1606,7 @@ window.DEMO = true;
         <div class="seg" id="h-news-seg">
           <button class="seg-btn active" data-cat="crypto" onclick="homeNews('crypto')">Crypto</button>
           <button class="seg-btn" data-cat="gov" onclick="homeNews('gov')">Policy</button>
+          <button class="seg-btn" data-cat="economy" onclick="homeNews('economy')">Economy</button>
         </div>
       </div>
       <div id="h-news"><div class="empty">Loading headlines…</div></div>
@@ -3878,6 +3884,17 @@ async function renderHomeExpenseHero(){
 
 // ---------- Home news feed (reuses /crypto/news) ----------
 let _homeNewsCat = 'crypto';
+function _econMkStrip(mk){
+  const R = (mk && mk.rates) || {};
+  const fmt = (k)=>{ const v = R[k] && R[k].value; return (v==null) ? '—' : (v.toFixed(2)+'%'); };
+  const sp = R['10y2y'] && R['10y2y'].value;
+  return `<div class="econ-strip">`+
+    `<div class="econ-chip"><div class="lb">10-Yr</div><div class="vv">${fmt('10y')}</div></div>`+
+    `<div class="econ-chip"><div class="lb">2-Yr</div><div class="vv">${fmt('2y')}</div></div>`+
+    `<div class="econ-chip"><div class="lb">13-Wk</div><div class="vv">${fmt('13w')}</div></div>`+
+    `<div class="econ-chip"><div class="lb">10Y–2Y</div><div class="vv" style="color:${sp!=null && sp<0 ? 'var(--bad)' : 'var(--good)'}">${sp==null?'—':((sp>0?'+':'')+sp.toFixed(2)+'%')}</div></div>`+
+  `</div>`;
+}
 async function homeNews(cat){
   _homeNewsCat = cat;
   const seg = document.getElementById('h-news-seg');
@@ -3886,10 +3903,23 @@ async function homeNews(cat){
   if(!box) return;
   box.innerHTML = '<div class="empty">Loading headlines…</div>';
   try{
-    const d = await api('/crypto/news?category='+cat+'&limit=6');
-    const items = d.items || [];
-    if(!items.length){ box.innerHTML = '<div class="empty">No headlines right now.</div>'; return; }
-    box.innerHTML = items.map(i=>{
+    // Economy has its own dedicated feed endpoint; crypto/gov use the crypto feed.
+    const endpoint = cat==='economy'
+      ? '/economy/news?limit=6&category=economy'
+      : '/crypto/news?category='+cat+'&limit=6';
+    let d, mk = null;
+    if(cat==='economy'){
+      [d, mk] = await Promise.all([
+        api(endpoint),
+        api('/economy/markets').catch(()=>null)
+      ]);
+    } else {
+      d = await api(endpoint);
+    }
+    const items = (d && d.items) || [];
+    const strip = (cat==='economy' && mk) ? _econMkStrip(mk) : '';
+    if(!items.length){ box.innerHTML = strip + '<div class="empty">No headlines right now.</div>'; return; }
+    box.innerHTML = strip + items.map(i=>{
       const t = i.published ? new Date(i.published) : null;
       const when = t && !isNaN(t) ? t.toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
       return `<div class="cx-news-item"><a href="${i.url}" target="_blank" rel="noopener">${esc(i.title)}</a>`+

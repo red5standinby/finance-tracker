@@ -2066,10 +2066,15 @@ def _parse_feed(source: str, url: str, limit: int = 12) -> list[dict]:
     return out
 
 
+# Economy/bonds feeds are served by /api/economy/news, but the home news card
+# lets users switch to Economy alongside Crypto and Policy.
+_NEWS_HOME_CATS = ("crypto", "gov", "economy")
+
+
 @app.get("/api/crypto/news")
 def crypto_news(category: str = "crypto", limit: int = 12):
-    """Latest headlines. category: crypto|gov|all."""
-    cats = ["crypto", "gov"] if category == "all" else [category if category in _NEWS_FEEDS else "crypto"]
+    """Latest headlines. category: crypto|gov|economy|all."""
+    cats = list(_NEWS_HOME_CATS) if category == "all" else [category if category in _NEWS_FEEDS else "crypto"]
 
     def fetch():
         items: list[dict] = []
