@@ -1,13 +1,12 @@
 """Build the GitHub Pages (static) edition of the LFFD dashboard into docs/.
 
 The FastAPI backend is not available on GitHub Pages, so this build:
-  - copies static/index.html to docs/index.html
+  - copies prototype/index.html to docs/index.html
   - injects a small bootstrap that sets window.API_BASE and enables DEMO mode
   - ships a docs/demo.json with representative (fabricated) data
 
-DEMO mode intercepts the api() layer and serves sample data, so the UI is fully
-browsable on the road. Point window.API_BASE at a real tunnel later and DEMO
-can be turned off by removing the injected <script> block.
+The live app served by the FastAPI backend (static/index.html) must NEVER
+contain the demo bootstrap — only docs/ is the public read-only demo.
 
 Run:  .venv/bin/python build_pages.py
 """
@@ -19,7 +18,9 @@ import re
 import shutil
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SRC = os.path.join(HERE, "static", "index.html")
+# Source of truth is the working prototype. static/ (the live app) is published
+# from prototype/ separately and must stay demo-free.
+SRC = os.path.join(HERE, "prototype", "index.html")
 OUTDIR = os.path.join(HERE, "docs")
 DEMO_JSON = os.path.join(HERE, "docs", "demo.json")
 

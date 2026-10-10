@@ -1255,6 +1255,10 @@
     background:var(--panel,#fff);border:1px solid var(--line);border-radius:16px;
     box-shadow:0 28px 70px -22px rgba(15,23,42,.5)}
   .chat-drawer.open{display:flex}
+  .chat-backdrop{position:fixed;inset:0;z-index:60;background:rgba(15,23,42,.28);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    opacity:0;pointer-events:none;transition:opacity .2s ease}
+  .chat-backdrop.open{opacity:1;pointer-events:auto}
   .chat-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;
     border-bottom:1px solid var(--line);background:var(--panel2,rgba(0,0,0,.02))}
   .chat-title{display:inline-flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
@@ -1276,6 +1280,7 @@
     .chat-drawer{right:10px;left:10px;bottom:74px;width:auto}
   }
 </style>
+
 
 <!-- ===== GitHub Pages demo bootstrap (injected by build_pages.py) ===== -->
 <script>
@@ -1456,7 +1461,6 @@ window.DEMO = true;
       <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
       <button data-tab="ai"><span class="ic">✦</span><span class="lb">AI Costs</span></button>
-      <button data-tab="economy"><span class="ic">◭</span><span class="lb">Economy</span></button>
       <button data-tab="txns"><span class="ic">≡</span><span class="lb">Transactions</span></button>
       <button data-tab="rules"><span class="ic">⚙</span><span class="lb">Rules</span></button>
     </nav>
@@ -2297,6 +2301,7 @@ window.DEMO = true;
 <button id="chat-fab" onclick="chatToggle()" title="Ask Chombi" aria-label="Ask Chombi">
   <span class="chat-fab-ico">🐾</span><span class="chat-fab-txt">Ask Chombi</span>
 </button>
+<div id="chat-backdrop" class="chat-backdrop" onclick="chatToggle()"></div>
 <div id="chat-drawer" class="chat-drawer">
   <div class="chat-head">
     <div class="chat-title"><span class="chat-dot"></span> Chombi</div>
@@ -5957,7 +5962,10 @@ const CHAT_VIEW_LABELS = {dashboard:'Dashboard',trends:'Trends',savings:'Savings
 function chatToggle(){
   const d = $('#chat-drawer');
   d.classList.toggle('open');
-  if(d.classList.contains('open')){
+  const isOpen = d.classList.contains('open');
+  const bd = $('#chat-backdrop');
+  if(bd) bd.classList.toggle('open', isOpen);
+  if(isOpen){
     if(!$('#chat-log').children.length) chatGreet();
     setTimeout(()=>$('#chat-input').focus(),40);
   }
