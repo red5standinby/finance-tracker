@@ -795,6 +795,26 @@ def _bill_status(con, bill, month):
     if per_month < 1:
         per_month = 1
     today = date.today()
+    # Future-dated bills: starts_on is the first due/start date ('YYYY-MM-DD').
+    # Until that date arrives, the bill is 'scheduled' (upcoming, not yet owed).
+    # Once today reaches starts_on, normal due/overdue logic takes over.
+    starts_on = None
+    try:
+        starts_on = bill["starts_on"]
+    except (KeyError, IndexError):
+        starts_on = None
+    if starts_on:
+        try:
+            start_d = date.fromisoformat(str(starts_on)[:10])
+        except ValueError:
+            start_d = None
+        if start_d and today < start_d and month <= start_d.strftime("%Y-%m"):
+            return {
+                "status": "scheduled", "paid_date": None, "paid_amount": None,
+                "variance": None, "manual": False, "starts_on": starts_on,
+                "paid_count": 0, "expected_count": per_month, "remaining_count": per_month,
+                "per_payment": round((bill["expected_amount"] or 0) / per_month, 2),
+            }
     # Installment bills (weekly / multi-payment) are matched on a window
     # starting at the calendar month and spanning ~per_month weekly cycles
     # (plus a few days of tail so a late cycle still lands). No back-grace:
@@ -925,6 +945,7 @@ def get_bills(month: str | None = None, include_inactive: bool = False):
         "partial": sum(1 for r in out if r["status"] == "partial"),
         "due": sum(1 for r in out if r["status"] in ("due", "upcoming", "partial")),
         "overdue": sum(1 for r in out if r["status"] in ("overdue", "missed")),
+        "scheduled": sum(1 for r in out if r["status"] == "scheduled"),
         "total": len(out),
         "expected": round(sum(r.get("expected_amount") or 0 for r in out), 2),
         "paid_amount": round(sum((r.get("paid_amount") or 0) for r in out if r["status"] in ("paid", "partial")), 2),
@@ -934,7 +955,7 @@ def get_bills(month: str | None = None, include_inactive: bool = False):
             for r in out), 2),
     }
     # surface overdue first, then due/partial, then paid
-    order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "partial": 3, "paid": 4}
+    order = {"overdue": 0, "missed": 1, "due": 2, "upcoming": 3, "partial": 3, "scheduled": 4, "paid": 5}
     out.sort(key=lambda r: (order.get(r["status"], 9), r["due_day"] or 0))
     return {"month": month, "rows": out, "counts": counts}
 
@@ -1013,16 +1034,17 @@ def add_bill(body: BillIn):
     if not key:
         raise HTTPException(400, "name or match_cleaned required")
     with db() as con:
-        con.execute("""INSERT INTO bills(name,match_cleaned,expected_amount,due_day,kind,category_key,active,payments_per_month)
-            VALUES(?,?,?,?,?,?,1,?)
+        con.execute("""INSERT INTO bills(name,match_cleaned,expected_amount,due_day,kind,category_key,active,payments_per_month,starts_on)
+            VALUES(?,?,?,?,?,?,1,?,?)
             ON CONFLICT(match_cleaned) DO UPDATE SET
               name=excluded.name, expected_amount=excluded.expected_amount,
               due_day=excluded.due_day, kind=excluded.kind,
               category_key=excluded.category_key, active=1,
-              payments_per_month=excluded.payments_per_month""",
+              payments_per_month=excluded.payments_per_month,
+              starts_on=excluded.starts_on""",
             (body.name or key.title(), key, body.expected_amount or 0,
              body.due_day or 0, body.kind or "bill", body.category_key or "",
-             body.payments_per_month or 1))
+             body.payments_per_month or 1, body.starts_on or None))
     return {"ok": True, "match_cleaned": key}
 
 
@@ -1039,6 +1061,7 @@ def patch_bill(bill_id: int, body: BillIn):
         if body.category_key is not None:    sets.append("category_key=?");    params.append(body.category_key)
         if body.active is not None:          sets.append("active=?");          params.append(1 if body.active else 0)
         if body.payments_per_month is not None: sets.append("payments_per_month=?"); params.append(max(1, body.payments_per_month))
+        if body.starts_on is not None:       sets.append("starts_on=?");       params.append(body.starts_on or None)
         if sets:
             con.execute(f"UPDATE bills SET {', '.join(sets)} WHERE id=?", (*params, bill_id))
     return {"ok": True}

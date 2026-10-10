@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS bills (
     active INTEGER DEFAULT 1,        -- 1 = shown on dashboard
     manual_paid_month TEXT DEFAULT NULL,  -- 'YYYY-MM' the user hand-marked paid (override)
     payments_per_month INTEGER DEFAULT 1, -- installments expected each month (e.g. weekly = 4)
+    starts_on TEXT DEFAULT NULL,     -- 'YYYY-MM-DD' first due/start date; NULL = already active
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_bills_cleaned ON bills(match_cleaned);
@@ -194,6 +195,8 @@ def init_db(seed_categories: Iterable[dict]):
             con.execute("ALTER TABLE bills ADD COLUMN manual_paid_month TEXT DEFAULT NULL")
         if bcols and "payments_per_month" not in bcols:
             con.execute("ALTER TABLE bills ADD COLUMN payments_per_month INTEGER DEFAULT 1")
+        if bcols and "starts_on" not in bcols:
+            con.execute("ALTER TABLE bills ADD COLUMN starts_on TEXT DEFAULT NULL")
         # migration: add requests column to older ai_costs tables
         acols = {r[1] for r in con.execute("PRAGMA table_info(ai_costs)")}
         if acols and "requests" not in acols:

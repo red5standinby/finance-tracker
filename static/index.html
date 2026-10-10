@@ -458,6 +458,7 @@
   .hb-badge.ok{background:rgba(34,197,94,.15);color:var(--good)}
   .hb-badge.warn{background:rgba(234,179,8,.18);color:#eab308}
   .hb-badge.over{background:rgba(239,68,68,.18);color:var(--bad)}
+  .hb-badge.sched{background:rgba(99,102,241,.16);color:#6366f1}
   /* bill action buttons: icon+label on desktop; icon-only on mobile */
   .bill-act .bi{display:none}
   .bill-act.icon-only .bi{display:inline;font-weight:700}
@@ -497,6 +498,7 @@
   .cal-bill.overdue{border-left-color:var(--bad);background:rgba(239,68,68,.10)}
   .cal-bill.missed{border-left-color:var(--bad);background:rgba(239,68,68,.10)}
   .cal-bill.upcoming{border-left-color:var(--accent)}
+  .cal-bill.scheduled{border-left-color:#6366f1;border-left-style:dashed;opacity:.85}
   .cal-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:12px;color:var(--mut)}
   .cal-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:middle}
   @media(max-width:820px){
@@ -3298,7 +3300,11 @@ function renderBillsCalendar(){
   // bucket bills by day-of-month
   const byDay = {};
   (_billsRows || []).forEach(r=>{
-    const d = r.due_day || 0;
+    let d = r.due_day || 0;
+    // A scheduled bill lands on its actual start day when that's this month.
+    if(r.starts_on && String(r.starts_on).slice(0,7) === _calYM){
+      d = parseInt(String(r.starts_on).slice(8,10), 10) || d;
+    }
     if(d < 1) return;
     (byDay[d] = byDay[d] || []).push(r);
   });
@@ -3315,7 +3321,7 @@ function renderBillsCalendar(){
     const rows = byDay[d] || [];
     const chips = rows.map(r=>{
       const st = r.status === 'paid' ? 'paid' : (r.status==='overdue'||r.status==='missed') ? 'overdue'
-                : r.status==='due' ? 'due' : 'upcoming';
+                : r.status==='scheduled' ? 'scheduled' : r.status==='due' ? 'due' : 'upcoming';
       const amt = r.status==='paid' ? (r.paid_amount||r.expected_amount||0) : (r.expected_amount||0);
       monthTotal += amt; if(r.status==='paid') monthPaid += amt;
       return `<div class="cal-bill ${st}" title="${esc(r.name)} · ${fmt(amt)} · ${esc(r.status)}" onclick="event.stopPropagation();editBill(${r.id})"><span class="cb-nm">${esc(r.name)}</span> <span class="cb-amt">${fmt(amt)}</span></div>`;
@@ -3372,13 +3378,15 @@ function billRowHtml(r){
   const daysInMonth = new Date(now2.getFullYear(), now2.getMonth()+1, 0).getDate();
   const perMonth = r.expected_count || r.payments_per_month || 1;
   const isInstall = perMonth > 1;
-  const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : (r.status==='partial' ? 'warn' : 'warn');
+  const stColor = r.status==='paid' ? 'ok' : (r.status==='overdue'||r.status==='missed') ? 'over' : (r.status==='scheduled' ? 'sched' : (r.status==='partial' ? 'warn' : 'warn'));
   const stLabel = r.status==='missed' ? 'missed' : (r.status==='partial'
-    ? `${r.paid_count||0}/${perMonth} paid` : r.status);
+    ? `${r.paid_count||0}/${perMonth} paid` : (r.status==='scheduled' ? 'scheduled' : r.status));
   const dd = r.due_day || 0;
   let barHtml = '';
   if(r.status === 'paid'){
     barHtml = `<div class="duebar"><span style="width:100%;background:var(--good)"></span></div>`;
+  } else if(r.status === 'scheduled'){
+    barHtml = `<div class="duebar"><span style="width:0%"></span></div>`;
   } else if(r.status === 'partial' && isInstall){
     const pct = Math.round((r.paid_count||0)/perMonth*100);
     barHtml = `<div class="duebar"><span style="width:${pct}%;background:var(--accent)"></span></div>`;
@@ -3402,6 +3410,9 @@ function billRowHtml(r){
   } else if(r.status==='partial' && isInstall){
     right = `<div class="hb-amt">${fmt(r.paid_amount||0)} <span class="muted" style="font-size:12px;font-weight:400">of ${fmt(r.expected_amount||0)}</span></div>` +
       `<div class="hb-sub">${r.paid_count||0} of ${perMonth} paid · ${r.remaining_count||0} left${r.per_payment?' · '+fmt(r.per_payment)+' each':''}</div>`;
+  } else if(r.status==='scheduled'){
+    const sd = (r.starts_on||'').slice(5);
+    right = `<div class="hb-amt">${fmt(r.expected_amount||0)}</div><div class="hb-sub">starts ${sd?sd:'soon'}</div>`;
   } else {
     let when = '';
     if(dd > 0){
@@ -3492,6 +3503,8 @@ async function openBillForm(bill){
         '<label class="fld">Each payment<input id="bf-each" type="text" readonly value="'+(bill&&(bill.payments_per_month>1)?fmt((bill.expected_amount||0)/bill.payments_per_month):'—')+'" title="Expected amount ÷ payments per month"></label>'+
       '</div>'+
       '<div class="muted" style="font-size:11.5px;margin:-6px 0 10px">Set payments per month to 1 for a single bill. Use &gt;1 for weekly/installment bills (e.g. weekly daycare = 4).</div>'+
+      '<label class="fld">First due date <span class="muted" style="font-weight:400">(optional — leave for a bill that\'s already running)</span><input id="bf-start" type="date" value="'+esc(bill?(bill.starts_on||''):'')+'"></label>'+
+      '<div class="muted" style="font-size:11.5px;margin:-6px 0 10px">Set a date in the future to schedule an upcoming bill — it shows as <b>Scheduled</b> until that date arrives, then starts counting normally. Blank = active now.</div>'+
       '<label class="fld">Category<select id="bf-cat">'+opts+'</select></label>'+
       '<label class="fld">Type<select id="bf-kind">'+
         '<option value="bill"'+(bill&&bill.kind==='card'?'':' selected')+'>Bill</option>'+
@@ -3509,6 +3522,22 @@ async function openBillForm(bill){
     eEl.value = (a>0 && p>1) ? fmt(a/p) : '—'; };
   if(aEl) aEl.addEventListener('input', refreshEach);
   if(pEl) pEl.addEventListener('input', refreshEach);
+  // New bills: pre-fill the first-due date with the next occurrence of the
+  // due day (this month if it hasn't passed, else next month). Editing keeps
+  // whatever's stored; the field is optional and can be cleared to "active now".
+  const sEl = document.getElementById('bf-start');
+  if(sEl && !isEdit && !sEl.value){
+    const day = parseInt(document.getElementById('bf-day').value) || 0;
+    if(day >= 1){
+      const now = new Date();
+      let y = now.getFullYear(), m = now.getMonth();  // 0-based
+      const lastThis = new Date(y, m+1, 0).getDate();
+      if(now.getDate() > Math.min(day, lastThis)){ m += 1; if(m > 11){ m = 0; y += 1; } }
+      const last = new Date(y, m+1, 0).getDate();
+      const dd = String(Math.min(day, last)).padStart(2,'0');
+      sEl.value = `${y}-${String(m+1).padStart(2,'0')}-${dd}`;
+    }
+  }
 }
 
 function closeBillForm(){ document.getElementById('bill-modal').classList.remove('open'); }
@@ -3521,9 +3550,12 @@ async function submitBillForm(id){
   const per = Math.max(1, parseInt(document.getElementById('bf-per').value)||1);
   const cat = document.getElementById('bf-cat').value;
   const kind = document.getElementById('bf-kind').value;
+  const startEl = document.getElementById('bf-start');
+  const starts_on = startEl ? (startEl.value||'').trim() : '';
   if(!name && !match){ alert('Give the bill a name or a match merchant.'); return; }
   const body = { name:(name||match), match_cleaned:(match||name.toLowerCase()),
-    expected_amount:amt, due_day:day, category_key:cat, kind:kind, payments_per_month:per };
+    expected_amount:amt, due_day:day, category_key:cat, kind:kind, payments_per_month:per,
+    starts_on: starts_on || null };
   try {
     if(id){ await api('/bills/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); }
     else { await jpost('/bills', body); }
