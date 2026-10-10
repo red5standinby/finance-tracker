@@ -903,6 +903,7 @@ class BillIn(BaseModel):
     category_key: str | None = None
     active: bool | None = None
     payments_per_month: int | None = None
+    starts_on: str | None = None   # 'YYYY-MM-DD' first due / start date; null = already active
 
 
 @app.get("/api/bills")
@@ -2236,6 +2237,94 @@ def del_favorite(coin_id: str):
 @app.get("/")
 def index():
     return FileResponse(os.path.join(STATIC, "index.html"))
+
+
+# ---------- in-app chat (piped to the OpenClaw agent) ----------
+
+CHAT_SESSION_KEY = os.environ.get("CHOMBI_CHAT_SESSION", "agent:main:budget-app-chat")
+CHAT_TIMEOUT = int(os.environ.get("CHOMBI_CHAT_TIMEOUT", "120"))
+
+
+def _openclaw_cmd():
+    """Return the command prefix to run the openclaw CLI.
+
+    OpenClaw's launcher is `#!/usr/bin/env node`, and the host has an older
+    system node (v20) earlier in PATH than the bundled v22 runtime it needs.
+    So we run the CLI's .mjs entrypoint explicitly with the bundled node when
+    we can find it, falling back to the bare `openclaw` binary otherwise.
+    """
+    env_bin = os.environ.get("OPENCLAW_BIN")
+    tools = os.path.expanduser("~/.openclaw/tools")
+    node_v22 = None
+    if os.path.isdir(tools):
+        for d in sorted(os.listdir(tools), reverse=True):
+            cand = os.path.join(tools, d, "bin", "node")
+            if os.path.exists(cand):
+                node_v22 = cand
+                break
+    mjs = None
+    if os.path.isdir(tools):
+        for d in sorted(os.listdir(tools), reverse=True):
+            cand = os.path.join(tools, d, "lib", "node_modules", "openclaw", "openclaw.mjs")
+            if os.path.exists(cand):
+                mjs = cand
+                break
+    if env_bin and os.path.exists(env_bin):
+        return [node_v22, env_bin] if (node_v22 and env_bin.endswith(".mjs")) else [env_bin]
+    if node_v22 and mjs:
+        return [node_v22, mjs]
+    from shutil import which
+    found = which("openclaw")
+    return [found] if found else ["openclaw"]
+
+
+class ChatIn(BaseModel):
+    message: str
+    context: str | None = None   # short situational hint (tab, month, figures)
+
+
+@app.post("/api/chat")
+def chat(body: ChatIn):
+    """Forward an in-app chat turn to the OpenClaw agent and return its reply.
+
+    Runs the same agent codepath as `openclaw agent`, on a fixed session key so
+    the conversation thread persists between app reloads. Kept synchronous and
+    generous on timeout because a real agent turn (with tool use) can take a
+    while; the SPA shows a 'thinking' state meanwhile.
+    """
+    import subprocess
+    msg = (body.message or "").strip()
+    if not msg:
+        raise HTTPException(400, "empty message")
+    # Optional one-line situational context so 'why is this month an F?' works.
+    if body.context:
+        ctx = body.context.strip()[:500]
+        msg = f"[In-app chat from the budget app. Current view: {ctx}]\n\n{msg}" 
+    cmd = _openclaw_cmd() + ["agent", "--session-key", CHAT_SESSION_KEY,
+           "--json", "-m", msg]
+    env = dict(os.environ)
+    node_dir = os.path.dirname(_openclaw_cmd()[0])
+    if node_dir and node_dir not in env.get("PATH", "").split(os.pathsep):
+        env["PATH"] = node_dir + os.pathsep + env.get("PATH", "")
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True,
+                              timeout=CHAT_TIMEOUT, env=env)
+    except subprocess.TimeoutExpired:
+        raise HTTPException(504, "The agent took too long to respond. Try again.")
+    except FileNotFoundError:
+        raise HTTPException(503, "OpenClaw CLI not found on the server host.")
+    if proc.returncode != 0:
+        detail = (proc.stderr or proc.stdout or "").strip()[-500:]
+        raise HTTPException(502, f"Agent run failed: {detail}")
+    try:
+        data = json.loads(proc.stdout)
+        payloads = (data.get("result") or {}).get("payloads") or []
+        reply = "\n".join(p.get("text", "") for p in payloads if p.get("text")).strip()
+        if not reply:
+            reply = "(no reply)"
+    except (json.JSONDecodeError, AttributeError):
+        reply = (proc.stdout or "").strip()[-4000:] or "(no reply)"
+    return {"reply": reply}
 
 
 @app.get("/favicon.svg")

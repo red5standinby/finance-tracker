@@ -151,6 +151,12 @@ window.DEMO = true;
   window.fetch = async function(url, opts){
     if(opts && opts.method && opts.method !== 'GET'){
       if(String(url).startsWith('/api')){
+        if(String(url).indexOf('/chat') >= 0){
+          return new Response(JSON.stringify({reply:
+            "I'm only wired to the live app — this public demo is a read-only snapshot, "+
+            "so there's no agent behind the curtain here. Open the real one and ask me again 🐾"}),
+            {status:200, headers:{'Content-Type':'application/json'}});
+        }
         if(window.toast) toast('Demo mode — changes are not saved');
         return new Response(JSON.stringify({ok:true}), {status:200, headers:{'Content-Type':'application/json'}});
       }
