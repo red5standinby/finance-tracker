@@ -1525,9 +1525,12 @@ def get_paydown():
                 "payments_last": row["last"],
                 "charges_total": round(abs(spend), 2),
             })
-    known = [c for c in cards if c["balance"] is not None]
+    # Only cards with an actual outstanding balance count toward owed/min/count.
+    # A paid-off card (balance 0.0) still carries a stored min_payment and must
+    # NOT be summed into the household minimum or the "N of M cards" figure.
+    known = [c for c in cards if c["balance"] is not None and c["balance"] > 0]
     total_owed = round(sum(c["balance"] for c in known), 2)
-    total_min = round(sum((c["min_payment"] or 0) for c in cards), 2)
+    total_min = round(sum((c["min_payment"] or 0) for c in known), 2)
     # balance-weighted average APR
     denom = sum(c["balance"] for c in known) or 0
     avg_apr = round(sum((c["apr"] or 0) * c["balance"] for c in known) / denom, 2) if denom else 0
@@ -1986,6 +1989,30 @@ def crypto_markets(per_page: int = 10, vs: str = "usd", ids: str = ""):
             "spark": (c.get("sparkline_in_7d") or {}).get("price") or [],
         })
     return {"coins": out, "vs": vs, "fetched_at": int(time.time())}
+
+
+@app.get("/api/crypto/price")
+def crypto_price(id: str = "bitcoin", vs: str = "usd"):
+    """Single live spot price + 24h change — used by the BTC stacking calculator.
+
+    Returns a small flat payload so the client can seed an input field without
+    pulling the whole markets list. Falls back to (price=None) on API failure so
+    the calculator still renders (the user can type a price manually)."""
+    def fetch():
+        return _cg("/simple/price", {
+            "ids": id, "vs_currencies": vs,
+            "include_24hr_change": "true",
+        })
+    try:
+        data = _cached(f"price:{id}:{vs}", 60, fetch)
+        row = (data or {}).get(id) or {}
+        price = row.get(vs)
+        chg = row.get(f"{vs}_24h_change")
+        return {"id": id, "vs": vs, "price": price, "chg_24h": chg,
+                "fetched_at": int(time.time())}
+    except Exception as e:
+        return {"id": id, "vs": vs, "price": None, "chg_24h": None,
+                "error": str(e), "fetched_at": int(time.time())}
 
 
 @app.get("/api/crypto/chart")

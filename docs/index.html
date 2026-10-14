@@ -73,10 +73,17 @@
   body{margin:0;background:var(--bg);color:var(--txt);
     font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
   a{color:var(--accent)}
-  header{display:flex;align-items:center;gap:14px;padding:0 22px;height:var(--hdr);
+  header{display:flex;align-items:center;height:var(--hdr);
     background:linear-gradient(180deg,var(--panel2),var(--panel));
     border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
     box-shadow:0 2px 14px rgba(0,0,0,.35)}
+  /* header content aligns with main content: clear the sidebar, then center at
+     main's max-width and match main's horizontal padding */
+  .hdr-inner{display:flex;align-items:center;gap:14px;width:100%;margin-left:220px;
+    padding:0 26px}
+  .hdr-content{display:flex;align-items:center;gap:14px;width:100%;
+    max-width:1440px;margin:0 auto}
+  @media (min-width:821px){ body.sb-collapsed .hdr-inner{margin-left:68px} }
   header h1{font-size:18px;margin:0;letter-spacing:.6px;font-weight:600;font-family:var(--font-title)}
   header .logo{font-size:23px;display:inline-flex;align-items:center}
   /* ---- premium retro brand mark ---- */
@@ -177,6 +184,9 @@
   .cx-neg{color:var(--bad)}
   .cx-top tr{cursor:pointer}
   .cx-top tr:hover{background:var(--panel2)}
+  table tbody tr.clickable{cursor:pointer}
+  table tbody tr.clickable:hover td{background:rgba(var(--tint),.09)}
+  table tbody tr.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
   .tv-wrap{display:flex;flex-wrap:wrap;gap:10px}
   .tv-card{flex:0 1 150px;min-width:150px;background:var(--panel2);border:1px solid var(--line);
     border-radius:10px;padding:9px 12px}
@@ -209,11 +219,14 @@
   /* portfolio card with nested Holdings + 24h stats */
   .cx-portfolio{margin-top:0}
   .cx-portfolio-top{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap}
-  .cx-portfolio-stats{display:flex;gap:28px;text-align:right}
+  .cx-portfolio-stats{display:flex;gap:24px;text-align:right;align-items:flex-end}
   .cx-stat{min-width:80px;padding-left:20px;border-left:1px solid var(--line)}
-  .cx-stat .lbl{margin-bottom:3px;font-size:11px}
-  .cx-stat-v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.3px}
-  .cx-stat-s{font-size:11px;color:var(--mut);margin-top:1px}
+  .cx-stat .lbl{margin-bottom:3px;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;opacity:.75}
+  .cx-stat-v{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:0;color:var(--mut)}
+  .cx-stat-s{font-size:10.5px;color:var(--mut);margin-top:1px;opacity:.85}
+  /* 24h change: secondary to the portfolio value — muted, compact, no shouting */
+  .cx-stat--change .cx-stat-v{font-size:13px;font-weight:600}
+  .cx-stat--change .cx-pos,.cx-stat--change .cx-neg{font-weight:600;opacity:.9}
   @media (max-width:560px){
     .cx-portfolio-top{align-items:flex-start}
     .cx-portfolio-stats{text-align:left;gap:22px;width:100%}
@@ -535,7 +548,15 @@
   .b-status-val.over{color:var(--bad)}
   .b-status-lbl{font-size:11.5px;color:var(--mut);margin-top:2px;line-height:1.2}
   .b-status-sep{width:1px;background:var(--line);margin:2px 0}
-  .b-status-total{text-align:center;font-size:12px;color:var(--mut);margin-top:10px}
+  .b-status-total{font-size:12px;color:var(--mut);margin-top:8px}
+  /* compact status counts folded into the left-to-pay card */
+  .b-mini-status{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:10px}
+  .b-mini-item{display:flex;align-items:baseline;gap:5px}
+  .b-mini-val{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+  .b-mini-val.pos{color:var(--good)}
+  .b-mini-val.warn{color:#eab308}
+  .b-mini-val.over{color:var(--bad)}
+  .b-mini-lbl{font-size:11.5px;color:var(--mut)}
   .bgroup:hover{border-color:rgba(var(--tint),.45)}
   .bgroup-head{display:flex;align-items:center;gap:10px;padding:11px 13px;cursor:pointer;user-select:none;
     transition:background .18s ease}
@@ -561,6 +582,10 @@
   /* Modals */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
   .modal.open{display:flex}
+  .t-filter-count{display:none;margin-left:7px;background:var(--accent);color:#06121f;font-size:11px;font-weight:700;border-radius:20px;padding:1px 7px;line-height:1.5}
+  .t-filter-count.on{display:inline-block}
+  #trend-modal .filters{margin-bottom:0}
+  #trend-modal .filters label{flex:1 1 100%}
   .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
   .fld{display:block;font-size:12px;color:var(--mut);margin-bottom:11px}
   .fld input,.fld select{display:block;width:100%;margin-top:4px;background:var(--panel2);border:1px solid var(--line);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:14px;box-sizing:border-box}
@@ -683,6 +708,62 @@
   .pd-step b{font-size:13.5px}
   .pd-step .muted{font-size:12px;line-height:1.45;margin-top:2px}
   .pd-cards-hint{font-size:12.5px;margin:-2px 0 14px}
+  /* ---- BTC stacking plan ---- */
+  #tab-btcplan .bp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .bp-f{display:flex;flex-direction:column;gap:5px;font-size:12.5px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.04em}
+  .bp-f input,.bp-f select{height:38px;padding:0 11px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--txt);font-size:14px;font-weight:500;text-transform:none;letter-spacing:normal}
+  .bp-f input:focus,.bp-f select:focus{outline:none;border-color:var(--accent)}
+  .bp-h{font-size:11px;font-weight:400;color:var(--mut);text-transform:none;letter-spacing:normal;opacity:.8}
+  #bp-live-tag{color:var(--good)}
+  .bp-sl{display:flex;align-items:center;gap:10px;height:38px}
+  .bp-sl input[type=range]{flex:1;height:auto;padding:0;background:none;border:none;accent-color:var(--accent)}
+  .bp-slv{min-width:52px;text-align:right;font-variant-numeric:tabular-nums;color:var(--txt);font-size:13.5px;font-weight:700}
+  .bp-presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .bp-presets .btn.sm{padding:7px 12px;font-size:12.5px}
+  .bp-cards{display:grid;grid-template-columns:minmax(240px,1.4fr) repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 16px;align-items:stretch}
+  .bp-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .bp-card .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .bp-card .v{font-size:25px;font-weight:800;margin-top:5px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .bp-card .s{font-size:12px;color:var(--mut);margin-top:3px}
+  .bp-card .v.pos{color:var(--good)} .bp-card .v.acc{color:var(--accent)} .bp-card .v.btc{color:#f7931a}
+  /* hero: portfolio value */
+  .bp-card.bp-hero{padding:20px 22px;background:linear-gradient(135deg,var(--panel2),var(--panel));border-color:rgba(110,168,254,.4)}
+  .bp-card.bp-hero .v{font-size:40px;line-height:1.05;color:var(--good)}
+  .bp-card.bp-hero .s{font-size:13px}
+  .bp-card.bp-hero .sub-row{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px}
+  .bp-card.bp-hero .sub-item .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .bp-card.bp-hero .sub-item .vv{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:1px}
+  .bp-card.bp-mini{padding:11px 13px;border-radius:12px}
+  .bp-card.bp-mini .lbl{font-size:9.5px}
+  .bp-card.bp-mini .v{font-size:15px;margin-top:3px}
+  .bp-card.bp-mini .s{font-size:10px;margin-top:2px}
+  .bp-table-wrap{max-height:560px;overflow:auto}
+  #bp-table thead th{position:sticky;top:0;z-index:2;background:var(--panel);box-shadow:inset 0 -1px 0 var(--line)}
+  #bp-table thead{z-index:2}
+  #bp-table td{font-variant-numeric:tabular-nums;white-space:nowrap}
+  #bp-table tbody tr:hover{background:var(--panel2)}
+  #bp-table .bp-pos{color:var(--good)} #bp-table .bp-neg{color:var(--bad)}
+  #bp-table tr.bp-milestone{background:rgba(110,168,254,.08)}
+  #bp-table tr.bp-milestone td{font-weight:700}
+  .bp-col-loan{background:rgba(247,147,26,.06)}
+  #bp-table th.bp-col-loan{border-left:2px solid rgba(247,147,26,.35)}
+  #bp-table td.bp-col-loan:first-of-type{border-left:2px solid rgba(247,147,26,.35)}
+  #bp-table th.bp-col-loan{background:rgba(247,147,26,.14)}
+  #bp-table td.bp-loan-cell{color:#f7931a;font-weight:600}
+  /* sticky year column */
+  #bp-table th.bp-th-year,#bp-table td:first-child{position:sticky;left:0;z-index:3;background:var(--panel);box-shadow:inset -1px 0 0 var(--line)}
+  #bp-table thead th.bp-th-year{z-index:4}
+  #bp-table tr.bp-milestone td:first-child{background:#101a2e}
+  /* clickable selection */
+  #bp-table thead th.no-sort,#bp-table thead th.bp-col-loan{cursor:pointer;user-select:none}
+  #bp-table thead th.no-sort:hover{background:var(--panel2)}
+  #bp-table thead th.bp-th-sel{background:var(--accent)!important;color:#fff}
+  #bp-table tbody tr{cursor:pointer}
+  #bp-table tbody tr.bp-row-sel td{background:rgba(110,168,254,.16)!important}
+  #bp-table tbody td.bp-col-sel{background:rgba(110,168,254,.13)!important}
+  #bp-table tbody td.bp-cross{background:rgba(110,168,254,.26)!important}
+  #bp-table colline{display:none}
+  .bp-note{font-size:12px;color:var(--mut);line-height:1.5;margin-top:10px}
   .pd-method-note{font-size:12.5px;color:var(--mut);margin:-4px 0 16px;line-height:1.5}
   .pd-method-note b{color:var(--txt)}
   .pd-headline{background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 16px;font-size:15px;line-height:1.5;margin-bottom:14px}
@@ -822,6 +903,10 @@
   .bud-seghead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
   .bud-list{display:flex;flex-direction:column;gap:16px}
   .bud-row{padding-bottom:14px;border-bottom:1px solid rgba(36,48,68,.4)}
+  .bud-row.clickable{cursor:pointer;border-radius:10px;padding:10px 12px;margin:-10px -12px 4px;transition:background .15s}
+  .bud-row.clickable:hover{background:rgba(var(--tint),.07)}
+  .bud-row.clickable:hover .bud-name{color:var(--accent)}
+  .bud-row.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
   .bud-row:last-child{border-bottom:none;padding-bottom:0}
   .bud-row-h{display:flex;align-items:center;gap:8px;margin-bottom:7px}
   .bud-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto}
@@ -868,7 +953,9 @@
 
   /* ---------- responsive / mobile ---------- */
   @media (max-width: 820px){
-    header{flex-wrap:nowrap;gap:10px;padding:12px 14px}
+    header{flex-wrap:nowrap}
+    .hdr-inner{margin-left:0;padding:0 14px}
+    .hdr-content{gap:10px}
     header h1{font-size:15px}
     .layout{min-height:calc(100vh - var(--hdr))}
     .sidebar{position:fixed;top:var(--hdr);left:0;z-index:30;height:calc(100vh - var(--hdr));width:240px;flex-basis:240px;
@@ -922,9 +1009,9 @@
     #tab-dash .grid.inline-pair{grid-template-columns:1fr}
     .panel{padding:16px}
     .legend{gap:12px}
-    .pie-wrap{gap:16px;justify-content:center}
-    #t-pie{flex:1 1 100%;max-width:340px;margin:0 auto}
-    .pie-legend{flex:1 1 100%;max-width:none}
+    .pie-wrap{gap:18px;justify-content:center;flex-direction:column;align-items:stretch}
+    .pie-wrap #t-pie{flex:0 0 auto;width:auto;max-width:320px;margin:0 auto;align-self:center}
+    .pie-wrap .pie-legend{flex:0 0 auto;min-width:0;width:100%;max-width:none;justify-content:flex-start}
     /* paydown tab: prevent horizontal slide on mobile */
     #pd-cards{grid-template-columns:1fr}
     .pd-card-inputs{gap:10px}
@@ -963,14 +1050,21 @@
   tr.tag-confirm-row:hover td{background:var(--panel2)}
   tr.tag-confirm-row .chip{vertical-align:middle}
   /* trends: pie + legend side by side */
-  .pie-wrap{display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap}
-  #t-pie{flex:0 0 360px;max-width:360px}
-  .pie-legend{flex:1;min-width:200px;max-width:560px}
-  .pl-list{max-height:264px;overflow-y:auto}
-  .pl-row{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--line);
+  .pie-wrap{display:flex;gap:clamp(20px,3vw,44px);align-items:flex-start;flex-wrap:wrap}
+  #t-pie{flex:0 0 clamp(300px,32%,360px);max-width:360px;align-self:center}
+  .pie-legend{flex:1 1 320px;min-width:240px;max-width:none;display:flex;flex-direction:column;justify-content:center}
+  .pl-list{display:flex;flex-direction:column}
+  .pl-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);
     font-size:13.5px}
-  .pl-row .pl-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .pl-row .pl-val{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .pl-row.clickable{cursor:pointer;border-radius:8px;padding:7px 9px;margin:0 -9px;transition:background .15s}
+  .pl-row.clickable:hover{background:rgba(var(--tint),.09)}
+  .pl-row.clickable:hover .pl-name{color:var(--accent)}
+  .pl-row.clickable:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .pie-slice{transition:opacity .12s}
+  .pie-slice:hover{opacity:.82}
+  .pl-row .pl-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pl-row .pl-val{flex:0 0 auto;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .pl-row .pl-pct{flex:0 0 auto;min-width:46px;text-align:right;font-variant-numeric:tabular-nums}
   .pl-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .pl-val{font-variant-numeric:tabular-nums}
   .pl-pager{display:flex;align-items:center;justify-content:space-between;gap:12px;
@@ -1301,6 +1395,11 @@ window.DEMO = true;
       return {results: res.slice(0,10).map(c=>({id:c.id,name:c.name,symbol:c.symbol,rank:c.rank,thumb:c.image}))};
     }
     if(path.startsWith('/crypto/markets')) return {coins: cx.markets || [], vs:'usd'};
+    if(path.startsWith('/crypto/price')){
+      const id = qs.get('id') || 'bitcoin';
+      const mk = (cx.markets || []).find(c => c.id === id) || (cx.markets||[])[0] || {};
+      return {id, vs:'usd', price: mk.price || 83475, chg_24h: mk.chg_24h || 0};
+    }
     if(path.startsWith('/crypto/chart')){
       const id = qs.get('id') || 'bitcoin';
       const series = (cx.charts && cx.charts[id]) || [];
@@ -1427,6 +1526,7 @@ window.DEMO = true;
 </head>
 <body>
 <header>
+ <div class="hdr-inner"><div class="hdr-content">
   <button class="sb-burger" id="sb-burger" title="Toggle menu" aria-label="Toggle menu"><svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true">
     <circle class="bm-ring" cx="20" cy="20" r="17.2"/>
     <circle class="bm-ring2" cx="20" cy="20" r="14"/>
@@ -1449,6 +1549,7 @@ window.DEMO = true;
     </div>
   </div>
   <button class="btn" id="nav-import">+ Import</button>
+ </div></div>
 </header>
 <div class="layout">
   <aside class="sidebar" id="sidebar">
@@ -1460,6 +1561,7 @@ window.DEMO = true;
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
       <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
+      <button data-tab="btcplan"><span class="ic">◈</span><span class="lb">BTC Plan</span></button>
       <button data-tab="ai"><span class="ic">✦</span><span class="lb">AI Costs</span></button>
       <button data-tab="txns"><span class="ic">≡</span><span class="lb">Transactions</span></button>
       <button data-tab="rules"><span class="ic">⚙</span><span class="lb">Rules</span></button>
@@ -1626,8 +1728,8 @@ window.DEMO = true;
     <div class="home-when" id="bills-when"></div>
   </div>
 
-  <div class="grid bills-summary" style="grid-template-columns:minmax(240px,1.1fr) 1fr;gap:14px;margin-bottom:14px">
-    <!-- Left to pay this month: hero card + completion donut -->
+  <div class="grid bills-summary" style="grid-template-columns:1fr;gap:14px;margin-bottom:14px">
+    <!-- Left to pay this month: hero card + completion donut + compact status counts -->
     <div class="card b-left-card" id="b-count-left">
       <div class="lbl">Left to pay · this month</div>
       <div class="b-left-inner">
@@ -1635,29 +1737,24 @@ window.DEMO = true;
         <div class="b-left-figs">
           <div class="val" id="b-left">$0</div>
           <div class="muted" id="b-left-sub" style="font-size:12px">—</div>
+          <!-- compact status counts (moved from the old status card) -->
+          <div class="b-mini-status">
+            <div class="b-mini-item">
+              <span class="b-mini-val pos" id="b-paid">0</span>
+              <span class="b-mini-lbl">Paid</span>
+            </div>
+            <div class="b-mini-item">
+              <span class="b-mini-val warn" id="b-due">0</span>
+              <span class="b-mini-lbl">Due / upcoming</span>
+            </div>
+            <div class="b-mini-item">
+              <span class="b-mini-val over" id="b-over">0</span>
+              <span class="b-mini-lbl">Overdue</span>
+            </div>
+          </div>
+          <div class="b-status-total" id="b-total-sub">—</div>
         </div>
       </div>
-    </div>
-    <!-- Combined status: paid / due&upcoming / overdue -->
-    <div class="card b-status-card">
-      <div class="lbl">This month's bills</div>
-      <div class="b-status-row">
-        <div class="b-status-item">
-          <div class="b-status-val pos" id="b-paid">0</div>
-          <div class="b-status-lbl">Paid</div>
-        </div>
-        <div class="b-status-sep"></div>
-        <div class="b-status-item">
-          <div class="b-status-val warn" id="b-due">0</div>
-          <div class="b-status-lbl">Due / upcoming</div>
-        </div>
-        <div class="b-status-sep"></div>
-        <div class="b-status-item">
-          <div class="b-status-val over" id="b-over">0</div>
-          <div class="b-status-lbl">Overdue</div>
-        </div>
-      </div>
-      <div class="b-status-total" id="b-total-sub">—</div>
     </div>
   </div>
 
@@ -1759,35 +1856,11 @@ window.DEMO = true;
       <h2 class="page-title">Trends</h2>
       <div class="page-sub">Income vs. expenses over time, by month and category</div>
     </div>
-  </div>
-  <div class="filters">
-    <label class="f-half">From <input type="date" id="t-start"></label>
-    <label class="f-half">To <input type="date" id="t-end"></label>
-    <label class="f-half">Account
-      <div class="multiselect" id="t-account-ms"></div>
-    </label>
-    <label class="f-half">Category
-      <div class="multiselect" id="t-cat-ms"></div>
-    </label>
-    <label class="f-half">Window
-      <select id="t-months">
-        <option value="6">Last 6 months</option>
-        <option value="12" selected>Last 12 months</option>
-        <option value="24">Last 24 months</option>
-        <option value="0">All time</option>
-      </select>
-    </label>
-    <label class="f-half">View
-      <select id="t-view">
-        <option value="pie">Expense mix (pie)</option>
-        <option value="avg">3-mo averages</option>
-        <option value="trend">Spend vs income trend</option>
-      </select>
-    </label>
-    <label class="f-half" id="t-piemonth-label">Month
-      <select id="t-piemonth"><option value="">All months</option></select>
-    </label>
-    <button class="btn ghost" onclick="loadTrends()">Apply</button>
+    <div class="ph-right">
+      <button class="btn ghost" id="t-filter-btn" onclick="openTrendFilters()">
+        <span class="ic">⚙</span> Filters<span id="t-filter-count" class="t-filter-count"></span>
+      </button>
+    </div>
   </div>
 
   <div class="grid cards avg-cards">
@@ -1826,6 +1899,45 @@ window.DEMO = true;
     <div class="muted" id="t-trend-legend" style="font-size:12px;margin-top:8px"></div>
   </div>
 </section>
+
+<!-- Trends filter modal -->
+<div class="modal" id="trend-modal" onclick="closeTrendFilters()">
+  <div class="modal-card" onclick="event.stopPropagation()" style="max-width:480px">
+    <h3 style="margin:0 0 14px">Trend filters</h3>
+    <div class="filters" style="margin-bottom:8px">
+      <label class="f-half">From <input type="date" id="t-start"></label>
+      <label class="f-half">To <input type="date" id="t-end"></label>
+      <label class="f-half">Account
+        <div class="multiselect" id="t-account-ms"></div>
+      </label>
+      <label class="f-half">Category
+        <div class="multiselect" id="t-cat-ms"></div>
+      </label>
+      <label class="f-half">Window
+        <select id="t-months">
+          <option value="6">Last 6 months</option>
+          <option value="12" selected>Last 12 months</option>
+          <option value="24">Last 24 months</option>
+          <option value="0">All time</option>
+        </select>
+      </label>
+      <label class="f-half">View
+        <select id="t-view">
+          <option value="pie">Expense mix (pie)</option>
+          <option value="avg">3-mo averages</option>
+          <option value="trend">Spend vs income trend</option>
+        </select>
+      </label>
+      <label class="f-half" id="t-piemonth-label">Month
+        <select id="t-piemonth"><option value="">All months</option></select>
+      </label>
+    </div>
+    <div class="modal-actions" style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+      <button class="btn ghost" onclick="resetTrendFilters()">Reset</button>
+      <button class="btn" onclick="applyTrendFilters()">Apply</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ SAVINGS ============ -->
 <section id="tab-savings" class="hidden">
@@ -2188,7 +2300,7 @@ window.DEMO = true;
           <div class="cx-stat-v" id="cx-count">0</div>
           <div class="cx-stat-s">coins tracked</div>
         </div>
-        <div class="cx-stat">
+        <div class="cx-stat cx-stat--change">
           <div class="lbl">24h change</div>
           <div class="cx-stat-v" id="cx-24h">$0</div>
           <div class="cx-stat-s" id="cx-24h-pct">—</div>
@@ -2288,6 +2400,78 @@ window.DEMO = true;
         </div>
       </div>
       <div id="cx-news"><div class="muted" style="font-size:13px">Loading headlines…</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-btcplan" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">Bitcoin Stacking Plan</h2>
+      <div class="page-sub">Project your BTC accumulation — amortized year by year, priced live</div>
+    </div>
+    <div class="ph-right">
+      <button class="btn ghost" onclick="bpLoadPrice()">↻ Live price</button>
+    </div>
+  </div>
+
+  <!-- summary cards -->
+  <div class="bp-cards" id="bp-cards"></div>
+
+  <!-- inputs -->
+  <div class="panel bp-inputs">
+    <div class="panel-head"><h2>Your inputs</h2>
+      <span class="muted" id="bp-price-note" style="font-size:12px"></span></div>
+    <div class="bp-grid">
+      <label class="bp-f">Starting BTC <input type="number" step="any" min="0" id="bp-btc" value="0.4" oninput="bpCompute()"><span class="bp-h">coins you hold today</span></label>
+      <label class="bp-f">Stack per period <input type="number" step="any" min="0" id="bp-stack" value="150" oninput="bpCompute()"><span class="bp-h">$ added each period</span></label>
+      <label class="bp-f">Frequency
+        <select id="bp-freq" onchange="bpCompute()">
+          <option value="52" selected>Weekly</option>
+          <option value="26">Biweekly</option>
+          <option value="12">Monthly</option>
+          <option value="365">Daily</option>
+        </select><span class="bp-h">how often you buy</span></label>
+      <label class="bp-f">BTC price today <input type="number" step="any" min="0" id="bp-price" value="83475" oninput="bpCompute()"><span class="bp-h" id="bp-live-tag">live</span></label>
+      <label class="bp-f">BTC CAGR / yr <div class="bp-sl"><input type="range" min="-50" max="150" step="1" id="bp-growth" value="35" oninput="bpGrowth(this)"><span class="bp-slv" id="bp-growth-v">35%</span></div><span class="bp-h">annual growth rate (compounded)</span></label>
+      <label class="bp-f">Expenses / yr <input type="number" step="any" min="0" id="bp-exp" value="126000" oninput="bpCompute()"><span class="bp-h">annual cost of living</span></label>
+      <label class="bp-f">House price <input type="number" step="any" min="0" id="bp-house" value="950000" oninput="bpCompute()"><span class="bp-h">a benchmark asset</span></label>
+      <label class="bp-f">House growth / yr <div class="bp-sl"><input type="range" min="-10" max="15" step="0.5" id="bp-hg" value="5" oninput="bpHG(this)"><span class="bp-slv" id="bp-hg-v">5%</span></div><span class="bp-h">real estate appreciation</span></label>
+      <label class="bp-f">Expense growth / yr <div class="bp-sl"><input type="range" min="-10" max="20" step="0.5" id="bp-eg" value="3" oninput="bpEG(this)"><span class="bp-slv" id="bp-eg-v">3%</span></div><span class="bp-h">cost-of-living inflation</span></label>
+      <label class="bp-f">Year 1
+        <input type="number" min="2026" max="2100" step="1" id="bp-year" value="2026" oninput="bpCompute()"><span class="bp-h">cal year of row 1</span></label>
+      <label class="bp-f">Years <input type="number" min="1" max="60" step="1" id="bp-years" value="30" oninput="bpCompute()"><span class="bp-h">projection horizon</span></label>
+      <label class="bp-f">Collateral %
+        <div class="bp-sl"><input type="range" min="1" max="100" step="1" id="bp-bv" value="5" oninput="bpBV(this)"><span class="bp-slv" id="bp-bv-v">5%</span></div><span class="bp-h">% of stack used as collateral</span></label>
+    </div>
+    <div class="bp-presets">
+      <button class="btn ghost sm" onclick="bpPreset(150,52,35,'weekly $150')">Weekly $150</button>
+      <button class="btn ghost sm" onclick="bpPreset(500,12,35,'monthly $500')">Monthly $500</button>
+      <button class="btn ghost sm" onclick="bpPreset(1000,12,50,'monthly $1k @ 50%')">Monthly $1k · 50%</button>
+      <button class="btn ghost sm" onclick="bpPreset(250,52,20,'weekly $250 @ 20%')">Weekly $250 · 20%</button>
+    </div>
+  </div>
+
+  <!-- table -->
+  <div class="panel">
+    <div class="panel-head"><h2>Amortization</h2>
+      <span class="muted" style="font-size:12px">BTC accumulated, its value, and how it stacks up</span></div>
+    <div class="table-wrap bp-table-wrap">
+      <table id="bp-table">
+        <thead><tr>
+          <th class="no-sort bp-th-year" data-col="0">Year</th>
+          <th class="no-sort">BTC price</th>
+          <th class="no-sort">BTC added</th>
+          <th class="no-sort">BTC balance</th>
+          <th class="no-sort">Fiat value</th>
+          <th class="no-sort">Invested</th>
+          <th class="no-sort">Gain</th>
+          <th class="no-sort">Stack / house</th>
+          <th class="no-sort">Stack / expenses</th>
+          <th class="no-sort bp-col-loan">50% LTV Loan</th>
+        </tr></thead>
+        <tbody id="bp-body"></tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -3116,12 +3300,13 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget','ai','economy'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget','ai','economy','btcplan'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='dashboard') loadHome();
   if(name==='trends') loadTrends();
   if(name==='savings') loadSavings();
   if(name==='paydown') loadPaydown();
   if(name==='crypto') loadCrypto();
+  if(name==='btcplan') bpInit();
   if(name==='txns') loadTxns(0);
   if(name==='rules'){ loadCats(); loadRules(); }
   if(name==='bills') loadBills();
@@ -3131,6 +3316,34 @@ function showTab(name){
   if(name==='import'){ loadImports(); loadAcctList(); }
 }
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{ showTab(b.dataset.tab); if(window.innerWidth<=820){ const s=$('#sidebar'); if(s && !s.classList.contains('collapsed')){ s.classList.add('collapsed'); try{ localStorage.setItem('lffd-sidebar','1'); }catch(e){} } } });
+
+// Jump to the Transactions tab pre-filtered to one category (and optional date window).
+// Wired from the Budget category rows and the Trends expense-mix pie/legend.
+function gotoCategory(key, opts){
+  opts = opts || {};
+  if(!key) return;
+  // Set the filter inputs FIRST, then switch tabs — showTab('txns') kicks off
+  // its own loadTxns(0), which will then already see the category/date filter.
+  const sel = $('#f-cat');
+  if(sel && [...sel.options].some(o=>o.value===key)) sel.value = key;
+  const st = $('#f-start'), en = $('#f-end');
+  if(st) st.value = opts.start || '';
+  if(en) en.value = opts.end || '';
+  if(opts.q !== undefined){ const q = $('#f-q'); if(q) q.value = opts.q || ''; }
+  showTab('txns');
+  const card = $('#tab-txns');
+  if(card) card.scrollIntoView({behavior:'smooth', block:'start'});
+}
+// Resolve [start,end] ISO dates for a 'YYYY-MM' budget month.
+function _monthBounds(ym){
+  if(!ym) return {};
+  const [y,m] = ym.split('-').map(Number);
+  if(!y || !m) return {};
+  const first = new Date(y, m-1, 1);
+  const last = new Date(y, m, 0);
+  const iso = d => d.toISOString().slice(0,10);
+  return {start: iso(first), end: iso(last)};
+}
 $('#nav-import').onclick = ()=>showTab('import');
 
 // ---------- theme palette ----------
@@ -3171,6 +3384,7 @@ $('#nav-import').onclick = ()=>showTab('import');
   const sb=$('#sidebar');
   const setCollapsed=(c)=>{
     sb.classList.toggle('collapsed',c);
+    document.body.classList.toggle('sb-collapsed',c);
     $('#sb-toggle-ic').textContent=c?'›':'‹';
     const lb=$('#sb-toggle-lb'); if(lb) lb.textContent=c?'':'Collapse';
     try{ localStorage.setItem('lffd-sidebar', c?'1':'0'); }catch(e){}
@@ -3210,6 +3424,11 @@ async function loadMeta(){
   if(!MS['f-account-ms']) msInit('f-account-ms', {allLabel:'All accounts', onChange:()=>loadTxns(0)});
   if(!MS['t-account-ms']) msInit('t-account-ms', {allLabel:'All accounts', onChange:()=>loadTrends()});
   if(!MS['t-cat-ms']) msInit('t-cat-ms', {allLabel:'All categories', onChange:()=>loadTrends()});
+  // keep the filter badge in sync with any direct edits in the modal
+  ['t-start','t-end','t-months','t-view','t-piemonth'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && !el._filterHook){ el._filterHook = true; el.addEventListener('change', ()=>updateTrendFilterCount()); }
+  });
   if(!MS['bud-account-ms']) msInit('bud-account-ms', {allLabel:'All accounts', onChange:()=>{ if(typeof loadBudgetTab==='function') loadBudgetTab(); }});
   const prevBud = msValues('bud-account-ms');
   const prevTCat = msValues('t-cat-ms');
@@ -4716,7 +4935,6 @@ function renderBudgetTab(){
 
   // only meaningful when there's spending logged this month
   const hasSpend = spentAll > 0.005;
-  const savLine = savBud>0 ? `<div class="bud-subline" style="margin-top:6px"><span>Savings / investing<span class="sv">${fmt(savSpent)} of ${fmt(savBud)}</span></span><span class="muted">tracked as savings, not spending</span></div>` : '';
   $('#bud-hero').innerHTML = `
     <div class="bud-hero-top">
       <div class="bud-kpi"><div class="k">Spending budget</div><div class="v">${fmt(spendBud)}</div></div>
@@ -4729,8 +4947,7 @@ function renderBudgetTab(){
       <span>Spent budgeted<span class="sv ${spendSpent>spendBud?'neg':''}">${fmt(spendSpent)}</span></span>
       <span>${spendBud>0?pct+'% of spending budget used':'No budget set'}</span>
       ${(spentAll-savSpent)>0.005?'<span>'+fmt(spentAll-savSpent)+' total spend this month</span>':''}
-    </div>
-    ${savLine}`;
+    </div>`;
 
   // category list — "Active" (default) shows only categories with a budget set
   let rows = d.rows.slice();
@@ -4759,7 +4976,7 @@ function renderBudgetTab(){
     const w = hasB ? Math.min(100, r.spent/r.budget*100).toFixed(1) : (r.spent>0?'100':'0');
     const remTxt = !hasB ? '<span class="muted">no budget</span>'
       : (r.remaining<0 ? `<span class="neg">${fmt(-r.remaining)} over</span>` : `<span class="muted">${fmt(r.remaining)} left</span>`);
-    return `<div class="bud-row">
+    return `<div class="bud-row clickable" role="button" tabindex="0" title="View ${esc(r.name)} transactions" onclick="gotoCategory('${esc(r.key)}', _monthBounds('${esc(shownMonth)}'))" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gotoCategory('${esc(r.key)}', _monthBounds('${esc(shownMonth)}'));}">
       <div class="bud-row-h">
         <span class="bud-dot" style="background:${esc(r.color||'#64748b')}"></span>
         <span class="bud-name">${esc(r.name)}</span>
@@ -4769,7 +4986,7 @@ function renderBudgetTab(){
       <div class="bud-row-f">
         <span class="bud-spent">${fmt(r.spent)} <span class="muted">of</span> </span>
         <input class="bud-inp" type="number" min="0" step="10" value="${hasB?r.budget:''}"
-          placeholder="0" title="Monthly budget" onchange="budgetRowSet('${esc(r.key)}', this.value)">
+          placeholder="0" title="Monthly budget" onclick="event.stopPropagation()" onchange="budgetRowSet('${esc(r.key)}', this.value)">
         <span class="bud-rem">${remTxt}</span>
       </div>
     </div>`;
@@ -4906,6 +5123,42 @@ async function loadSavings(){
 }
 
 // ---------- trends ----------
+function openTrendFilters(){
+  updateTrendFilterCount();
+  document.getElementById('trend-modal').classList.add('open');
+}
+function closeTrendFilters(){
+  document.getElementById('trend-modal').classList.remove('open');
+}
+function applyTrendFilters(){
+  closeTrendFilters();
+  loadTrends();
+}
+function resetTrendFilters(){
+  const s=$('#t-start'), e=$('#t-end');
+  if(s) s.value=''; if(e) e.value='';
+  if($('#t-months')) $('#t-months').value='12';
+  if($('#t-view')) $('#t-view').value='pie';
+  if($('#t-piemonth')) $('#t-piemonth').value='';
+  if(MS['t-account-ms']) msSet('t-account-ms', []);
+  if(MS['t-cat-ms']) msSet('t-cat-ms', []);
+  updateTrendFilterCount();
+  loadTrends();
+}
+// How many non-default filters are active (date range, accounts, categories, non-default window/view/month).
+function updateTrendFilterCount(){
+  let n = 0;
+  if($('#t-start') && $('#t-start').value) n++;
+  if($('#t-end') && $('#t-end').value) n++;
+  if(MS['t-account-ms'] && msValues('t-account-ms').length) n++;
+  if(MS['t-cat-ms'] && msValues('t-cat-ms').length) n++;
+  if($('#t-months') && $('#t-months').value !== '12') n++;
+  if($('#t-view') && $('#t-view').value !== 'pie') n++;
+  if($('#t-piemonth') && $('#t-piemonth').value) n++;
+  const btn = document.getElementById('t-filter-count');
+  if(btn){ btn.textContent = n; btn.classList.toggle('on', n>0); }
+}
+
 async function loadTrends(){
   const q = new URLSearchParams();
   if($('#t-start').value) q.set('start',$('#t-start').value);
@@ -4951,6 +5204,7 @@ async function loadTrends(){
   $('#t-panel-trend').classList.toggle('hidden', v!=='trend');
   $('#t-piemonth-label').classList.toggle('hidden', v!=='pie');
   $('#t-view').onchange = ()=>{ loadTrends(); };
+  updateTrendFilterCount();
 }
 let tMonthSeries = [];
 
@@ -4959,10 +5213,10 @@ function renderPie(d){
   // Build category totals for the selected month, or all months if none selected.
   let cats;
   if(month){
-    cats = d.categories.map(c=>({name:c.name,color:c.color,total:c.series?.[month]||0}))
+    cats = d.categories.map(c=>({name:c.name,color:c.color,key:c.key,total:c.series?.[month]||0}))
            .filter(c=>c.total>0);
   } else {
-    cats = d.categories.filter(c=>c.total>0).map(c=>({name:c.name,color:c.color,total:c.total}));
+    cats = d.categories.filter(c=>c.total>0).map(c=>({name:c.name,color:c.color,key:c.key,total:c.total}));
   }
   const total = cats.reduce((s,c)=>s+c.total,0);
   const scope = month ? new Date(+month.slice(0,4), +month.slice(5,7)-1, 1)
@@ -4971,6 +5225,13 @@ function renderPie(d){
   if(!cats.length || !total){ $('#t-pie').innerHTML='<div class="empty">No expense data</div>'; $('#t-pie-legend').innerHTML=''; return; }
   const R=150, r=86, cx=170, cy=170;
   let a0=-Math.PI/2, svg=`<svg viewBox="0 0 340 340" style="width:100%;max-width:360px;height:auto">`;
+  const pieWin = month ? _monthBounds(month) : {};
+  // A single category (full circle) can't be drawn as one SVG arc — start and
+  // end points coincide, so the arc collapses to nothing. Draw a solid ring.
+  if(cats.length===1){
+    const c=cats[0];
+    svg += `<path class="pie-slice" style="cursor:pointer" fill-rule="evenodd" d="M${cx} ${cy-R} A${R} ${R} 0 1 1 ${cx} ${cy+R} A${R} ${R} 0 1 1 ${cx} ${cy-R} Z M${cx} ${cy-r} A${r} ${r} 0 1 0 ${cx} ${cy+r} A${r} ${r} 0 1 0 ${cx} ${cy-r} Z" fill="${c.color}" stroke="var(--bg)" stroke-width="1.5" onclick="gotoCategory('${esc(c.key)}', ${JSON.stringify(pieWin)})"><title>${esc(c.name)}: ${fmt(c.total)} (100.0%) — click to view transactions</title></path>`;
+  } else {
   cats.forEach(c=>{
     const frac=c.total/total, a1=a0+frac*Math.PI*2;
     const large=(a1-a0)>Math.PI?1:0;
@@ -4978,16 +5239,19 @@ function renderPie(d){
     const x1=cx+R*Math.cos(a1), y1=cy+R*Math.sin(a1);
     const xi1=cx+r*Math.cos(a1), yi1=cy+r*Math.sin(a1);
     const xi0=cx+r*Math.cos(a0), yi0=cy+r*Math.sin(a0);
-    svg += `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${c.color}" stroke="var(--bg)" stroke-width="1.5"><title>${esc(c.name)}: ${fmt(c.total)} (${(frac*100).toFixed(1)}%)</title></path>`;
+    svg += `<path class="pie-slice" style="cursor:pointer" d="M${x0.toFixed(2)} ${y0.toFixed(2)} A${R} ${R} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)} L${xi1.toFixed(2)} ${yi1.toFixed(2)} A${r} ${r} 0 ${large} 0 ${xi0.toFixed(2)} ${yi0.toFixed(2)} Z" fill="${c.color}" stroke="var(--bg)" stroke-width="1.5" onclick="gotoCategory('${esc(c.key)}', ${JSON.stringify(pieWin)})"><title>${esc(c.name)}: ${fmt(c.total)} (${(frac*100).toFixed(1)}%) — click to view transactions</title></path>`;
     a0=a1;
   });
+  }
   svg += `<text x="170" y="165" fill="var(--mut)" font-size="13" text-anchor="middle">Total spend</text>`;
   svg += `<text x="170" y="189" fill="var(--txt)" font-size="19" font-weight="700" text-anchor="middle">${fmt(total)}</text>`;
   svg += '</svg>';
   $('#t-pie').innerHTML = svg;
   _pieRows = cats; _piePage = 0; _pieTotal = total;
+  _pieWin = pieWin;
   renderPieLegend(total);
 }
+let _pieWin = {};
 
 // ---------- paginated pie legend ----------
 const PIE_PAGE_SIZE = 6;
@@ -5006,10 +5270,10 @@ function renderPieLegend(total){
   const start = _piePage * PIE_PAGE_SIZE;
   const slice = rows.slice(start, start + PIE_PAGE_SIZE);
   const list = slice.map(c=>
-    `<div class="pl-row"><span class="dot" style="background:${c.color}"></span>
+    `<div class="pl-row clickable" role="button" tabindex="0" title="View ${esc(c.name)} transactions" onclick="gotoCategory('${esc(c.key)}', _pieWin)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gotoCategory('${esc(c.key)}', _pieWin);}"><span class="dot" style="background:${c.color}"></span>
       <span class="pl-name">${esc(c.name)}</span>
       <span class="pl-val">${fmt(c.total)}</span>
-      <span class="muted" style="width:46px;text-align:right">${(c.total/total*100).toFixed(1)}%</span></div>`).join('');
+      <span class="muted pl-pct">${(c.total/total*100).toFixed(1)}%</span></div>`).join('');
   const first = start + 1, last = Math.min(start + PIE_PAGE_SIZE, rows.length);
   const pager = rows.length > PIE_PAGE_SIZE
     ? `<div class="pl-pager">
@@ -5029,7 +5293,9 @@ function renderAvgTable(d){
   const cats = d.categories.filter(c=>c.total>0);
   const total = cats.reduce((s,c)=>s+c.total,0) || 1;
   $('#t-avg-body').innerHTML = cats.map(c=>`
-    <tr>
+    <tr class="clickable" role="button" tabindex="0" title="View ${esc(c.name)} transactions"
+        onclick="gotoCategory('${esc(c.key)}')"
+        onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();gotoCategory('${esc(c.key)}');}">
       <td><span class="dot" style="background:${c.color};display:inline-block;margin-right:6px"></span>${esc(c.name)}</td>
       <td>${fmt(c.avg_3mo)}</td>
       <td class="muted">${fmt(c.avg_active)}</td>
@@ -5086,6 +5352,7 @@ function renderTrendChart(d){
 // ---------- transactions ----------
 let SELECTED = new Set();
 let PAGE_ITEMS = [];
+let _txnSeq = 0;
 
 async function loadTxns(page){
   if(page===0) TXNPAGE=0; else TXNPAGE=page;
@@ -5098,7 +5365,9 @@ async function loadTxns(page){
   if($('#f-hidden').checked) q.set('include_hidden','true');
   q.set('sort',SORT.col); q.set('order',SORT.dir);
   q.set('limit','100'); q.set('offset', String(TXNPAGE*100));
+  const mySeq = ++_txnSeq;
   const d = await api('/transactions?'+q);
+  if(mySeq !== _txnSeq) return;   // a newer request superseded this one
   TXNTOTAL = d.total;
   PAGE_ITEMS = d.items;
   $('#txn-count').textContent = `${d.total.toLocaleString()} transaction${d.total===1?'':'s'}`;
@@ -6030,9 +6299,183 @@ async function chatSend(){
   await loadMeta();
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget','ai','economy'].includes(h)) showTab(h);
+  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget','ai','economy','btcplan'].includes(h)) showTab(h);
   else showTab('dashboard');
 })();
+// ---------- BTC stacking plan ----------
+const BTC_TOTAL_SUPPLY = 21000000; // for % of all BTC context
+let _bpLoaded = false;
+
+async function bpInit(){
+  bpCompute();
+  if(!_bpLoaded){ _bpLoaded = true; bpLoadPrice(); }
+}
+
+async function bpLoadPrice(){
+  try{
+    const r = await api('/crypto/price?id=bitcoin');
+    if(r && r.price){
+      $('#bp-price').value = Math.round(r.price);
+      const chg = (r.chg_24h||0);
+      $('#bp-live-tag').innerHTML = `live · ${chg>=0?'+':''}${chg.toFixed(2)}% 24h (updated ${new Date().toLocaleTimeString()})`;
+      bpCompute();
+    } else {
+      $('#bp-live-tag').textContent = 'enter manually (live feed unavailable)';
+    }
+  }catch(e){ $('#bp-live-tag').textContent = 'enter manually'; }
+}
+
+function bpGrowth(el){ $('#bp-growth-v').textContent = el.value + '%'; bpCompute(); }
+function bpHG(el){ $('#bp-hg-v').textContent = el.value + '%'; bpCompute(); }
+function bpEG(el){ $('#bp-eg-v').textContent = el.value + '%'; bpCompute(); }
+function bpBV(el){ $('#bp-bv-v').textContent = el.value + '%'; bpCompute(); }
+
+function bpPreset(stack, freq, growth, label){
+  $('#bp-stack').value = stack;
+  $('#bp-freq').value = freq;
+  $('#bp-growth').value = growth; $('#bp-growth-v').textContent = growth + '%';
+  bpCompute();
+  toast('Preset applied: ' + label);
+}
+
+function bpNum(id){ const v = parseFloat($(id).value); return isFinite(v) ? v : 0; }
+
+function bpCompute(){
+  const btc0   = Math.max(0, bpNum('#bp-btc'));
+  const perDep = Math.max(0, bpNum('#bp-stack'));
+  const freq   = parseInt($('#bp-freq').value, 10) || 52;
+  const p0     = Math.max(0, bpNum('#bp-price'));
+  const g      = bpNum('#bp-growth') / 100;
+  const expYr  = Math.max(0, bpNum('#bp-exp'));
+  const house0 = Math.max(0, bpNum('#bp-house'));
+  const hg     = bpNum('#bp-hg') / 100;
+  const eg     = bpNum('#bp-eg') / 100;
+  let   year0  = parseInt($('#bp-year').value, 10) || 2026;
+  let   years  = Math.max(1, Math.min(60, parseInt($('#bp-years').value, 10) || 30));
+  const borrowPct = Math.max(0, Math.min(100, bpNum('#bp-bv') || 0)) / 100;   // % of stack borrowed against
+
+  const perYear = freq;                 // deposits per year
+  const annualDep = perDep * freq;      // $ stacked per year
+
+  let btcBalance = btc0;
+  let invested = btc0 * p0;
+  let price = p0;
+  let house = house0;
+  let exp = expYr;
+
+  const rows = [];
+  let firstHouseYear = null, firstExpYear = null, firstBtcYear = null;
+  const targetBtc = 1; // for "when do you hit 1 BTC" (only if not already there)
+
+  if(btc0 >= targetBtc) firstBtcYear = year0;
+
+  for(let i = 0; i < years; i++){
+    // Per-period stacking: deposit into BTC `freq` times over the year. Row i is the
+    // snapshot at the END of calendar year year0+i, having deposited through i+1 years
+    // (but year0 itself is the baseline year with no price growth yet).
+    let btcAdded = 0;
+    if(perDep > 0 && freq > 0 && i > 0){
+      for(let k = 0; k < freq; k++){
+        // buy at the midpoint of the period; growth accrues over `i-1` full years
+        const t = (i - 1) + (k + 0.5) / freq;
+        const buyPrice = p0 * Math.pow(1 + g, Math.max(0, t));
+        if(buyPrice > 0) btcAdded += perDep / buyPrice;
+      }
+    }
+    btcBalance += btcAdded;
+    invested += perDep * freq * (i > 0 ? 1 : 0);
+    // end-of-year price after i full years of compounding (year0 = baseline, no growth)
+    price = p0 * Math.pow(1 + g, i);
+    house = house0 * Math.pow(1 + hg, i);
+    exp   = expYr * Math.pow(1 + eg, i);
+    const fiatValue = btcBalance * price;
+    const gain = fiatValue - invested;
+    const stackHouse = house > 0 ? fiatValue / house : 0;
+    const stackExp   = exp > 0 ? fiatValue / exp : 0;
+    // LTV loan column: borrow against `borrowPct` of the stack at 50% LTV.
+    const borrowValue = fiatValue * borrowPct;                  // $ of stack pledged
+    const loan50      = borrowValue * 0.50;                     // $ loan at 50% LTV
+    const yr = year0 + i;
+    if(firstHouseYear===null && stackHouse >= 1) firstHouseYear = yr;
+    if(firstExpYear===null && stackExp >= 1) firstExpYear = yr;
+    if(firstBtcYear===null && btcBalance >= targetBtc) firstBtcYear = yr;
+    rows.push({yr, i, price, btcAdded, btcBalance, fiatValue, invested, gain, stackHouse, stackExp, borrowValue, loan50});
+  }
+
+  // ---- summary cards ----
+  const last = rows[rows.length-1] || {btcBalance:btc0, fiatValue:btc0*p0, invested:btc0*p0, gain:0, stackHouse:0};
+  const pctSupply = (last.btcBalance / BTC_TOTAL_SUPPLY) * 100;
+  const retPct = last.invested>0 ? (last.gain/last.invested)*100 : 0;
+  $('#bp-cards').innerHTML = `
+    <div class="bp-card bp-hero">
+      <div class="lbl">Portfolio value · ${year0+years-1}</div>
+      <div class="v">$${Math.round(last.fiatValue).toLocaleString()}</div>
+      <div class="s">${last.btcBalance.toFixed(6)} ₿ at projected $${Math.round(last.price).toLocaleString()}/BTC · ${(g*100).toFixed(0)}% CAGR</div>
+      <div class="sub-row">
+        <div class="sub-item"><div class="k">Total invested</div><div class="vv">$${Math.round(last.invested).toLocaleString()}</div></div>
+        <div class="sub-item"><div class="k">Unrealized gain</div><div class="vv" style="color:var(--good)">+$${Math.abs(Math.round(last.gain)).toLocaleString()}</div></div>
+        <div class="sub-item"><div class="k">Return</div><div class="vv" style="color:var(--good)">+${retPct.toFixed(0)}%</div></div>
+      </div>
+    </div>
+    <div class="bp-card bp-mini"><div class="lbl">1 BTC</div><div class="v acc">${firstBtcYear ? (firstBtcYear===year0?'held':firstBtcYear) : '—'}</div></div>
+    <div class="bp-card bp-mini"><div class="lbl">Owns house</div><div class="v acc">${firstHouseYear || '—'}</div></div>
+    <div class="bp-card bp-mini"><div class="lbl">Covers exp.</div><div class="v acc">${firstExpYear || '—'}</div></div>
+    <div class="bp-card bp-mini"><div class="lbl">% of 21M BTC</div><div class="v btc">${pctSupply.toFixed(4)}%</div></div>
+  `;
+
+  // ---- table ----
+  const rowsHtml = rows.map(r=>{
+    const addCls = r.gain>=0 ? 'bp-pos' : 'bp-neg';
+    const mil = (r.stackHouse>=1 && rows[r.i-1] && rows[r.i-1].stackHouse<1) || (r.stackExp>=1 && rows[r.i-1] && rows[r.i-1].stackExp<1);
+    const houseCls = r.stackHouse>=1 ? 'bp-pos' : '';
+    const expCls = r.stackExp>=1 ? 'bp-pos' : '';
+    return `<tr data-year="${r.yr}" class="${mil?'bp-milestone':''}">
+      <td onclick="bpRowClick(${r.yr})">${r.yr}</td>
+      <td onclick="bpColClick(1)">$${Math.round(r.price).toLocaleString()}</td>
+      <td class="${addCls}" onclick="bpColClick(2)">${r.btcAdded.toFixed(6)}</td>
+      <td onclick="bpColClick(3)">${r.btcBalance.toFixed(6)}</td>
+      <td onclick="bpColClick(4)">$${Math.round(r.fiatValue).toLocaleString()}</td>
+      <td onclick="bpColClick(5)">$${Math.round(r.invested).toLocaleString()}</td>
+      <td class="${addCls}" onclick="bpColClick(6)">${r.gain>=0?'+':'−'}$${Math.abs(Math.round(r.gain)).toLocaleString()}</td>
+      <td class="${houseCls}" onclick="bpColClick(7)">${r.stackHouse.toFixed(2)}×</td>
+      <td class="${expCls}" onclick="bpColClick(8)">${r.stackExp.toFixed(2)}×</td>
+      <td class="bp-col-loan bp-loan-cell" onclick="bpColClick(9)">$${Math.round(r.loan50).toLocaleString()}</td>
+    </tr>`;
+  }).join('');
+  $('#bp-body').innerHTML = rowsHtml;
+  bpWireCols();
+}
+
+// ---- row / column selection ----
+let _bpSelYear = null, _bpSelCol = null;
+function bpRowClick(yr){
+  _bpSelYear = (_bpSelYear === yr) ? null : yr;
+  bpApplySel();
+}
+function bpColClick(colIdx){
+  _bpSelCol = (_bpSelCol === colIdx) ? null : colIdx;
+  bpApplySel();
+}
+function bpApplySel(){
+  document.querySelectorAll('#bp-table thead th').forEach((th,i)=>{
+    const idx = [...th.parentNode.children].indexOf(th);
+    th.classList.toggle('bp-th-sel', _bpSelCol !== null && idx === _bpSelCol);
+  });
+  document.querySelectorAll('#bp-body tr').forEach(tr=>{
+    const yr = parseInt(tr.dataset.year, 10);
+    const rowSel = (_bpSelYear !== null && yr === _bpSelYear);
+    tr.classList.toggle('bp-row-sel', rowSel);
+    [...tr.children].forEach((td,ci)=>{
+      td.classList.toggle('bp-col-sel', _bpSelCol !== null && ci === _bpSelCol);
+      td.classList.toggle('bp-cross', rowSel && _bpSelCol !== null && ci === _bpSelCol);
+    });
+  });
+}
+function bpWireCols(){
+  document.querySelectorAll('#bp-table thead th').forEach(th=>{
+    th.onclick = ()=> bpColClick([...th.parentNode.children].indexOf(th));
+  });
+}
 </script>
 </body>
 </html>

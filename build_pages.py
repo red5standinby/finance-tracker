@@ -44,6 +44,11 @@ window.DEMO = true;
       return {results: res.slice(0,10).map(c=>({id:c.id,name:c.name,symbol:c.symbol,rank:c.rank,thumb:c.image}))};
     }
     if(path.startsWith('/crypto/markets')) return {coins: cx.markets || [], vs:'usd'};
+    if(path.startsWith('/crypto/price')){
+      const id = qs.get('id') || 'bitcoin';
+      const mk = (cx.markets || []).find(c => c.id === id) || (cx.markets||[])[0] || {};
+      return {id, vs:'usd', price: mk.price || 83475, chg_24h: mk.chg_24h || 0};
+    }
     if(path.startsWith('/crypto/chart')){
       const id = qs.get('id') || 'bitcoin';
       const series = (cx.charts && cx.charts[id]) || [];

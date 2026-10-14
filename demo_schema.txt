@@ -1,0 +1,373 @@
+{
+  dashboard: {
+    totals: {
+      income: float
+      expense: float
+      net: float
+      savings: float
+    }
+    grade: {
+      grade: str
+      color: str
+      rate: float
+      net: float
+      income: float
+      expense: float
+      trend: {
+        direction: str
+        delta: float
+        prev_grade: str
+        prev_rate: float
+      }
+      all_time: {
+        grade: str
+        color: str
+        rate: float
+        net: float
+        income: float
+        expense: float
+        savings: float
+      }
+      savings: float
+    }
+    categories: [11] e.g. {
+        key: str
+        name: str
+        color: str
+        kind: str
+        total: float
+        count: int
+        hidden: int
+        avg_3mo: float
+        avg_active: float
+        series: {
+          2026-06: ...
+          2026-07: ...
+          2026-08: ...
+          2026-09: ...
+        }
+      }
+    months: [4] e.g. {
+        month: str
+        income: float
+        expense: float
+        net: float
+      }
+    accounts: [6] e.g. {
+        name: str
+        income: float
+        expense: float
+      }
+    uncategorized: {
+      count: int
+      amount: int
+    }
+    range: {
+      start: NoneType
+      end: NoneType
+    }
+  }
+  categories: [11] e.g. {
+      id: int
+      key: str
+      name: str
+      kind: str
+      color: str
+      is_custom: int
+      hidden: int
+    }
+  accounts: [6] e.g. {
+      id: int
+      name: str
+      bank: str
+      kind: str
+      exclude: int
+      cnt: int
+      first_date: str
+      last_date: str
+    }
+  budgets: {
+    month: str
+    rows: [24] e.g. {
+        key: str
+        name: str
+        color: str
+        budget: float
+        spent: float
+        remaining: float
+        pct: float
+      }
+    categories: [32] e.g. {
+        key: str
+        name: str
+        color: str
+      }
+    totals: {
+      budget: float
+      spent: float
+      spent_all: float
+      spent_unbudgeted: float
+    }
+  }
+  trends: {
+    months: [4] e.g. str
+    categories: [10] e.g. {
+        key: str
+        name: str
+        color: str
+        total: float
+        avg_3mo: float
+        avg_active: float
+        series: {
+          2026-06: ...
+          2026-07: ...
+          2026-08: ...
+          2026-09: ...
+        }
+      }
+    month_series: [4] e.g. {
+        month: str
+        income: float
+        expense: float
+        net: float
+      }
+    avg_3mo: {
+      income: float
+      expense: float
+      net: float
+    }
+    avg_all: {
+      income: float
+      expense: float
+      net: float
+      months: int
+    }
+  }
+  transactions: {
+    total: int
+    items: [45] e.g. {
+        id: int
+        date: str
+        description: str
+        cleaned: str
+        amount: float
+        raw_type: str
+        category_source: str
+        memo: str
+        ckey: str
+        cname: str
+        ccolor: str
+        account: str
+      }
+  }
+  rules: [13] e.g. {
+      id: int
+      merchant_pattern: str
+      category_key: str
+      hits: int
+    }
+  imports: [1] e.g. {
+      id: str
+      filename: str
+      account: str
+      bank: str
+      inserted: int
+      skipped: int
+      created_at: str
+    }
+  savings: {
+    accounts: [1] e.g. {
+        id: int
+        name: str
+        bank: str
+        deposits: float
+        withdrawals: float
+        interest: float
+        net: float
+        count: int
+        last_date: str
+        series: [58] e.g. ...
+        balance: NoneType
+        balance_date: NoneType
+      }
+    totals: {
+      deposits: float
+      withdrawals: float
+      interest: float
+      net: float
+      count: int
+      balance: int
+    }
+  }
+  crypto: {
+    markets: [10] e.g. {
+        id: str
+        symbol: str
+        name: str
+        image: str
+        price: int
+        market_cap: int
+        rank: int
+        chg_24h: float
+        chg_7d: float
+        spark: [56] e.g. ...
+      }
+    charts: {
+      bitcoin: [169] e.g. [2] e.g. ...
+      ethereum: [169] e.g. [2] e.g. ...
+      solana: [169] e.g. [2] e.g. ...
+    }
+    favorites: [2] e.g. str
+    holdings: [2] e.g. {
+        id: int
+        coin_id: str
+        symbol: str
+        name: str
+        amount: float
+      }
+    news: [3] e.g. {
+        title: str
+        url: str
+        source: str
+        category: str
+      }
+  }
+  savingsHistory: {
+    months: [12] e.g. {
+        month: str
+        balance: float
+      }
+    current: float
+    current_month: str
+    txn_net: float
+  }
+  bills: {
+    month: str
+    rows: [21] e.g. {
+        id: int
+        name: str
+        match_cleaned: str
+        expected_amount: float
+        due_day: int
+        kind: str
+        account_id: NoneType
+        category_key: str
+        active: int
+        created_at: str
+        manual_paid_month: NoneType
+        payments_per_month: int
+        status: str
+        paid_date: NoneType
+        paid_amount: NoneType
+        variance: NoneType
+        manual: bool
+        paid_count: int
+        expected_count: int
+        remaining_count: int
+        per_payment: float
+      }
+    counts: {
+      paid: int
+      partial: int
+      due: int
+      overdue: int
+      total: int
+      expected: float
+      paid_amount: float
+      left: float
+    }
+  }
+  paydown: {
+    cards: [3] e.g. {
+        id: int
+        name: str
+        bank: str
+        balance: float
+        balance_date: str
+        apr: float
+        min_payment: float
+        payments_count: int
+        payments_total: float
+        payments_last: str
+        charges_total: float
+      }
+    totals: {
+      owed: float
+      min: float
+      avg_apr: float
+      cards_with_balance: int
+      cards_total: int
+    }
+  }
+  aiCosts: {
+    total: float
+    count: int
+    first_date: str
+    last_date: str
+    daily: [18] e.g. {
+        date: str
+        cost: float
+        n: int
+      }
+    daily_by_model: [22] e.g. {
+        date: str
+        cost: float
+        n: int
+        model: str
+      }
+    monthly: [2] e.g. {
+        month: str
+        cost: float
+        n: int
+      }
+    by_model: [2] e.g. {
+        model: str
+        cost: float
+        n: int
+      }
+    by_wallet: [1] e.g. {
+        wallet_type: str
+        cost: float
+        n: int
+      }
+    models: [2] e.g. str
+  }
+  economyNews: {
+    economy: [8] e.g. {
+        title: str
+        url: str
+        source: str
+        published: str
+      }
+    bonds: [4] e.g. {
+        title: str
+        url: str
+        source: str
+        published: str
+      }
+  }
+  economyMarkets: {
+    rates: {
+      10y: {
+        label: str
+        value: float
+      }
+      5y: {
+        label: str
+        value: float
+      }
+      2y: {
+        label: str
+        value: float
+      }
+      13w: {
+        label: str
+        value: float
+      }
+      10y2y: {
+        label: str
+        value: float
+      }
+    }
+  }
+}
