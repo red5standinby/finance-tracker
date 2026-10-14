@@ -970,6 +970,27 @@ def bill_candidates():
     return {"candidates": cands}
 
 
+@app.get("/api/merchants")
+def list_merchants(q: str | None = None, limit: int = 200):
+    """Distinct cleaned merchant names seen in transactions, most frequent first.
+    Powers the autocomplete datalist on the bill 'match merchant' field."""
+    with db() as con:
+        rows = con.execute("""
+            SELECT COALESCE(NULLIF(TRIM(t.cleaned),''), TRIM(t.description)) AS name,
+                   COUNT(*) n
+            FROM transactions t
+            WHERE COALESCE(NULLIF(TRIM(t.cleaned),''), TRIM(t.description)) IS NOT NULL
+            GROUP BY name
+            ORDER BY n DESC, name ASC
+            LIMIT ?
+        """, (max(1, min(2000, limit)),)).fetchall()
+    names = [r["name"] for r in rows if r["name"]]
+    if q:
+        ql = q.lower()
+        names = [n for n in names if ql in n.lower()]
+    return {"merchants": names}
+
+
 # Common bill categories, in display order. key -> label.
 _BILL_GROUPS = [
     ("housing", "Housing"),

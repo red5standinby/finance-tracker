@@ -3739,6 +3739,18 @@ function billSearch(q){
   }, 200);
 }
 
+let _billMerchants = null;
+async function populateMerchantSuggestions(){
+  const dl = document.getElementById('bf-merchants');
+  if(!dl) return;
+  if(!_billMerchants){
+    try { const d = await api('/merchants?limit=1000'); _billMerchants = d.merchants || []; }
+    catch(e){ _billMerchants = []; }
+  }
+  dl.innerHTML = _billMerchants
+    .map(m => '<option value="'+esc(m)+'"></option>').join('');
+}
+
 let _billCats = null;
 async function billCategoryOptions(selected){
   if(!_billCats){
@@ -3758,7 +3770,7 @@ async function openBillForm(bill){
     '<div class="modal-card" onclick="event.stopPropagation()">'+
       '<h3 style="margin:0 0 14px">'+(isEdit?'Edit bill':'Create a bill')+'</h3>'+
       '<label class="fld">Name<input id="bf-name" value="'+esc(bill?(bill.name||''):'')+'" placeholder="e.g. Netflix"></label>'+
-      '<label class="fld">Match merchant (text in the transaction)<input id="bf-match" value="'+esc(bill?(bill.match_cleaned||''):'')+'" placeholder="e.g. netflix"></label>'+
+      '<label class="fld">Match merchant (text in the transaction)<input id="bf-match" list="bf-merchants" autocomplete="off" value="'+esc(bill?(bill.match_cleaned||''):'')+'" placeholder="e.g. netflix"><datalist id="bf-merchants"></datalist></label>'+
       '<div class="fld-row">'+
         '<label class="fld">Expected amount<input id="bf-amt" type="number" step="0.01" value="'+(bill?(bill.expected_amount||''):'')+'" placeholder="20.20"></label>'+
         '<label class="fld">Due on the<input id="bf-day" type="number" min="1" max="31" value="'+(bill&&bill.due_day?bill.due_day:'')+'" placeholder="13"></label>'+
@@ -3781,6 +3793,7 @@ async function openBillForm(bill){
       '</div>'+
     '</div>';
   d.classList.add('open');
+  populateMerchantSuggestions();
   setTimeout(()=>{const el=document.getElementById('bf-name');if(el)el.focus();},30);
   const aEl=document.getElementById('bf-amt'), pEl=document.getElementById('bf-per'), eEl=document.getElementById('bf-each');
   const refreshEach=()=>{ const a=parseFloat(aEl.value)||0, p=Math.max(1,parseInt(pEl.value)||1);
