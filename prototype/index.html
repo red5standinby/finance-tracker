@@ -731,7 +731,7 @@
   .bp-toggle:active{transform:none}
   .bp-toggle .bp-caret{font-size:10px;display:inline-block;transition:transform .28s cubic-bezier(.4,0,.2,1);color:var(--mut)}
   .bp-inputs:not(.bp-collapsed) .bp-toggle .bp-caret{transform:rotate(180deg);color:var(--accent)}
-  .bp-cards{display:grid;grid-template-columns:minmax(240px,1.4fr) repeat(auto-fit,minmax(120px,1fr));gap:12px;margin:0 0 16px;align-items:stretch}
+  .bp-cards{display:grid;grid-template-columns:3fr 1fr;gap:12px;margin:0 0 16px;align-items:stretch}
   .bp-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
   .bp-card .lbl{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
   .bp-card .v{font-size:25px;font-weight:800;margin-top:5px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -748,17 +748,26 @@
   .bp-card.bp-mini .lbl{font-size:9.5px}
   .bp-card.bp-mini .v{font-size:15px;margin-top:3px}
   .bp-card.bp-mini .s{font-size:10px;margin-top:2px}
-  /* inline "Total BTC stacked" sub-item inside the hero, sits along the bottom */
-  .bp-card.bp-hero .sub-item.bp-sub-btc .vv{color:#f7931a}
-  .bp-card.bp-hero .bp-sub-note{font-size:11.5px;font-weight:500;color:var(--mut);margin-left:6px;letter-spacing:normal}
+  /* right-hand info card: stacked stat rows */
+  .bp-card.bp-info{display:flex;flex-direction:column;justify-content:center;gap:14px}
+  .bp-info-row .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .bp-info-row .vv{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px;letter-spacing:-.01em}
+  .bp-info-row.bp-info-btc .vv{color:#f7931a}
+  /* editable slider value */
+  .bp-slv-input{width:64px;min-width:64px;height:30px;padding:0 8px;text-align:right;font-variant-numeric:tabular-nums;
+    color:var(--txt);font-size:13.5px;font-weight:700;border:1px solid var(--line);border-radius:8px;
+    background:var(--panel2);text-transform:none;letter-spacing:normal;-moz-appearance:textfield}
+  .bp-slv-input:focus{outline:none;border-color:var(--accent)}
+  .bp-slv-input::-webkit-outer-spin-button,.bp-slv-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .bp-slv-suffix{color:var(--mut);font-size:13px;font-weight:700;margin-left:-4px}
   /* mobile: portfolio (hero) spans full width, then minis in a 2-up row */
   @media (max-width:600px){
-    #tab-btcplan .bp-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    #tab-btcplan .bp-cards{grid-template-columns:1fr;gap:10px}
     #tab-btcplan .bp-card .v{font-size:22px}
     #tab-btcplan .bp-card.bp-hero{grid-column:1/-1}
     #tab-btcplan .bp-card.bp-hero .v{font-size:34px}
-    #tab-btcplan .bp-card.bp-hero .sub-row{gap:12px}
-    #tab-btcplan .bp-card.bp-hero .bp-sub-note{display:block;margin-left:0;margin-top:2px}
+    #tab-btcplan .bp-card.bp-info{flex-direction:row;flex-wrap:wrap;gap:20px}
+    #tab-btcplan .bp-card.bp-info .bp-info-row{flex:1 1 auto}
   }
   .bp-table-wrap{max-height:560px;overflow:auto}
   #bp-table thead th{position:sticky;top:0;z-index:2;background:var(--panel);box-shadow:inset 0 -1px 0 var(--line)}
@@ -2314,16 +2323,16 @@
           <option value="365">Daily</option>
         </select><span class="bp-h">how often you buy</span></label>
       <label class="bp-f">BTC price today <input type="number" step="any" min="0" id="bp-price" value="83475" oninput="bpCompute()"><span class="bp-h" id="bp-live-tag">live</span></label>
-      <label class="bp-f">BTC CAGR / yr <div class="bp-sl"><input type="range" min="-50" max="150" step="1" id="bp-growth" value="35" oninput="bpGrowth(this)"><span class="bp-slv" id="bp-growth-v">35%</span></div><span class="bp-h">annual growth rate (compounded)</span></label>
+      <label class="bp-f">BTC CAGR / yr <div class="bp-sl"><input type="range" min="-50" max="150" step="1" id="bp-growth" value="35" oninput="bpGrowth(this)"><input type="number" class="bp-slv-input" step="1" id="bp-growth-v" value="35" oninput="bpGrowthNum(this)"><span class="bp-slv-suffix">%</span></div><span class="bp-h">annual growth rate (compounded)</span></label>
       <label class="bp-f">Expenses / yr <input type="number" step="any" min="0" id="bp-exp" value="126000" oninput="bpCompute()"><span class="bp-h">annual cost of living</span></label>
       <label class="bp-f">House price <input type="number" step="any" min="0" id="bp-house" value="950000" oninput="bpCompute()"><span class="bp-h">a benchmark asset</span></label>
-      <label class="bp-f">House growth / yr <div class="bp-sl"><input type="range" min="-10" max="15" step="0.5" id="bp-hg" value="5" oninput="bpHG(this)"><span class="bp-slv" id="bp-hg-v">5%</span></div><span class="bp-h">real estate appreciation</span></label>
-      <label class="bp-f">Expense growth / yr <div class="bp-sl"><input type="range" min="-10" max="20" step="0.5" id="bp-eg" value="3" oninput="bpEG(this)"><span class="bp-slv" id="bp-eg-v">3%</span></div><span class="bp-h">cost-of-living inflation</span></label>
+      <label class="bp-f">House growth / yr <div class="bp-sl"><input type="range" min="-10" max="15" step="0.5" id="bp-hg" value="5" oninput="bpHG(this)"><input type="number" class="bp-slv-input" step="0.5" id="bp-hg-v" value="5" oninput="bpHGNum(this)"><span class="bp-slv-suffix">%</span></div><span class="bp-h">real estate appreciation</span></label>
+      <label class="bp-f">Expense growth / yr <div class="bp-sl"><input type="range" min="-10" max="20" step="0.5" id="bp-eg" value="3" oninput="bpEG(this)"><input type="number" class="bp-slv-input" step="0.5" id="bp-eg-v" value="3" oninput="bpEGNum(this)"><span class="bp-slv-suffix">%</span></div><span class="bp-h">cost-of-living inflation</span></label>
       <label class="bp-f">Year 1
         <input type="number" min="2026" max="2100" step="1" id="bp-year" value="2026" oninput="bpCompute()"><span class="bp-h">cal year of row 1</span></label>
       <label class="bp-f">Years <input type="number" min="1" max="60" step="1" id="bp-years" value="30" oninput="bpCompute()"><span class="bp-h">projection horizon</span></label>
       <label class="bp-f">Collateral %
-        <div class="bp-sl"><input type="range" min="1" max="100" step="1" id="bp-bv" value="5" oninput="bpBV(this)"><span class="bp-slv" id="bp-bv-v">5%</span></div><span class="bp-h">% of stack used as collateral</span></label>
+        <div class="bp-sl"><input type="range" min="1" max="100" step="1" id="bp-bv" value="5" oninput="bpBV(this)"><input type="number" class="bp-slv-input" step="1" id="bp-bv-v" value="5" oninput="bpBVNum(this)"><span class="bp-slv-suffix">%</span></div><span class="bp-h">% of stack used as collateral</span></label>
     </div>
     <div class="bp-presets">
       <button class="btn ghost sm" onclick="bpPreset(150,52,35,'weekly $150')">Weekly $150</button>
@@ -6227,15 +6236,33 @@ async function bpLoadPrice(){
   }catch(e){ $('#bp-live-tag').textContent = 'enter manually'; }
 }
 
-function bpGrowth(el){ $('#bp-growth-v').textContent = el.value + '%'; bpCompute(); }
-function bpHG(el){ $('#bp-hg-v').textContent = el.value + '%'; bpCompute(); }
-function bpEG(el){ $('#bp-eg-v').textContent = el.value + '%'; bpCompute(); }
-function bpBV(el){ $('#bp-bv-v').textContent = el.value + '%'; bpCompute(); }
+// growth sliders: range drives the number box (and vice-versa), both recompute.
+function bpGrowth(el){ $('#bp-growth-v').value = el.value; bpCompute(); }
+function bpHG(el){ $('#bp-hg-v').value = el.value; bpCompute(); }
+function bpEG(el){ $('#bp-eg-v').value = el.value; bpCompute(); }
+function bpBV(el){ $('#bp-bv-v').value = el.value; bpCompute(); }
+// typed value -> clamp into the range's min/max, move the slider, recompute.
+function bpSetSlider(sliderId, inputEl, fallback){
+  const s = $('#'+sliderId); if(!s) return;
+  const min = parseFloat(s.min), max = parseFloat(s.max), step = parseFloat(s.step)||1;
+  let v = parseFloat(inputEl.value);
+  if(!isFinite(v)) v = fallback;
+  v = Math.max(min, Math.min(max, v));
+  // snap to step so the range stays in sync
+  v = Math.round((v - min) / step) * step + min;
+  v = parseFloat(v.toFixed(6));
+  s.value = v; inputEl.value = v;
+  bpCompute();
+}
+function bpGrowthNum(el){ bpSetSlider('bp-growth', el, 35); }
+function bpHGNum(el){   bpSetSlider('bp-hg', el, 5); }
+function bpEGNum(el){   bpSetSlider('bp-eg', el, 3); }
+function bpBVNum(el){   bpSetSlider('bp-bv', el, 5); }
 
 function bpPreset(stack, freq, growth, label){
   $('#bp-stack').value = stack;
   $('#bp-freq').value = freq;
-  $('#bp-growth').value = growth; $('#bp-growth-v').textContent = growth + '%';
+  $('#bp-growth').value = growth; $('#bp-growth-v').value = growth;
   bpCompute();
   toast('Preset applied: ' + label);
 }
@@ -6312,14 +6339,12 @@ function bpCompute(){
     <div class="bp-card bp-hero">
       <div class="lbl">Portfolio value · ${year0+years-1}</div>
       <div class="v">$${Math.round(last.fiatValue).toLocaleString()}</div>
-      <div class="sub-row">
-        <div class="sub-item bp-sub-btc"><div class="k">Total BTC stacked</div><div class="vv btc">${last.btcBalance.toFixed(6)} ₿ <span class="bp-sub-note">at projected $${Math.round(last.price).toLocaleString()}/BTC · ${(g*100).toFixed(0)}% CAGR</span></div></div>
-        <div class="sub-item"><div class="k">Total invested</div><div class="vv">$${Math.round(last.invested).toLocaleString()}</div></div>
-      </div>
     </div>
-    <div class="bp-card bp-mini"><div class="lbl">1 BTC</div><div class="v acc">${firstBtcYear ? (firstBtcYear===year0?'held':firstBtcYear) : '—'}</div></div>
-    <div class="bp-card bp-mini"><div class="lbl">Owns house</div><div class="v acc">${firstHouseYear || '—'}</div></div>
-    <div class="bp-card bp-mini"><div class="lbl">Covers exp.</div><div class="v acc">${firstExpYear || '—'}</div></div>
+    <div class="bp-card bp-info">
+      <div class="bp-info-row bp-info-btc"><div class="k">Total BTC stacked</div><div class="vv">${last.btcBalance.toFixed(6)} ₿</div></div>
+      <div class="bp-info-row"><div class="k">Total invested</div><div class="vv">$${Math.round(last.invested).toLocaleString()}</div></div>
+      <div class="bp-info-row"><div class="k">Collateral %</div><div class="vv">${(borrowPct*100).toFixed(0)}%</div></div>
+    </div>
   `;
 
   // ---- table ----
