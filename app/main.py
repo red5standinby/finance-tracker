@@ -947,11 +947,12 @@ def get_bills(month: str | None = None, include_inactive: bool = False):
         "overdue": sum(1 for r in out if r["status"] in ("overdue", "missed")),
         "scheduled": sum(1 for r in out if r["status"] == "scheduled"),
         "total": len(out),
+        "payable": sum(1 for r in out if r["status"] != "scheduled"),
         "expected": round(sum(r.get("expected_amount") or 0 for r in out), 2),
         "paid_amount": round(sum((r.get("paid_amount") or 0) for r in out if r["status"] in ("paid", "partial")), 2),
         "left": round(sum(
             (r.get("expected_amount") or 0) - (r.get("paid_amount") or 0) if r["status"] == "partial"
-            else (0 if r["status"] == "paid" else (r.get("expected_amount") or 0))
+            else (0 if r["status"] in ("paid", "scheduled") else (r.get("expected_amount") or 0))
             for r in out), 2),
     }
     # surface overdue first, then due/partial, then paid

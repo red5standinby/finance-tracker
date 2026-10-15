@@ -3386,11 +3386,15 @@ async function loadBills(){
   $('#b-over').textContent  = c.overdue || 0;
   $('#b-left').textContent  = fmt(c.left || 0);
   const total = c.total || 0;
+  const scheduled = c.scheduled || 0;
+  // Scheduled (future-dated) bills aren't owed yet this month, so they must not
+  // dilute monthly completion — base the % on bills actually in play this month.
+  const payable = (c.payable != null) ? c.payable : Math.max(0, total - scheduled);
   const paidN = c.paid || 0;
-  const paidPct = total ? Math.round(paidN / total * 100) : 0;
-  $('#b-total-sub').textContent = total ? `${paidN} of ${total} bills paid · ${paidPct}% complete` : 'No bills tracked';
-  $('#b-left-sub').textContent = c.left ? `${total - paidN} bill${(total-paidN)===1?'':'s'} still to pay` : (total ? 'All bills paid 🎉' : 'Nothing scheduled');
-  renderBillCompletionRing(paidPct, paidN, total);
+  const paidPct = payable ? Math.round(paidN / payable * 100) : 0;
+  $('#b-total-sub').textContent = payable ? `${paidN} of ${payable} bills paid · ${paidPct}% complete` : (scheduled ? `${scheduled} scheduled · nothing due yet` : 'No bills tracked');
+  $('#b-left-sub').textContent = c.left ? `${payable - paidN} bill${(payable-paidN)===1?'':'s'} still to pay` : (payable ? 'All bills paid 🎉' : (scheduled ? 'Nothing due yet' : 'Nothing scheduled'));
+  renderBillCompletionRing(paidPct, paidN, payable);
 
   const box = $('#b-list');
   let groups = B.groups || [];
