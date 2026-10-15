@@ -2313,7 +2313,12 @@ def del_favorite(coin_id: str):
 
 @app.get("/")
 def index():
-    return FileResponse(os.path.join(STATIC, "index.html"))
+    # no-cache: always revalidate the HTML so a stale cached page (with old JS)
+    # can't mask client-side updates after a deploy.
+    return FileResponse(
+        os.path.join(STATIC, "index.html"),
+        headers={"Cache-Control": "no-cache, must-revalidate"},
+    )
 
 
 # ---------- in-app chat (piped to the OpenClaw agent) ----------
