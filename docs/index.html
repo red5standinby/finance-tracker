@@ -6509,7 +6509,7 @@ function bpCompute(){
     <div class="bp-card bp-info">
       <div class="bp-info-row bp-info-btc"><div class="k">Total BTC stacked</div><div class="vv">${last.btcBalance.toFixed(6)} ₿</div></div>
       <div class="bp-info-row"><div class="k">Total invested</div><div class="vv">$${Math.round(last.invested).toLocaleString()}</div></div>
-      <div class="bp-info-row"><div class="k">Collateral</div><div class="vv">$${Math.round(last.fiatValue*borrowPct).toLocaleString()}<span class="bp-info-sub">${(borrowPct*100).toFixed(0)}% of stack pledged</span></div></div>
+      <div class="bp-info-row"><div class="k">Collateral loan</div><div class="vv">$${Math.round(last.fiatValue*borrowPct*0.50).toLocaleString()}<span class="bp-info-sub">${(borrowPct*100).toFixed(0)}% of stack pledged · 50% LTV</span></div></div>
     </div>
   `;
 
