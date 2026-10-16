@@ -75,6 +75,68 @@ window.DEMO = true;
     if(path.startsWith('/crypto/holdings')) return cx.holdings || [];
     return {};
   }
+  // HVAC payoff planner: reproduce the backend amortization so the demo planner
+  // stays fully interactive (all figures fabricated).
+  function amz(balance, payment, apr, extra){
+    const rate = (apr||0)/100/12;
+    const pay = (payment||0) + (extra||0);
+    if(pay <= 0 || balance <= 0) return null;
+    let b = balance, m = 0, interest = 0;
+    while(b > 0.005 && m < 600){
+      const i = b * rate;
+      let p = pay - i;
+      if(p <= 0) return null;
+      if(p > b) p = b;
+      interest += i; b = b - p; m++;
+    }
+    return {months:m, total_interest: Math.round(interest*100)/100};
+  }
+  function addMonths(iso, n){
+    const p = (iso||'2026-10').split('-');
+    const y = +p[0], mo = +p[1];
+    const em = mo - 1 + n;
+    return String(y + Math.floor(em/12)).padStart(4,'0')+'-'+String(em%12+1).padStart(2,'0');
+  }
+  function demoHvac(path, qs, d){
+    if(path.includes('?')) path = path.split('?')[0];
+    const hv = d.hvac || {loans:[], totals:{owed:0,monthly:0,count:0,with_balance:0}};
+    if(path === '/hvac') return hv;
+    if(path === '/hvac/combined/plan'){
+      const extra = parseFloat(qs.get('extra')) || 0;
+      const per = {};
+      (qs.get('extras')||'').split(',').forEach(s=>{ const a=s.split(':'); if(a.length===2) per[+a[0]]=parseFloat(a[1])||0; });
+      const active = (hv.loans||[]).filter(l=>(l.balance||0)>0 && (l.payment||0)>0);
+      const total_payment = Math.round(active.reduce((a,l)=>a+(l.payment||0),0)*100)/100;
+      const total_extra = Math.round(active.reduce((a,l)=>a+((l.id in per)?per[l.id]:extra),0)*100)/100;
+      const proj = (we)=>{ let months=0, interest=0; const pl=[];
+        for(const l of active){ const ex=we?((l.id in per)?per[l.id]:extra):0; const r=amz(l.balance,l.payment,l.apr,ex); if(!r) return null;
+          months=Math.max(months,r.months); interest+=r.total_interest;
+          pl.push({id:l.id,name:l.name,months:r.months,balance:l.balance,payment:l.payment,extra:Math.round(ex*100)/100,monthly:Math.round(((l.payment||0)+ex)*100)/100,total_interest:r.total_interest}); }
+        return {months,total_interest:Math.round(interest*100)/100,per_loan:pl}; };
+      const base=proj(false), wx=proj(true);
+      if(!base) return {active:false,loans:[],total_balance:0,total_payment};
+      return {active:true,loans:active,extra,total_balance:hv.totals.owed,total_payment,
+        total_extra,total_payment_with_extra:Math.round((total_payment+total_extra)*100)/100,
+        baseline:base,with_extra:wx,baseline_months:base.months,with_extra_months:wx.months,
+        months_saved:base.months-wx.months,interest_saved:Math.round((base.total_interest-wx.total_interest)*100)/100,
+        payoff_date_baseline:addMonths('2026-10',base.months),payoff_date_with_extra:addMonths('2026-10',wx.months)};
+    }
+    const mLoan = path.match(/^\/hvac\/(\d+)\/plan$/);
+    if(mLoan){
+      const l = (hv.loans||[]).find(x=>x.id===+mLoan[1]);
+      if(!l) return {active:false};
+      const extra = parseFloat(qs.get('extra')) || 0;
+      const base = amz(l.balance,l.payment,l.apr,0), wx = amz(l.balance,l.payment,l.apr,extra);
+      if(!base) return {active:false,loan:l};
+      const out = {active:true,loan:l,extra,baseline:base,with_extra:wx,
+        baseline_months:base.months,with_extra_months:wx.months,
+        months_saved:base.months-wx.months,interest_saved:Math.round((base.total_interest-wx.total_interest)*100)/100,
+        payoff_date_baseline:addMonths('2026-10',base.months),payoff_date_with_extra:addMonths('2026-10',wx.months)};
+      if(l.deadline){ out.deadline=l.deadline; out.on_time = base.months<=0?false:(wx.months<=0?true:true); }
+      return out;
+    }
+    return hv;
+  }
   const origFetch = window.fetch;
   window.fetch = async function(url, opts){
     const u = String(url);
@@ -148,6 +210,7 @@ window.DEMO = true;
         by_wallet: [{wallet_type:'Paid', cost:r6(total), n:Object.keys(by_day).length}],
       });
     })(d.aiCosts, qs);
+    else if(path.startsWith('/hvac')) body = demoHvac(path, qs, d);
     else if(path.startsWith('/crypto')) body = demoCrypto(path, qs, d);
     else body = {};
     return new Response(JSON.stringify(body), {status:200, headers:{'Content-Type':'application/json'}});
@@ -184,6 +247,21 @@ def build():
         html = html.replace("</head>", BOOTSTRAP + "</head>", 1)
     else:
         html = BOOTSTRAP + html
+    # Scrub real-world identifiers so the PUBLIC demo shows only synthetic names.
+    # (Keeps the live app in static/ untouched.)
+    SCRUB = [
+        ("Wells Fargo", "SynthCard Issuer"),
+        ("Capital One", "SynthCard"),
+        ("M&amp;T Bank", "SynthBank"),
+        ("M&amp;T", "SynthBank"),
+        ("M&T", "SynthBank"),
+        ("Citizens", "SynthBank"),
+        ("Chase", "SynthBank"),
+        ("Gemini", "SynthCard"),
+        ("$430.99 accrued", "a growing accrued balance"),
+    ]
+    for a, b in SCRUB:
+        html = html.replace(a, b)
     with open(os.path.join(OUTDIR, "index.html"), "w", encoding="utf-8") as f:
         f.write(html)
     # demo data

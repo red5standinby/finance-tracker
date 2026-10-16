@@ -122,6 +122,35 @@ CREATE TABLE IF NOT EXISTS ai_costs (
     UNIQUE(provider_user, date, end_date, model, wallet_type)
 );
 CREATE INDEX IF NOT EXISTS idx_ai_cost_date ON ai_costs(date);
+
+CREATE TABLE IF NOT EXISTS hvac_loans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,        -- display name, e.g. 'Magnolia HVAC'
+    balance REAL DEFAULT NULL,        -- current payoff balance (user-entered)
+    balance_date TEXT DEFAULT NULL,   -- YYYY-MM-DD when balance was recorded
+    original REAL DEFAULT NULL,       -- original loan amount (optional)
+    apr REAL DEFAULT NULL,            -- interest rate % (optional)
+    payment REAL DEFAULT NULL,        -- expected monthly payment (optional)
+    match_cleaned TEXT DEFAULT '',    -- lowercase cleaned merchant to auto-detect payments
+    account_id INTEGER DEFAULT NULL,  -- usual source account (optional)
+    sort_order INTEGER DEFAULT 0,
+    deadline TEXT DEFAULT NULL,           -- promo / special-terms end date (deferred interest)
+    deferred INTEGER DEFAULT 0,           -- 1 = deferred-interest promo (interest waived if paid by deadline)
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS sinking_funds (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,        -- e.g. 'Vacation + Xmas Gifts'
+    target REAL DEFAULT NULL,         -- goal amount (optional)
+    saved REAL DEFAULT 0,             -- current amount set aside
+    saved_date TEXT DEFAULT NULL,     -- when 'saved' was recorded
+    monthly REAL DEFAULT 0,           -- planned monthly contribution
+    target_date TEXT DEFAULT NULL,    -- goal date (YYYY-MM-DD)
+    note TEXT DEFAULT '',
+    sort_order INTEGER DEFAULT 0,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 

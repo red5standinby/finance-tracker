@@ -1235,6 +1235,10 @@ class BulkCategoryIn(BaseModel):
     category: str
 
 
+class BulkDeleteIn(BaseModel):
+    ids: list[int]
+
+
 @app.post("/api/transactions/bulk-category")
 def bulk_category(body: BulkCategoryIn):
     with db() as con:
@@ -1247,6 +1251,18 @@ def bulk_category(body: BulkCategoryIn):
                               (c["id"], i))
             n += cur.rowcount
     return {"ok": True, "updated": n}
+
+
+@app.post("/api/transactions/bulk-delete")
+def bulk_delete(body: BulkDeleteIn):
+    if not body.ids:
+        raise HTTPException(400, "no ids")
+    with db() as con:
+        n = 0
+        for i in body.ids:
+            cur = con.execute("DELETE FROM transactions WHERE id=?", (i,))
+            n += cur.rowcount
+    return {"ok": True, "deleted": n}
 
 
 # ---------- categories ----------
@@ -1598,6 +1614,425 @@ def get_paydown_payments(acct_id: int, limit: int = 100):
             "FROM transactions WHERE account_id=? AND amount > 0 "
             "ORDER BY date DESC, id DESC LIMIT ?", (acct_id, limit)).fetchall()
     return [dict(r) for r in rows]
+
+
+# ---------------- HVAC loan paydown tracker ----------------
+class HvacBody(BaseModel):
+    name: str | None = None
+    balance: float | None = None
+    balance_date: str | None = None
+    original: float | None = None
+    apr: float | None = None
+    payment: float | None = None
+    match_cleaned: str | None = None
+    account_id: int | None = None
+    sort_order: int | None = None
+    deadline: str | None = None
+    deferred: int | None = None
+
+
+def _hvac_loan(con, row) -> dict:
+    """Enrich a hvac_loans row with its detected payments from transactions."""
+    d = dict(row)
+    mc = (d.get("match_cleaned") or "").strip().lower()
+    payments = []
+    total_paid = 0.0
+    if mc:
+        rows = con.execute(
+            "SELECT id, date, description, cleaned, amount, account_id "
+            "FROM transactions WHERE lower(cleaned)=? AND amount < 0 "
+            "ORDER BY date DESC, id DESC", (mc,)).fetchall()
+        for r in rows:
+            payments.append({"id": r["id"], "date": r["date"],
+                             "description": r["description"],
+                             "amount": round(abs(r["amount"]), 2),
+                             "account_id": r["account_id"]})
+        total_paid = round(sum(p["amount"] for p in payments), 2)
+    d["payments"] = payments
+    d["payments_count"] = len(payments)
+    d["payments_total"] = total_paid
+    d["payments_last"] = payments[0]["date"] if payments else None
+    d["payments_per_month"] = round(d.get("payment") or 0, 2)
+    return d
+
+
+@app.get("/api/hvac")
+def get_hvac():
+    """HVAC loans: balances, detected payments, and combined totals."""
+    with db() as con:
+        rows = con.execute(
+            "SELECT * FROM hvac_loans ORDER BY sort_order, id").fetchall()
+        loans = [_hvac_loan(con, r) for r in rows]
+    known = [l for l in loans if l.get("balance") is not None and l["balance"] > 0]
+    total_owed = round(sum(l["balance"] for l in known), 2)
+    total_payment = round(sum((l.get("payment") or 0) for l in known), 2)
+    return {
+        "loans": loans,
+        "totals": {
+            "owed": total_owed,
+            "monthly": total_payment,
+            "count": len(loans),
+            "with_balance": len(known),
+        },
+    }
+
+
+@app.patch("/api/hvac/{loan_id}")
+def patch_hvac(loan_id: int, body: HvacBody):
+    from datetime import date as _date
+    sets, vals = [], []
+    for col in ("name", "balance", "original", "apr", "payment",
+                "match_cleaned", "account_id", "sort_order", "deadline", "deferred"):
+        v = getattr(body, col)
+        if v is not None:
+            sets.append(f"{col}=?")
+            vals.append(v)
+    if body.balance is not None:
+        sets.append("balance_date=?")
+        vals.append(body.balance_date or _date.today().isoformat())
+    if not sets:
+        raise HTTPException(400, "nothing to update")
+    vals.append(loan_id)
+    with db() as con:
+        cur = con.execute(f"UPDATE hvac_loans SET {', '.join(sets)} WHERE id=?", vals)
+        if cur.rowcount == 0:
+            raise HTTPException(404, "loan not found")
+    return {"ok": True}
+
+
+class HvacCreate(BaseModel):
+    name: str
+    balance: float | None = None
+    balance_date: str | None = None
+    original: float | None = None
+    apr: float | None = None
+    payment: float | None = None
+    match_cleaned: str | None = None
+    account_id: int | None = None
+    sort_order: int | None = None
+    deadline: str | None = None
+    deferred: int | None = None
+
+
+@app.post("/api/hvac")
+def create_hvac(body: HvacCreate):
+    from datetime import date as _date
+    with db() as con:
+        try:
+            cur = con.execute(
+                """INSERT INTO hvac_loans
+                   (name,balance,balance_date,original,apr,payment,match_cleaned,account_id,sort_order,deadline,deferred)
+                   VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                (body.name, body.balance, body.balance_date or _date.today().isoformat(),
+                 body.original, body.apr, body.payment, (body.match_cleaned or "").lower(),
+                 body.account_id, body.sort_order or 0, body.deadline, body.deferred or 0))
+        except Exception as exc:
+            raise HTTPException(400, f"could not create loan: {exc}")
+    return {"ok": True, "id": cur.lastrowid}
+
+
+@app.delete("/api/hvac/{loan_id}")
+def delete_hvac(loan_id: int):
+    with db() as con:
+        cur = con.execute("DELETE FROM hvac_loans WHERE id=?", (loan_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "loan not found")
+    return {"ok": True}
+
+
+def _amortize(balance: float, monthly: float, apr: float | None,
+              extra: float = 0.0, max_months: int = 600):
+    """Month-by-month payoff. Returns (months, total_interest, schedule_tail, paid_total)."""
+    rate = (apr or 0.0) / 100.0 / 12.0
+    bal = float(balance)
+    total_int = 0.0
+    months = 0
+    pay = monthly + extra
+    if pay <= 0:
+        return None
+    while bal > 0.005 and months < max_months:
+        months += 1
+        interest = bal * rate
+        # deferred-interest promos charge $0 while within terms
+        total_int += interest
+        principal = pay - interest
+        if principal <= 0:
+            return None  # payment never touches principal
+        bal = max(0.0, bal - principal)
+    return {"months": months, "total_interest": round(total_int, 2)}
+
+
+@app.get("/api/hvac/combined/plan")
+def hvac_combined_plan(extra: float = 0.0, extras: str = ""):
+    """Combined payoff projection across ALL HVAC loans.
+
+    By default one shared `extra`/mo applies to every loan. To give each loan its
+    OWN extra, pass `extras` as a comma-separated `loanId:amount` list (e.g.
+    `extras=1:100,2:250`); loans not listed fall back to `extra`.
+
+    Returns the total monthly payment (baseline) prominently, plus a combined
+    payoff date and interest saved so the slider can be driven off the real
+    total monthly figure."""
+    from datetime import date as _date
+    per_extra: dict[int, float] = {}
+    if extras:
+        for part in extras.split(","):
+            part = part.strip()
+            if not part or ":" not in part:
+                continue
+            lid, val = part.split(":", 1)
+            try:
+                per_extra[int(lid)] = float(val)
+            except ValueError:
+                continue
+    with db() as con:
+        rows = con.execute(
+            "SELECT * FROM hvac_loans ORDER BY sort_order, id").fetchall()
+    loans = [dict(r) for r in rows]
+    active = [l for l in loans if (l.get("balance") or 0) > 0 and (l.get("payment") or 0) > 0]
+    total_balance = round(sum((l["balance"] or 0) for l in active), 2)
+    total_payment = round(sum((l["payment"] or 0) for l in active), 2)
+    total_extra = round(sum(per_extra.get(l["id"], extra) for l in active), 2)
+    total_payment_with_extra = round(total_payment + total_extra, 2)
+
+    def _project(with_extra):
+        # months = the LAST loan to be cleared when each gets its own extra
+        months = 0
+        interest = 0.0
+        per = []
+        for l in active:
+            ex = per_extra.get(l["id"], extra) if with_extra else 0.0
+            r = _amortize(l["balance"], l["payment"], l.get("apr"), ex)
+            if not r:
+                return None
+            months = max(months, r["months"])
+            interest += r["total_interest"]
+            per.append({"id": l["id"], "name": l["name"], "months": r["months"],
+                        "balance": l["balance"], "payment": l["payment"],
+                        "extra": round(ex, 2),
+                        "monthly": round((l["payment"] or 0) + ex, 2),
+                        "total_interest": r["total_interest"]})
+        return {"months": months, "total_interest": round(interest, 2), "per_loan": per}
+
+    base = _project(False)
+    withx = _project(True)
+    if not base:
+        return {"active": False, "loans": [], "total_balance": total_balance,
+                "total_payment": total_payment}
+
+    today = _date.today()
+    end_month = today.month - 1 + withx["months"]
+    end_year = today.year + end_month // 12
+    end_month = end_month % 12 + 1
+    base_end_year = today.year + (today.month - 1 + base["months"]) // 12
+    base_end_month = (today.month - 1 + base["months"]) % 12 + 1
+
+    return {
+        "active": True,
+        "loans": [dict(l) for l in active],
+        "extra": extra,
+        "per_extra": {str(k): v for k, v in per_extra.items()},
+        "total_balance": total_balance,
+        "total_payment": total_payment,
+        "total_extra": total_extra,
+        "total_payment_with_extra": total_payment_with_extra,
+        "baseline": base,
+        "with_extra": withx,
+        "baseline_months": base["months"],
+        "with_extra_months": withx["months"],
+        "months_saved": base["months"] - withx["months"],
+        "interest_saved": round(base["total_interest"] - withx["total_interest"], 2),
+        "payoff_date_baseline": f"{base_end_year:04d}-{base_end_month:02d}",
+        "payoff_date_with_extra": f"{end_year:04d}-{end_month:02d}",
+    }
+
+
+@app.get("/api/hvac/{loan_id}/plan")
+def hvac_plan(loan_id: int, extra: float = 0.0):
+    """Payoff projection for one loan: baseline vs. with-extra, plus deadline check."""
+    from datetime import date as _date, timedelta
+    with db() as con:
+        r = con.execute("SELECT * FROM hvac_loans WHERE id=?", (loan_id,)).fetchone()
+    if not r:
+        raise HTTPException(404, "loan not found")
+    bal = r["balance"] or 0.0
+    mo = r["payment"] or 0.0
+    apr = r["apr"]
+    base = _amortize(bal, mo, apr) if bal > 0 and mo > 0 else None
+    withx = _amortize(bal, mo, apr, extra) if bal > 0 and (mo + extra) > 0 else None
+
+    def _month_word(m):
+        return f"{m} mo" if m is not None and m < 24 else (f"{m/12:.1f} yr" if m else None)
+
+    today = _date.today()
+    dl = r["deadline"]
+    deadline_info = None
+    if dl:
+        try:
+            d = _date.fromisoformat(dl)
+            months_left = max(0, (d.year - today.year) * 12 + (d.month - today.month))
+            need = _amortize(bal, mo, apr)  # months at current payment
+            reached = withx is not None and withx["months"] <= months_left
+            deadline_info = {
+                "date": dl, "months_left": months_left,
+                "beatable_with_extra": reached,
+                "required_extra_to_beat": _min_extra_for_deadline(bal, mo, apr, months_left),
+            }
+        except Exception:
+            deadline_info = None
+
+    return {
+        "loan": {"id": r["id"], "name": r["name"], "balance": bal,
+                 "payment": mo, "apr": apr, "deferred": bool(r["deferred"]),
+                 "deadline": dl},
+        "baseline": base,
+        "with_extra": withx,
+        "extra": extra,
+        "baseline_months": base["months"] if base else None,
+        "with_extra_months": withx["months"] if withx else None,
+        "months_saved": (base["months"] - withx["months"]) if (base and withx) else None,
+        "interest_saved": round((base["total_interest"] - withx["total_interest"]), 2) if (base and withx) else None,
+        "deadline_info": deadline_info,
+    }
+
+
+def _min_extra_for_deadline(bal: float, mo: float, apr: float | None, months_left: int):
+    """Smallest extra monthly that pays off within months_left."""
+    if months_left <= 0:
+        return None
+    rate = (apr or 0.0) / 100.0 / 12.0
+    # required payment for an amortizing loan
+    if rate <= 0:
+        req = bal / months_left
+    else:
+        req = bal * rate / (1 - (1 + rate) ** (-months_left))
+    extra = req - mo
+    return round(max(0.0, extra), 2)
+
+
+# ---------------- Sinking-fund planner ----------------
+class FundBody(BaseModel):
+    name: str | None = None
+    target: float | None = None
+    saved: float | None = None
+    saved_date: str | None = None
+    monthly: float | None = None
+    target_date: str | None = None
+    note: str | None = None
+    sort_order: int | None = None
+
+
+class FundCreate(BaseModel):
+    name: str
+    target: float | None = None
+    saved: float | None = 0
+    saved_date: str | None = None
+    monthly: float | None = 0
+    target_date: str | None = None
+    note: str | None = ""
+    sort_order: int | None = 0
+
+
+def _months_between(today, d):
+    return max(0, (d.year - today.year) * 12 + (d.month - today.month))
+
+
+def _fund_plan(f: dict) -> dict:
+    """Enrich a sinking-fund row with projection math."""
+    from datetime import date as _date
+    today = _date.today()
+    d = dict(f)
+    target = d.get("target")
+    saved = d.get("saved") or 0.0
+    monthly = d.get("monthly") or 0.0
+    d["remaining"] = round(max(0.0, (target or 0) - saved), 2) if target else None
+    d["pct"] = round(min(100.0, 100.0 * saved / target), 1) if target else None
+    d["months_to_goal"] = None
+    d["eta"] = None
+    d["required_monthly"] = None
+    d["on_track"] = None
+    d["months_left"] = None
+    d["surplus_monthly"] = None
+    if target and monthly > 0 and saved < target:
+        months = -(-int(round((target - saved) * 100)) // int(round(monthly * 100)))  # ceil
+        d["months_to_goal"] = months
+        y = today.year + (today.month - 1 + months) // 12
+        mo = (today.month - 1 + months) % 12 + 1
+        d["eta"] = f"{y:04d}-{mo:02d}"
+    td = d.get("target_date")
+    if td and target:
+        try:
+            dd = _date.fromisoformat(td)
+            ml = _months_between(today, dd)
+            d["months_left"] = ml
+            need_months = ml if ml > 0 else 1
+            d["required_monthly"] = round((target - saved) / need_months, 2) if saved < target else 0.0
+            # on track if planned monthly >= required, or already funded
+            d["on_track"] = (saved >= target) or (monthly >= (d["required_monthly"] or 0))
+            d["surplus_monthly"] = round(monthly - (d["required_monthly"] or 0), 2)
+        except Exception:
+            pass
+    return d
+
+
+@app.get("/api/funds")
+def get_funds():
+    with db() as con:
+        rows = con.execute("SELECT * FROM sinking_funds ORDER BY sort_order, id").fetchall()
+    funds = [_fund_plan(dict(r)) for r in rows]
+    tot_saved = round(sum((f.get("saved") or 0) for f in funds), 2)
+    tot_target = round(sum((f.get("target") or 0) for f in funds), 2)
+    tot_monthly = round(sum((f.get("monthly") or 0) for f in funds), 2)
+    return {"funds": funds, "totals": {
+        "saved": tot_saved, "target": tot_target, "monthly": tot_monthly,
+        "remaining": round(max(0.0, tot_target - tot_saved), 2), "count": len(funds)}}
+
+
+@app.post("/api/funds")
+def create_fund(body: FundCreate):
+    from datetime import date as _date
+    with db() as con:
+        try:
+            cur = con.execute(
+                """INSERT INTO sinking_funds (name,target,saved,saved_date,monthly,target_date,note,sort_order)
+                   VALUES(?,?,?,?,?,?,?,?)""",
+                (body.name, body.target, body.saved or 0,
+                 body.saved_date or _date.today().isoformat(), body.monthly or 0,
+                 body.target_date, body.note or "", body.sort_order or 0))
+        except Exception as exc:
+            raise HTTPException(400, f"could not create fund: {exc}")
+    return {"ok": True, "id": cur.lastrowid}
+
+
+@app.patch("/api/funds/{fund_id}")
+def patch_fund(fund_id: int, body: FundBody):
+    from datetime import date as _date
+    sets, vals = [], []
+    for col in ("name", "target", "saved", "monthly", "target_date", "note", "sort_order"):
+        v = getattr(body, col)
+        if v is not None:
+            sets.append(f"{col}=?")
+            vals.append(v)
+    if body.saved is not None:
+        sets.append("saved_date=?")
+        vals.append(body.saved_date or _date.today().isoformat())
+    if not sets:
+        raise HTTPException(400, "nothing to update")
+    vals.append(fund_id)
+    with db() as con:
+        cur = con.execute(f"UPDATE sinking_funds SET {', '.join(sets)} WHERE id=?", vals)
+        if cur.rowcount == 0:
+            raise HTTPException(404, "fund not found")
+    return {"ok": True}
+
+
+@app.delete("/api/funds/{fund_id}")
+def delete_fund(fund_id: int):
+    with db() as con:
+        cur = con.execute("DELETE FROM sinking_funds WHERE id=?", (fund_id,))
+        if cur.rowcount == 0:
+            raise HTTPException(404, "fund not found")
+    return {"ok": True}
 
 
 @app.get("/api/rules")

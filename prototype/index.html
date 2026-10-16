@@ -643,6 +643,8 @@
   button.btn:hover{filter:brightness(1.12)}
   button.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
   button.ghost:hover{background:var(--line)}
+  button.btn.danger{background:var(--bad);color:#fff}
+  button.btn.danger:hover{filter:brightness(1.12)}
   .bars{display:flex;flex-direction:column;gap:9px}
   .bar-row{display:grid;grid-template-columns:150px 1fr 90px;gap:12px;align-items:center;font-size:13px}
   .bar-track{background:var(--panel2);border-radius:6px;height:20px;overflow:hidden}
@@ -827,6 +829,50 @@
   .pd-head-amt.neg{color:var(--bad)} .pd-head-amt.pos{color:var(--good)}
   .pd-head-apr{font-size:11px;white-space:nowrap}
   .pd-card-body{overflow:hidden}
+  .hv-bar{height:8px;border-radius:6px;background:rgba(var(--tint),.14);overflow:hidden;margin:8px 0 4px}
+  .hv-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .hv-toggle{display:inline-flex;gap:4px;background:rgba(var(--tint),.12);border-radius:8px;padding:3px;margin:0 0 12px}
+  .hv-tg{border:0;background:transparent;color:var(--mut);font-size:11px;font-weight:600;padding:4px 10px;border-radius:6px;cursor:pointer;line-height:1}
+  .hv-tg:hover{color:var(--txt)}
+  .hv-tg.active{background:var(--card);color:var(--txt);box-shadow:0 1px 2px rgba(0,0,0,.15)}
+  .hv-hero-split{display:flex;align-items:stretch;gap:22px;flex-wrap:wrap}
+  .hv-hero-col{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .hv-hero-div{width:1px;background:rgba(var(--tint),.22);align-self:stretch}
+  @media (max-width:640px){.hv-hero-div{display:none}.hv-hero-split{gap:16px}.hv-hero-col{flex:1 1 40%}}
+  .hv-plan-controls{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px}
+  .hv-plan-card{background:rgba(var(--tint),.05);border:1px solid rgba(var(--tint),.18)}
+  .hv-plan-card .hv-plan-inline{margin-top:14px;padding-top:12px;border-top:1px solid rgba(var(--tint),.14)}
+  .hv-plan-controls label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--mut);font-weight:600}
+  .hv-plan-controls select,.hv-plan-controls input[type=range]{min-width:180px}
+  .hv-plan-controls input[type=range]{accent-color:var(--tint);cursor:pointer}
+  .hv-plan-hero{background:rgba(var(--tint),.07);border-radius:12px;padding:16px 18px}
+  .hv-plan-hero .k{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);font-weight:600}
+  .hv-plan-hero .v{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05;margin-top:2px}
+  .hv-plan-hero .s{font-size:12px;color:var(--mut);margin-top:2px}
+  .hv-plan-card .hv-hero-split .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mut);font-weight:600}
+  .hv-plan-card .hv-hero-split .val{font-size:30px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.05}
+  .hv-plan-card .hv-hero-split .muted{font-size:12px;color:var(--mut)}
+  .hv-plan-inline{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline;margin-top:10px;font-size:12px;color:var(--mut)}
+  .hv-plan-inline b{color:var(--txt);font-weight:700;font-variant-numeric:tabular-nums}
+  .hv-plan-inline .dot{opacity:.45}
+  .hv-deadline{margin-top:14px;border-radius:10px;padding:12px 14px;font-size:13px}
+  .hv-deadline.warn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35)}
+  .hv-deadline.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.35)}
+  .sf-card .sf-name{font-weight:700;font-size:15px}
+  .sf-bar{height:8px;border-radius:6px;background:rgba(var(--tint),.14);overflow:hidden;margin:8px 0 4px}
+  .sf-bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,#3b82f6,#2563eb)}
+  .sf-bar-fill.done{background:linear-gradient(90deg,#22c55e,#16a34a)}
+  .sf-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .sf-inputs label{display:flex;flex-direction:column;gap:4px;font-size:11px;color:var(--mut);font-weight:600;min-width:0}
+  .sf-inputs input{font-size:13px;width:100%;min-width:0;box-sizing:border-box}
+  .sf-card,.sf-card *{min-width:0}
+  .sf-plan{overflow-wrap:anywhere;word-break:break-word}
+  .sf-plan{margin-top:10px;border-radius:10px;padding:10px 12px;font-size:12px}
+  .sf-plan.ok{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.3)}
+  .sf-plan.warn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3)}
+  .sf-plan b{font-variant-numeric:tabular-nums}
+  .sf-del{background:transparent;border:0;color:var(--mut);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:6px}
+  .sf-del:hover{color:#ef4444;background:rgba(239,68,68,.1)}
   .pd-card.collapsed .pd-card-body{display:none}
   .pd-card.collapsed{padding-bottom:12px}
   .pd-card-name{font-weight:700;font-size:15px;line-height:1.25}
@@ -1445,6 +1491,7 @@
       <button data-tab="trends"><span class="ic">↗</span><span class="lb">Trends</span></button>
       <button data-tab="savings"><span class="ic">◈</span><span class="lb">Savings</span></button>
       <button data-tab="paydown"><span class="ic">↓</span><span class="lb">Paydown</span></button>
+      <button data-tab="hvac"><span class="ic">❄</span><span class="lb">HVAC</span></button>
       <button data-tab="crypto"><span class="ic">₿</span><span class="lb">Crypto</span></button>
       <button data-tab="btcplan"><span class="ic">◈</span><span class="lb">BTC Plan</span></button>
       <button data-tab="ai"><span class="ic">✦</span><span class="lb">AI Costs</span></button>
@@ -1833,6 +1880,19 @@
     </div>
   </div>
   <div id="sav-panels"></div>
+
+  <!-- Sinking funds planner -->
+  <div class="panel" style="margin-top:16px" id="sf-panel">
+    <div class="panel-head">
+      <h2>Sinking funds <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· goals you're saving toward</span></h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost sm" onclick="sfAdd()">+ Add fund</button>
+        <button class="btn sm" onclick="sfSaveAll()">Save all changes</button>
+      </div>
+    </div>
+    <div class="muted" style="margin-bottom:12px">Set a target and a monthly amount — the planner shows if you'll make your date (and what to bump it to).</div>
+    <div class="grid cards" id="sf-cards"></div>
+  </div>
 </section>
 
 <!-- ============ CREDIT CARD PAYDOWN ============ -->
@@ -1928,6 +1988,92 @@
     </div>
   </div>
 </section>
+<section id="tab-hvac" class="hidden">
+  <div class="page-head">
+    <div class="ph-left">
+      <h2 class="page-title">HVAC Loans</h2>
+      <div class="page-sub">Track your HVAC loan balances and payments</div>
+    </div>
+  </div>
+
+  <!-- Totals spotlight (combined) -->
+  <div class="grid home-hero" style="margin-bottom:16px">
+    <div class="card hero-card hero-spotlight" id="hv-hero-owed">
+      <div class="hv-toggle" id="hv-toggle">
+        <button class="hv-tg active" data-mode="combined" onclick="hvSetMode('combined')">Combined</button>
+        <button class="hv-tg" data-mode="magnolia" onclick="hvSetMode('magnolia')">Magnolia</button>
+        <button class="hv-tg" data-mode="condo" onclick="hvSetMode('condo')">Condo</button>
+      </div>
+      <div class="hv-hero-split">
+        <div class="hv-hero-col">
+          <div class="lbl" id="hv-owed-lbl">Total owed</div>
+          <div class="val neg" id="hv-owed">$0</div>
+          <div class="muted" style="font-size:12px" id="hv-owed-sub">—</div>
+        </div>
+        <div class="hv-hero-div"></div>
+        <div class="hv-hero-col">
+          <div class="lbl">Monthly payments</div>
+          <div class="val" id="hv-monthly">$0</div>
+          <div class="muted" style="font-size:12px" id="hv-monthly-sub">combined per month</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loan cards -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-head">
+      <h2>Your HVAC loans <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· balances &amp; payment history</span></h2>
+      <button class="btn sm" onclick="hvSaveAll()">Save all changes</button>
+    </div>
+    <div class="muted" style="margin-bottom:12px">Update a balance and hit <b>Save</b> — payments are auto-detected from your transactions.</div>
+    <div class="grid cards" id="hv-cards"></div>
+  </div>
+
+  <!-- Payoff planner -->
+  <div class="panel" style="margin-bottom:16px">
+    <div class="panel-head">
+      <h2>Payoff planner <span class="muted" style="font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">· how fast can you kill these?</span></h2>
+    </div>
+    <div class="muted" style="margin-bottom:12px">View both loans together or either one solo, then drag the extra monthly to see the payoff date and interest saved.</div>
+
+    <div class="card hv-plan-card">
+      <div class="hv-toggle" id="hv-plan-toggle">
+        <button class="hv-tg active" data-mode="combined" onclick="hvPlanSetMode('combined')">Both loans</button>
+        <button class="hv-tg" data-mode="magnolia" onclick="hvPlanSetMode('magnolia')">Magnolia</button>
+        <button class="hv-tg" data-mode="condo" onclick="hvPlanSetMode('condo')">Condo</button>
+      </div>
+      <div class="hv-hero-split">
+        <div class="hv-hero-col">
+          <div class="lbl">Total monthly payment</div>
+          <div class="val" id="hv-pt-v">$0</div>
+          <div class="muted" style="font-size:12px" id="hv-pt-s">across all HVAC loans</div>
+        </div>
+        <div class="hv-hero-div"></div>
+        <div class="hv-hero-col">
+          <div class="lbl" id="hv-clear-lbl">Both loans clear in</div>
+          <div class="val" id="hv-clear-v">—</div>
+          <div class="muted" style="font-size:12px" id="hv-clear-s">—</div>
+        </div>
+      </div>
+      <div class="hv-plan-inline" id="hv-plan-inline"></div>
+      <div class="hv-plan-controls" id="hv-plan-controls-solo" style="margin-top:14px;margin-bottom:0;display:none">
+        <label><span id="hv-plan-extra-lbl-solo">Extra / month <span class="muted" id="hv-plan-extra-lbl">$0</span></span>
+          <input type="range" id="hv-plan-extra" min="0" max="600" step="25" value="0" oninput="hvPlanRender()">
+        </label>
+      </div>
+      <div class="hv-plan-controls" id="hv-plan-controls-both" style="margin-top:14px;margin-bottom:0;display:none">
+        <label>Magnolia extra <span class="muted" id="hv-extra-mag-lbl">$0</span>
+          <input type="range" id="hv-extra-mag" min="0" max="600" step="25" value="0" oninput="hvPlanRender()">
+        </label>
+        <label>Condo extra <span class="muted" id="hv-extra-condo-lbl">$0</span>
+          <input type="range" id="hv-extra-condo" min="0" max="600" step="25" value="0" oninput="hvPlanRender()">
+        </label>
+      </div>
+      <div id="hv-plan-out"></div>
+    </div>
+  </div>
+</section>
 <section id="tab-txns" class="hidden">
   <div class="page-head">
     <div class="ph-left">
@@ -1962,6 +2108,7 @@
       <label>Set category
         <select id="bulk-cat"><option value="">— pick a category —</option></select></label>
       <button class="btn" id="bulk-apply" onclick="bulkApply()">Apply to selected</button>
+      <button class="btn danger" id="bulk-delete" onclick="bulkDelete()">Delete selected</button>
       <button class="btn ghost" onclick="clearSelection()">Clear selection</button>
       <span class="muted" id="bulk-hint"></span>
     </div>
@@ -3192,11 +3339,12 @@ window.addEventListener('resize', ()=>{ if(!$('#tab-crypto').classList.contains(
 // ---------- tabs ----------
 function showTab(name){
   document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('active', x.dataset.tab===name));
-  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget','ai','economy','btcplan'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
+  ['trends','savings','txns','rules','import','crypto','dashboard','bills','paydown','budget','ai','economy','btcplan','hvac'].forEach(t=>$('#tab-'+t).classList.toggle('hidden', t!==name));
   if(name==='dashboard') loadHome();
   if(name==='trends') loadTrends();
-  if(name==='savings') loadSavings();
+  if(name==='savings'){ loadSavings(); loadFunds(); }
   if(name==='paydown') loadPaydown();
+  if(name==='hvac') loadHvac();
   if(name==='crypto') loadCrypto();
   if(name==='btcplan') bpInit();
   if(name==='txns') loadTxns(0);
@@ -5405,6 +5553,367 @@ async function bulkApply(){
   }catch(e){ toast('Error: '+e.message); }
 }
 
+async function bulkDelete(){
+  const ids = [...SELECTED];
+  if(!ids.length){ toast('Nothing selected'); return; }
+  const n = ids.length;
+  if(!confirm(`Delete ${n} transaction${n===1?'':'s'}? This cannot be undone.`)) return;
+  try{
+    const r = await jpost('/transactions/bulk-delete', {ids});
+    toast(`Deleted ${r.deleted} transaction${r.deleted===1?'':'s'}`);
+    clearSelection(); await loadMeta(); loadTxns(TXNPAGE);
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+// ================= SINKING FUNDS =================
+let SF = { data:null };
+const SF_TODAY = new Date();
+
+async function loadFunds(){
+  const box = $('#sf-cards'); if(!box) return;
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  try{ SF.data = await api('/funds'); }
+  catch(e){ box.innerHTML = '<div class="empty">Could not load sinking funds</div>'; return; }
+  renderSfCards();
+}
+
+function sfMonths(m){ return m==null ? '—' : (m<24 ? m+' mo' : (m/12).toFixed(1)+' yr'); }
+
+function renderSfCards(){
+  const box = $('#sf-cards');
+  const funds = (SF.data && SF.data.funds) || [];
+  if(!funds.length){ box.innerHTML = '<div class="empty">No sinking funds yet — hit “+ Add fund”.</div>'; return; }
+  box.innerHTML = funds.map(f=>{
+    const pct = f.pct==null ? 0 : f.pct;
+    const done = f.target && f.saved >= f.target;
+    let plan = '';
+    if(f.target){
+      const mon = f.months_left!=null ? `${f.months_left} month${f.months_left===1?'':'s'} to ${f.target_date}` : '';
+      if(f.target_date && f.on_track!=null){
+        const req = f.required_monthly||0;
+        if(f.on_track){
+          plan = `<div class="sf-plan ok">✅ <b>On track.</b> At <b>${fmt(f.monthly)}</b>/mo you reach <b>${fmt(f.target)}</b> by <b>${f.target_date}</b>${mon?(' ('+mon+')'):''}.${f.surplus_monthly>0?(' Extra headroom: +'+fmt(f.surplus_monthly)+'/mo.'):''}</div>`;
+        }else{
+          plan = `<div class="sf-plan warn">⚠️ <b>Behind.</b> To hit <b>${fmt(f.target)}</b> by <b>${f.target_date}</b>${mon?(' ('+mon+')'):''} you need <b>${fmt(req)}</b>/mo — bump it up <b>${fmt(Math.abs(f.surplus_monthly||0))}</b>/mo.</div>`;
+        }
+      }else if(f.months_to_goal!=null){
+        plan = `<div class="sf-plan ok">🎯 At <b>${fmt(f.monthly)}</b>/mo you reach <b>${fmt(f.target)}</b> in <b>${sfMonths(f.months_to_goal)}</b> (${f.eta}).</div>`;
+      }
+    }
+    return `<div class="card sf-card" data-id="${f.id}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="min-width:0">
+          <div class="sf-name">${esc(f.name)}</div>
+          <div class="muted" style="font-size:12px">${f.target?('saved '+fmt(f.saved)+' of '+fmt(f.target)):('saved '+fmt(f.saved))}</div>
+        </div>
+        <button class="sf-del" title="Delete" onclick="sfDelete(${f.id})">✕</button>
+      </div>
+      ${f.target?`<div class="sf-bar"><div class="sf-bar-fill${done?' done':''}" style="width:${Math.min(100,pct)}%"></div></div><div class="muted" style="font-size:11px">${pct.toFixed(0)}%${f.remaining!=null?(' · '+fmt(f.remaining)+' to go'):''}</div>`:''}
+      <div class="sf-inputs">
+        <label>Saved <input type="number" step="0.01" id="sf-saved-${f.id}" value="${f.saved==null?'':f.saved}" placeholder="0"></label>
+        <label>Target <input type="number" step="0.01" id="sf-target-${f.id}" value="${f.target==null?'':f.target}" placeholder="e.g. 3000"></label>
+        <label>Monthly <input type="number" step="0.01" id="sf-monthly-${f.id}" value="${f.monthly==null?'':f.monthly}" placeholder="e.g. 400"></label>
+        <label>Goal date <input type="date" id="sf-date-${f.id}" value="${f.target_date||''}"></label>
+      </div>
+      <div style="margin-top:8px"><button class="btn sm" onclick="sfSave(${f.id})">Save</button></div>
+      ${plan}
+    </div>`;
+  }).join('');
+}
+
+function sfCollect(id){
+  const body = {};
+  const s=$('#sf-saved-'+id), t=$('#sf-target-'+id), m=$('#sf-monthly-'+id), d=$('#sf-date-'+id);
+  if(s) body.saved = s.value===''?0:parseFloat(s.value);
+  if(t) body.target = t.value===''?0:parseFloat(t.value);
+  if(m) body.monthly = m.value===''?0:parseFloat(m.value);
+  if(d) body.target_date = d.value||null;
+  return body;
+}
+
+async function sfSave(id){
+  try{
+    await api('/funds/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(sfCollect(id))});
+    toast('Saved');
+    SF.data = await api('/funds'); renderSfCards();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+async function sfSaveAll(){
+  const funds = (SF.data && SF.data.funds) || [];
+  let n=0;
+  for(const f of funds){ try{ await api('/funds/'+f.id,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(sfCollect(f.id))}); n++; }catch(e){} }
+  toast(n?('Saved '+n+' fund'+(n===1?'':'s')):'Nothing to save');
+  SF.data = await api('/funds'); renderSfCards();
+}
+
+async function sfAdd(){
+  const name = prompt('Name for this fund?', 'New fund');
+  if(!name) return;
+  try{ await api('/funds', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})}); SF.data = await api('/funds'); renderSfCards(); toast('Added'); }
+  catch(e){ toast('Error: '+e.message); }
+}
+
+async function sfDelete(id){
+  if(!confirm('Delete this fund?')) return;
+  try{ await api('/funds/'+id, {method:'DELETE'}); SF.data = await api('/funds'); renderSfCards(); toast('Deleted'); }
+  catch(e){ toast('Error: '+e.message); }
+}
+
+// ================= HVAC LOANS =================
+let HV = { data:null, mode:'combined' };
+let _hvCollapsed = {};
+
+function hvSetMode(mode){
+  HV.mode = mode;
+  document.querySelectorAll('#hv-toggle .hv-tg').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  renderHvHero();
+}
+
+async function loadHvac(){
+  const box = $('#hv-cards');
+  if(!box) return;
+  box.innerHTML = '<div class="empty">Loading…</div>';
+  try{ HV.data = await api('/hvac'); }
+  catch(e){ box.innerHTML = '<div class="empty">Could not load HVAC loans</div>'; return; }
+  renderHvHero();
+  renderHvCards();
+  hvPlanLoad();
+}
+
+// ---- HVAC payoff planner ----
+let _hvPlan = null;
+
+function hvPlanSetMode(mode){
+  HV.planMode = mode;
+  document.querySelectorAll('#hv-plan-toggle .hv-tg').forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));
+  hvPlanRender();
+}
+
+function hvPlanLoad(){ hvPlanRender(); }
+
+// The two prioritized readouts live inside the same card and both follow the mode.
+function hvPlanHead(totalPayment, totalSub, clearIn, clearSub, lbl){
+  const v = $('#hv-pt-v'); if(v) v.textContent = fmt(totalPayment||0);
+  const s = $('#hv-pt-s'); if(s) s.textContent = totalSub||'';
+  const cv = $('#hv-clear-v'); if(cv) cv.textContent = clearIn||'—';
+  const cs = $('#hv-clear-s'); if(cs) cs.textContent = clearSub||'—';
+  const cl = $('#hv-clear-lbl'); if(cl && lbl) cl.textContent = lbl;
+}
+
+const _hvMo = n => n==null ? '—' : (n<24 ? n+' mo' : (n/12).toFixed(1)+' yr');
+const _hvEnd = (m)=>{ if(m==null) return '—'; const t=new Date(); const d=new Date(t.getFullYear(), t.getMonth()+m, 1); return d.toLocaleDateString('en-US',{month:'short',year:'numeric'}); };
+const _hvEndISO = (s)=>{ if(!s) return '—'; const [y,mm]=s.split('-'); return new Date(+y,+mm-1,1).toLocaleDateString('en-US',{month:'short',year:'numeric'}); };
+
+function hvPlanInlineHtml(interestSavedLabel, interestSaved, timeSaved, minLine, perHtml){
+  const el = $('#hv-plan-inline'); if(!el) return;
+  el.innerHTML = `<span><b>${interestSaved}</b> ${interestSavedLabel}</span>`
+    + `<span class="dot">·</span><span><b>${timeSaved}</b> time saved</span>`
+    + `<span class="dot">·</span><span>${minLine}</span>`
+    + (perHtml?`<div style="flex-basis:100%;margin-top:6px">${perHtml}</div>`:'');
+}
+
+function hvPlanFind(mode){
+  const loans = (HV.data && HV.data.loans) || [];
+  const byName = loans.find(x=>(x.name||'').toLowerCase().includes(mode));
+  if(byName) return byName;
+  // Fallback: bind by position so the planner works with any loan names
+  // (e.g. the public demo uses fabricated names instead of Magnolia/Condo).
+  const active = loans.filter(x=>(x.balance||0)>0);
+  if(mode==='magnolia') return active[0];
+  if(mode==='condo') return active[1] || active[0];
+  return active[0];
+}
+
+async function hvPlanRender(){
+  const out = $('#hv-plan-out'); if(!out) return;
+  const mode = HV.planMode || 'combined';
+  const soloControls = $('#hv-plan-controls-solo'), bothControls = $('#hv-plan-controls-both');
+  if(soloControls) soloControls.style.display = (mode==='combined') ? 'none' : 'flex';
+  if(bothControls) bothControls.style.display = (mode==='combined') ? 'flex' : 'none';
+  if(mode==='combined'){ return hvPlanRenderCombined(); }
+  const rng = $('#hv-plan-extra');
+  const extra = rng ? parseFloat(rng.value) : 0;
+  const lbl = $('#hv-plan-extra-lbl'); if(lbl) lbl.textContent = fmt(extra);
+  return hvPlanRenderSingle(mode, extra);
+}
+
+async function hvPlanRenderSingle(mode, extra){
+  const out = $('#hv-plan-out');
+  const loan = hvPlanFind(mode);
+  if(!loan){ hvPlanHead(0,'','—','—', mode==='condo'?'Condo clears in':'Magnolia clears in'); out.innerHTML = '<div class="empty">Loan not found</div>'; return; }
+  let p;
+  try{ p = await api('/hvac/'+loan.id+'/plan?extra='+encodeURIComponent(extra)); }
+  catch(e){ out.innerHTML = '<div class="empty">Could not compute plan</div>'; return; }
+  _hvPlan = p;
+  const b = p.baseline, w = p.with_extra;
+  const base = p.loan.payment||0, apr = p.loan.apr;
+  const tot = (HV.data && HV.data.totals) || {};
+  hvPlanHead(base+extra, fmt(base)+'/mo base'+(extra?(' + '+fmt(extra)+' extra'):''),
+    b? _hvMo(w.months) : '—',
+    b? (_hvEnd(w.months)+' · '+fmt(base+extra)+'/mo') : 'set a balance + payment',
+    esc(loan.name)+' clears in');
+  if(!b){ out.innerHTML = '<div class="empty">Set a balance and monthly payment first.</div>'; hvPlanInlineHtml('interest saved','—','—','', ''); return; }
+  const interestSaved = fmt(apr?(b.total_interest - w.total_interest):0);
+  const savedMo = p.months_saved||0;
+  const timeSaved = savedMo? _hvMo(savedMo) : '—';
+  hvPlanInlineHtml(p.loan.deferred?'interest avoided':'interest saved', interestSaved, timeSaved,
+    'at minimums: '+_hvMo(b.months)+' ('+_hvEnd(b.months)+' · '+fmt(base)+'/mo)', '');
+  out.innerHTML = p.loan.deferred ? hvDeadlineHtml(p) : '';
+}
+
+async function hvPlanRenderCombined(){
+  const out = $('#hv-plan-out'); if(!out) return;
+  const mag = hvPlanFind('magnolia'), condo = hvPlanFind('condo');
+  const magRng = $('#hv-extra-mag'), condoRng = $('#hv-extra-condo');
+  const magExtra = magRng ? parseFloat(magRng.value) : 0;
+  const condoExtra = condoRng ? parseFloat(condoRng.value) : 0;
+  const ml = $('#hv-extra-mag-lbl'); if(ml) ml.textContent = fmt(magExtra);
+  const cl = $('#hv-extra-condo-lbl'); if(cl) cl.textContent = fmt(condoExtra);
+  const parts = [];
+  if(mag) parts.push(mag.id+':'+magExtra);
+  if(condo) parts.push(condo.id+':'+condoExtra);
+  let c;
+  try{ c = await api('/hvac/combined/plan?extras='+encodeURIComponent(parts.join(','))); }
+  catch(e){ out.innerHTML = '<div class="empty">Could not compute combined plan</div>'; return; }
+  const tot = c.total_payment || 0;
+  const totExtra = c.total_extra || 0;
+  const totWith = c.total_payment_with_extra || (tot+totExtra);
+  if(!c.active){
+    hvPlanHead(0, fmt(tot)+'/mo base','—','set a balance + payment','Both loans clear in');
+    out.innerHTML = '<div class="empty">Set a balance and monthly payment on your loans first.</div>';
+    hvPlanInlineHtml('interest saved','—','—','',''); return;
+  }
+  hvPlanHead(totWith, fmt(tot)+'/mo base'+(totExtra?(' + '+fmt(totExtra)+' extra'):''),
+    _hvMo(c.with_extra.months),
+    _hvEndISO(c.payoff_date_with_extra)+' · '+fmt(totWith)+'/mo total',
+    'Both loans clear in');
+  const savedMo = c.months_saved||0;
+  const interestSaved = fmt(c.interest_saved||0);
+  const timeSaved = savedMo? _hvMo(savedMo) : '—';
+  const per = (c.with_extra && c.with_extra.per_loan) || [];
+  const perHtml = per.map(l=>`<span class="muted">${esc(l.name)}: <b>${fmt(l.payment)} + ${fmt(l.extra)} = ${fmt(l.monthly)}/mo</b> → ${_hvMo(l.months)}</span>`).join('<span class="dot"> · </span>');
+  hvPlanInlineHtml('interest saved', interestSaved, timeSaved,
+    'at minimums: '+_hvMo(c.baseline.months)+' ('+_hvEndISO(c.payoff_date_baseline)+' · '+fmt(tot)+'/mo total)', perHtml);
+  out.innerHTML = '';
+}
+
+function hvDeadlineHtml(p){
+  const d = p.deadline_info; if(!d) return '';
+  const bal = p.loan.balance, apr = p.loan.apr;
+  const deferredCharge = apr ? (bal * (apr/100) * (d.months_left/12)) : 0;
+  if(d.beatable_with_extra){
+    return `<div class="hv-deadline ok">✅ <b>On track.</b> At your current extra, this is paid off before the <b>${d.date}</b> deferred-interest deadline — no retroactive interest charge. (${d.months_left} months left.)</div>`;
+  }
+  const need = d.required_extra_to_beat;
+  return `<div class="hv-deadline warn">⚠️ <b>Deadline: ${d.date}</b> (${d.months_left} months left). At this payment you won't beat it — you'd owe the deferred-interest charge (Wells Fargo currently shows <b>$430.99 accrued</b>, growing). Add <b>${fmt(need||0)}/mo</b> more (≈ ${fmt((p.loan.payment||0)+(need||0))}/mo total) to clear it in time.</div>`;
+}
+
+async function hvPlanRenderCombinedLegacyRemoved(){ return; }
+
+function renderHvHero(){
+  const t = HV.data.totals || {};
+  const loans = HV.data.loans || [];
+  const mode = HV.mode || 'combined';
+  let owed = t.owed||0, oLabel = 'Total owed', oSub;
+  let monthly = t.monthly||0, mSub = 'combined per month';
+  let sub;
+  if(mode!=='combined'){
+    const key = mode.toLowerCase();
+    const l = loans.find(x=>(x.name||'').toLowerCase().includes(key));
+    owed = l && l.balance!=null ? l.balance : 0;
+    oLabel = l ? l.name : 'Loan';
+    oSub = l ? ('balance updated '+(l.balance_date||'—')) : 'not found';
+    monthly = l && l.payment!=null ? l.payment : 0;
+    mSub = l ? (l.payment!=null ? 'per month' : 'no monthly payment set') : '—';
+  }else{
+    oSub = (t.count||0)+' loan'+((t.count||0)===1?'':'s')+' tracked';
+  }
+  sub = oSub;
+  const oLbl = $('#hv-owed-lbl'); if(oLbl) oLbl.textContent = oLabel;
+  $('#hv-owed').textContent = fmt(owed);
+  $('#hv-monthly').textContent = fmt(monthly);
+  const ms = $('#hv-monthly-sub'); if(ms) ms.textContent = mSub;
+  $('#hv-owed-sub').textContent = sub;
+}
+
+function renderHvCards(){
+  const box = $('#hv-cards');
+  const loans = HV.data.loans || [];
+  if(!loans.length){ box.innerHTML = '<div class="empty">No HVAC loans yet</div>'; return; }
+  loans.forEach(l=>{ if(_hvCollapsed[l.id]===undefined) _hvCollapsed[l.id] = true; });
+  box.innerHTML = loans.map(l=>{
+    const bal = l.balance;
+    const last = l.balance_date ? ' <span class="muted">· updated '+l.balance_date+'</span>' : '';
+    const pct = (l.original && l.original>0 && bal!=null) ? Math.max(0, Math.min(100, 100*(1 - bal/l.original))) : null;
+    const collapsed = !!_hvCollapsed[l.id];
+    const rows = (l.payments||[]).map(p=>`<tr><td>${p.date}</td><td class="muted">${esc(p.description)}</td><td style="text-align:right">${fmt(-p.amount)}</td></tr>`).join('');
+    return `<div class="card pd-card${collapsed?' collapsed':''}" data-id="${l.id}">
+      <div class="pd-card-head" onclick="toggleHvCard(${l.id})" role="button" tabindex="0">
+        <div class="pd-caret">▸</div>
+        <div style="min-width:0;flex:1">
+          <div class="pd-card-bank">HVAC loan</div>
+          <div class="pd-card-name">${esc(l.name)}</div>
+        </div>
+        <div class="pd-head-bal">
+          <span class="pd-head-amt ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'—':fmt(bal)}</span>
+          <span class="pd-head-apr muted">${l.payment?fmt(l.payment)+'/mo':'—'}</span>
+        </div>
+      </div>
+      <div class="pd-card-body">
+        <div class="pd-card-amt"><span class="pd-card-total ${bal==null?'':(bal>0?'neg':'pos')}">${bal==null?'No balance yet':fmt(bal)}</span>${last}</div>
+        <div class="pd-card-sub">${l.payments_count||0} payments · ${fmt(l.payments_total||0)} paid${l.payments_last?' · last '+l.payments_last:''}</div>
+        ${pct!=null?`<div class="hv-bar"><div class="hv-bar-fill" style="width:${pct}%"></div></div><div class="muted" style="font-size:11px;margin-bottom:8px">${pct.toFixed(0)}% paid off</div>`:''}
+        <div class="pd-card-inputs">
+          <label>Current balance <input type="number" step="0.01" id="hv-bal-${l.id}" value="${bal==null?'':bal}" placeholder="what you owe"></label>
+          <label>Monthly payment <input type="number" step="0.01" id="hv-pay-${l.id}" value="${l.payment==null?'':l.payment}" placeholder="e.g. 280"></label>
+          <label>Original amount <input type="number" step="0.01" id="hv-orig-${l.id}" value="${l.original==null?'':l.original}" placeholder="optional"></label>
+          <label class="pd-save">&nbsp;<button class="btn" style="height:34px" onclick="hvSave(${l.id})">Save</button></label>
+        </div>
+        ${rows?`<div style="margin-top:10px;overflow-x:auto"><table><thead><tr><th>Date</th><th>Description</th><th style="text-align:right">Payment</th></tr></thead><tbody>${rows}</tbody></table></div>`:'<div class="muted" style="margin-top:8px">No matching payments detected yet.</div>'}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleHvCard(id){
+  _hvCollapsed[id] = !_hvCollapsed[id];
+  const el = document.querySelector('#hv-cards .pd-card[data-id="'+id+'"]');
+  if(el) el.classList.toggle('collapsed', !!_hvCollapsed[id]);
+}
+
+async function hvSave(id){
+  const body = {};
+  const bal = $('#hv-bal-'+id), pay = $('#hv-pay-'+id), orig = $('#hv-orig-'+id);
+  if(bal && bal.value!=='') body.balance = parseFloat(bal.value);
+  if(pay && pay.value!=='') body.payment = parseFloat(pay.value);
+  if(orig && orig.value!=='') body.original = parseFloat(orig.value);
+  if(!Object.keys(body).length){ toast('Nothing to save'); return; }
+  try{
+    await api('/hvac/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    toast('Saved');
+    HV.data = await api('/hvac'); renderHvHero(); renderHvCards();
+  }catch(e){ toast('Error: '+e.message); }
+}
+
+async function hvSaveAll(){
+  const ids = (HV.data && HV.data.loans || []).map(l=>l.id);
+  let saved = 0;
+  for(const id of ids){
+    const bal = $('#hv-bal-'+id), pay = $('#hv-pay-'+id), orig = $('#hv-orig-'+id);
+    const l = HV.data.loans.find(x=>x.id===id); if(!l) continue;
+    const body = {};
+    if(bal && bal.value!=='' && parseFloat(bal.value)!==(l.balance==null?null:parseFloat(l.balance))) body.balance = parseFloat(bal.value);
+    if(pay && pay.value!=='' && parseFloat(pay.value)!==(l.payment==null?null:parseFloat(l.payment))) body.payment = parseFloat(pay.value);
+    if(orig && orig.value!=='' && parseFloat(orig.value)!==(l.original==null?null:parseFloat(l.original))) body.original = parseFloat(orig.value);
+    if(!Object.keys(body).length) continue;
+    try{ await api('/hvac/'+id, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)}); saved++; }catch(e){}
+  }
+  if(!saved){ toast('No changes to save'); return; }
+  toast('Saved '+saved+' loan'+(saved===1?'':'s'));
+  HV.data = await api('/hvac'); renderHvHero(); renderHvCards();
+}
+
 // ================= CREDIT CARD PAYDOWN =================
 let PD = { data:null, method:'avalanche' };
 let _pdCollapsed = {};   // card id -> true when its body is collapsed
@@ -6208,7 +6717,7 @@ async function chatSend(){
   await loadMeta();
   $('#t-piemonth').onchange = ()=>{ if(_lastTrends) renderPie(_lastTrends); };
   const h = (location.hash||'').replace('#','');
-  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget','ai','economy','btcplan'].includes(h)) showTab(h);
+  if(h && ['dashboard','trends','savings','txns','rules','crypto','import','bills','paydown','budget','ai','economy','btcplan','hvac'].includes(h)) showTab(h);
   else showTab('dashboard');
 })();
 // ---------- BTC stacking plan ----------

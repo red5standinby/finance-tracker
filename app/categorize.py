@@ -162,11 +162,13 @@ SEED_RULES: list[tuple[str, str]] = [
      r"gyro|bagel|devines|brew|tribus|bar |thirtythree|coffee|maheswara|fire and dice|jangs|"
      r"consign|concession", "dining"),
     # gas
-    (r"exxon|mobil|citgo|shell|sunoco|chevron|valero|speedway|cumberland farms|plains road|"
+    (r"exxon|\bmobil\b|citgo|shell|sunoco|chevron|valero|speedway|cumberland farms|plains road|"
      r"\bpetro\b|valvoline|cumberland", "gas"),
+    # mobile (cell carrier) — Noble Mobile is the current carrier; T-Mobile legacy
+    (r"noble mobile|t-mobile|tmobile|\btmo\b|verizon wireless|\bat&t\b|cell ?phone|cellular", "mobile"),
     # utilities
     (r"united illuminating|ui |southern connecticut gas|regional water|optimum|"
-     r"t-mobile|tmobile|tmo|verizon|at&t|comcast|frontier|eversource|aquarion", "utilities"),
+     r"comcast|frontier|eversource|aquarion", "utilities"),
     # housing
     (r"lexington green|on the mark|mangament|management|\brent\b|mortgage|milford|city of|tax co|\bproperty\b|"
      r"duck pond|service finance|scheduled transfer", "housing"),
